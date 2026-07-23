@@ -49,6 +49,23 @@ void main() {
       expect(payload, contains('depth_m:44.0'));
     });
 
+    test('matches a second real SSI-exported payload (normal recreational scuba dive)', () {
+      // From a second real QR export, this time an ordinary scuba dive (not
+      // extended range), confirming dive_type:0 is the right default here:
+      // dive;noid;dive_type:0;divetime:54.0;datetime:202511071050;
+      // depth_m:28.0;site:303948;var_watertype_id:5;var_divetype_id:24;...
+      final payload = SsiQrPayloadBuilder.build(_dive(
+        dateTime: DateTime(2025, 11, 7, 10, 50),
+        maxDepthMeters: 28.0,
+        duration: const Duration(minutes: 54),
+      ));
+
+      expect(
+        payload,
+        'dive;noid;dive_type:0;datetime:202511071050;divetime:54.0;depth_m:28.0',
+      );
+    });
+
     test('keeps one decimal place for whole-number depth and duration', () {
       final payload = SsiQrPayloadBuilder.build(_dive(
         maxDepthMeters: 18,
