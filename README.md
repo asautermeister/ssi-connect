@@ -1,23 +1,60 @@
-# Garmin Connect IQ seed
-This is a seed project for writing [Garmin Connect IQ](http://developer.garmin.com/connect-iq/) applications. Instead of using the Eclipse plugin (which works rather poorly...),
-you can use any text editor of your choice and **compile**, **run** or **package** your project using *make*.
+# SSI Connect
 
-**NOTICE:** This seed works will all Java versions **below** Java 12. The reason for this is, Java 12 stopped shipping with a JAR neccessary for the Garmin SDK. This applies to the Eclipse plugin, as well and will need to eventually be addressed by Garmin.
+![SSI Connect Logo](assets/branding/logo-hero.png)
 
-## Setup
-All you'll need to get started is edit the ```properties.mk``` file. Here's a description of the variables:
+Flutter-App (Android/iOS, für Tablet-Nutzung gedacht), die Tauchgänge einer Garmin-Uhr
+in die offizielle [SSI-App](https://play.google.com/store/apps/details?id=com.divessi.ssi)
+übernimmt – ganz ohne die Werte von Hand abzutippen.
 
-- **DEVICE** - device type you want to use for simulation (e.g. fenix3, vivoactive, epix...)
-- **SDK_HOME** - home folder of your SDK (e.g. /Users/me/connectiq-sdk-mac-3.0.4)
-- **PRIVATE_KEY** - path to your generated RSA private key for signing apps (needed since CIQ 1.3) (e.g. /home/.ssh/key/id_rsa_garmin.der)
-- **DEPLOY** - if you want to hot-deploy to your device, that's the mounted path for the APPS folder (e.g. /Volumes/GARMIN/GARMIN/APPS/)
+## Warum
 
-## Targets
-- **build** - compiles the app
-- **buildall** - compiles the app separately for every device in the SUPPORTED_DEVICES_LIST, packaging appropriate resources. Make sure to have your resource folders named correctly (e.g. /resources-fenix3_hr)
-- **run** - compiles and starts the simulator
-- **deploy** - if your device is connected via USB, compile and deploy the app to the device
-- **package** - create an .iq file for app store submission
+Garmin-Uhren mit Dive-Computer (z.B. die Descent-Serie) zeichnen Tauchgänge automatisch auf.
+Garmin und SSI haben aber keine offizielle Schnittstelle mehr zueinander. SSI Connect schließt
+diese Lücke: Tauchgänge werden von Garmin geladen (oder per FIT-Datei importiert), übersichtlich
+aufgelistet, und lassen sich mit einem Tastendruck als QR-Code anzeigen, den man mit der
+Kamera der SSI-App scannt.
 
-## How to use?
-To execute the **run** target, run ```make run``` from the home folder of your app
+## Funktionsumfang
+
+- **Mehrere Garmin-Accounts** (z.B. für die ganze Familie), Login inkl. Zwei-Faktor-Code
+- **Tauchgangs-Liste** pro Account: Datum, max. Tiefe, Tauchgangs-Nummer des Tages
+- **Detailansicht** mit allen geladenen Werten (Tiefe, Dauer, Wassertemperatur, ...)
+- **QR-Code-Export** im Format, das der SSI-QR-Scanner beim Anlegen eines Tauchgangs erwartet
+- **FIT-Datei-Import** als Alternative, falls der Garmin-Login gerade nicht funktioniert
+  (z.B. Original-FIT-Export aus Garmin Connect Web)
+- Zugangsdaten werden verschlüsselt auf dem Gerät gespeichert; Tauchgangsdaten selbst werden
+  **nicht** dauerhaft gespeichert, sondern nur für die laufende Sitzung geladen
+
+## Wie benutzt man es
+
+1. Auf dem Tablet einen oder mehrere Garmin-Accounts hinzufügen
+2. Tauchgang aus der Liste auswählen, Werte in der Detailansicht prüfen
+3. "QR-Code erzeugen" antippen
+4. Mit einem zweiten Gerät (z.B. dem Handy) die SSI-App öffnen, "QR-Code scannen" wählen und
+   den Code vom Tablet-Bildschirm abscannen
+
+Der QR-Code muss von einem *anderen* Gerät gescannt werden als dem, auf dem er angezeigt wird –
+deshalb ist die App als Tablet-/Zweitgerät-App gedacht und nicht als Handy-App neben SSI selbst.
+
+## Wichtige Einschränkungen
+
+- Der Garmin-Login nutzt eine **inoffizielle, reverse-engineerte Schnittstelle** (Garmin bietet
+  keine öffentliche Consumer-API an). Das kann jederzeit durch Änderungen bei Garmin brechen –
+  in dem Fall hilft der FIT-Datei-Import als Fallback.
+- Das SSI-QR-Format ist ebenfalls nicht offiziell dokumentiert, sondern wurde anhand echter
+  Exporte aus der SSI-App rekonstruiert (siehe `lib/ssi/ssi_qr_payload_builder.dart`).
+- Diese App steht in keiner Verbindung zu Garmin Ltd. oder Scuba Schools International (SSI).
+
+## Entwicklung
+
+Setup-Anleitung (Windows/VS Code) und Build-Befehle: siehe [`SETUP.md`](SETUP.md).
+
+```
+flutter analyze     # Statische Codeprüfung
+flutter test         # Unit-Tests
+flutter run          # App bauen + starten
+```
+
+## Lizenz
+
+Apache License 2.0, siehe [`LICENSE`](LICENSE).
