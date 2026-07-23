@@ -40,6 +40,8 @@ dependencies:
   qr_flutter: ^4.1.0
   provider: ^6.1.5+1
   uuid: ^4.6.0
+  fit_tool: ^1.0.5
+  file_picker: ^11.0.2
 
 dev_dependencies:
   flutter_test:

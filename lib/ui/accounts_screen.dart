@@ -5,16 +5,26 @@ import '../accounts/accounts_controller.dart';
 import '../accounts/models/garmin_account.dart';
 import 'add_account_screen.dart';
 import 'dive_list_screen.dart';
+import 'fit_import_flow.dart';
 
 /// Start screen: pick which family member's Garmin account to browse dives
-/// for, or add a new one.
+/// for, add a new one, or import dives from a manually exported FIT file.
 class AccountsScreen extends StatelessWidget {
   const AccountsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('SSI Connect')),
+      appBar: AppBar(
+        title: const Text('SSI Connect'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.upload_file),
+            tooltip: 'Tauchgänge aus FIT-Datei importieren',
+            onPressed: () => pickAndImportFitFile(context),
+          ),
+        ],
+      ),
       body: Consumer<AccountsController>(
         builder: (context, controller, _) {
           if (!controller.loaded) {
@@ -22,9 +32,24 @@ class AccountsScreen extends StatelessWidget {
           }
           if (controller.accounts.isEmpty) {
             return Center(
-              child: Text(
-                'Noch kein Garmin-Account hinzugefügt.',
-                style: Theme.of(context).textTheme.bodyLarge,
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'Noch kein Garmin-Account hinzugefügt.',
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.bodyLarge,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Alternativ oben rechts eine FIT-Datei importieren.',
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ],
+                ),
               ),
             );
           }

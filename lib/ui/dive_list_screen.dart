@@ -6,7 +6,8 @@ import '../accounts/models/garmin_account.dart';
 import '../garmin/garmin_activity_client.dart';
 import '../garmin/garmin_auth_exceptions.dart';
 import '../models/dive.dart';
-import 'dive_detail_screen.dart';
+import 'dive_list_tile.dart';
+import 'fit_import_flow.dart';
 
 class DiveListScreen extends StatefulWidget {
   const DiveListScreen({super.key, required this.account});
@@ -83,6 +84,11 @@ class _DiveListScreenState extends State<DiveListScreen> {
                       onPressed: _retry,
                       child: const Text('Erneut versuchen'),
                     ),
+                    const SizedBox(height: 8),
+                    OutlinedButton(
+                      onPressed: () => pickAndImportFitFile(context),
+                      child: const Text('Stattdessen FIT-Datei importieren'),
+                    ),
                   ],
                 ),
               ),
@@ -97,34 +103,11 @@ class _DiveListScreenState extends State<DiveListScreen> {
             child: ListView.separated(
               itemCount: dives.length,
               separatorBuilder: (_, _) => const Divider(height: 1),
-              itemBuilder: (context, index) {
-                final dive = dives[index];
-                return ListTile(
-                  title: Text(_formatDate(dive.dateTime)),
-                  subtitle: Text('Tauchgang ${dive.diveNumberOfDay} des Tages'),
-                  trailing: Text(
-                    dive.maxDepthMeters != null
-                        ? '${dive.maxDepthMeters!.toStringAsFixed(1)} m'
-                        : '–',
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  onTap: () => Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => DiveDetailScreen(dive: dive),
-                    ),
-                  ),
-                );
-              },
+              itemBuilder: (context, index) => DiveListTile(dive: dives[index]),
             ),
           );
         },
       ),
     );
-  }
-
-  String _formatDate(DateTime dateTime) {
-    final d = dateTime;
-    String two(int n) => n.toString().padLeft(2, '0');
-    return '${two(d.day)}.${two(d.month)}.${d.year} ${two(d.hour)}:${two(d.minute)}';
   }
 }
