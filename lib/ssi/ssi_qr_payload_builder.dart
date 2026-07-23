@@ -3,10 +3,21 @@ import '../models/dive.dart';
 /// Builds the text payload the official SSI app (com.divessi.ssi) expects
 /// when scanning a QR code to import a dive.
 ///
-/// The format is not officially documented - it was reconstructed from
-/// several independently-reported example payloads, e.g.:
-/// `dive;noid;dive_type:0;datetime:201907211000;divetime:38;depth_m:12.8;
-/// site:119506;var_weather_id:1;...;watertemp_c:26;airtemp_c:26;vis_m:20`
+/// The format is not officially documented. It was first reconstructed from
+/// independently-reported example payloads, then confirmed against a real
+/// QR code exported from the SSI app itself:
+/// `dive;noid;dive_type:2;divetime:92.0;datetime:202511080856;depth_m:44.0;
+/// site:1074;var_watertype_id:5;var_divetype_id:24;user_master_id:...;
+/// user_firstname:...;user_lastname:...;user_leader_id:`
+///
+/// Key findings from that real example:
+/// - `depth_m` and `divetime` always carry one decimal place, even for
+///   whole numbers (`44.0`, not `44`).
+/// - `divetime` is dive duration in *minutes*, as a float (so fractional
+///   minutes are possible), not whole seconds/minutes.
+/// - Field order doesn't matter - the real example has `divetime` before
+///   `datetime`, the reverse of earlier reference payloads, so this is
+///   evidently parsed as an order-independent key/value bag.
 ///
 /// Only the fields believed to be required are emitted: `dive_type`,
 /// `datetime`, `divetime`, `depth_m`, plus `watertemp_c` when available.
@@ -17,8 +28,11 @@ import '../models/dive.dart';
 class SsiQrPayloadBuilder {
   const SsiQrPayloadBuilder._();
 
-  /// Recreational single/multi-gas scuba dive. The only `dive_type` value
-  /// observed in reference payloads; SSI's other codes aren't documented.
+  /// Default recreational scuba dive. The real example above used `2`
+  /// (technical/cave dive, matching its dive site/dive shop) - the mapping
+  /// for `dive_type` isn't public, so this stays the same default used by
+  /// prior reference payloads for ordinary recreational dives, which is
+  /// what this app targets.
   static const _diveTypeScuba = 0;
 
   /// Throws [ArgumentError] if [dive] is missing a field the payload can't
@@ -27,9 +41,7 @@ class SsiQrPayloadBuilder {
     final maxDepth = dive.maxDepthMeters;
     final duration = dive.duration;
     if (maxDepth == null) {
-      throw ArgumentError(
-        'Tauchgang hat keine maximale Tiefe - QR-Code nicht möglich.',
-      );
+      throw ArgumentError('Tauchgang hat keine maximale Tiefe - QR-Code nicht möglich.');
     }
     if (duration == null) {
       throw ArgumentError('Tauchgang hat keine Dauer - QR-Code nicht möglich.');
@@ -38,13 +50,13 @@ class SsiQrPayloadBuilder {
     final fields = <String>[
       'dive_type:$_diveTypeScuba',
       'datetime:${_formatDateTime(dive.dateTime)}',
-      'divetime:${duration.inMinutes}',
-      'depth_m:${_formatNumber(maxDepth)}',
+      'divetime:${_formatFixed(duration.inSeconds / 60.0)}',
+      'depth_m:${_formatFixed(maxDepth)}',
     ];
 
     final waterTemp = dive.waterTemperatureCelsius;
     if (waterTemp != null) {
-      fields.add('watertemp_c:${_formatNumber(waterTemp)}');
+      fields.add('watertemp_c:${_formatFixed(waterTemp)}');
     }
 
     return 'dive;noid;${fields.join(';')}';
@@ -56,13 +68,8 @@ class SsiQrPayloadBuilder {
         '${pad(dateTime.hour)}${pad(dateTime.minute)}';
   }
 
-  /// Whole numbers are emitted without a decimal point (matches observed
-  /// payloads using both "18" and "12.8"), fractional ones with one digit.
-  static String _formatNumber(double value) {
-    final rounded = double.parse(value.toStringAsFixed(1));
-    if (rounded == rounded.roundToDouble()) {
-      return rounded.round().toString();
-    }
-    return rounded.toStringAsFixed(1);
-  }
+  /// Always one decimal place, matching the real captured payload
+  /// (`depth_m:44.0`, `divetime:92.0`) - unlike some earlier reference
+  /// examples, whole numbers are NOT trimmed to integers here.
+  static String _formatFixed(double value) => value.toStringAsFixed(1);
 }
