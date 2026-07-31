@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 
@@ -10,26 +12,35 @@ import 'imported_dive_list_screen.dart';
 /// Garmin login needed" entry point and as a fallback when a login attempt
 /// fails.
 Future<void> pickAndImportFitFile(BuildContext context) async {
-  final result = await FilePicker.pickFiles(
-    type: FileType.custom,
-    allowedExtensions: ['fit'],
-    withData: true,
-  );
-  if (!context.mounted) return;
-  if (result == null || result.files.isEmpty) return;
-
-  final bytes = result.files.single.bytes;
-  if (bytes == null) {
-    _showError(context, 'Datei konnte nicht gelesen werden.');
+  final PlatformFile? picked;
+  try {
+    picked = await FilePicker.pickFile(
+      type: FileType.custom,
+      allowedExtensions: ['fit'],
+    );
+  } catch (e) {
+    if (!context.mounted) return;
+    _showError(context, 'Dateiauswahl fehlgeschlagen: $e');
     return;
   }
+  if (picked == null) return;
+
+  final Uint8List bytes;
+  try {
+    bytes = await picked.readAsBytes();
+  } catch (e) {
+    if (!context.mounted) return;
+    _showError(context, 'Datei konnte nicht gelesen werden: $e');
+    return;
+  }
+  if (!context.mounted) return;
 
   try {
     final dives = FitDiveImporter.parse(bytes);
     if (!context.mounted) return;
-    Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => ImportedDiveListScreen(dives: dives)),
-    );
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => ImportedDiveListScreen(dives: dives)));
   } on FitImportException catch (e) {
     if (!context.mounted) return;
     _showError(context, e.message);
