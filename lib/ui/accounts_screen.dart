@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../accounts/accounts_controller.dart';
 import '../accounts/models/garmin_account.dart';
 import 'add_account_screen.dart';
+import 'debug_log_screen.dart';
 import 'dive_list_screen.dart';
 import 'fit_import_flow.dart';
 
@@ -22,6 +23,13 @@ class AccountsScreen extends StatelessWidget {
             icon: const Icon(Icons.upload_file),
             tooltip: 'Tauchgänge aus FIT-Datei importieren',
             onPressed: () => pickAndImportFitFile(context),
+          ),
+          IconButton(
+            icon: const Icon(Icons.bug_report_outlined),
+            tooltip: 'API-Protokoll',
+            onPressed: () => Navigator.of(
+              context,
+            ).push(MaterialPageRoute(builder: (_) => const DebugLogScreen())),
           ),
         ],
       ),

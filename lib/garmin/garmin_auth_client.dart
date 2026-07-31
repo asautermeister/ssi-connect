@@ -1,7 +1,11 @@
 import 'dart:convert';
 
+import 'package:cookie_jar/cookie_jar.dart';
 import 'package:dio/dio.dart';
+import 'package:dio_cookie_manager/dio_cookie_manager.dart';
 
+import '../debug/api_log.dart';
+import '../debug/api_log_interceptor.dart';
 import 'garmin_auth_exceptions.dart';
 import 'models/garmin_session.dart';
 
@@ -23,7 +27,15 @@ import 'models/garmin_session.dart';
 /// tested against a real account.
 class GarminAuthClient {
   GarminAuthClient({Dio? dio, this._domain = 'garmin.com'})
-    : _dio = dio ?? Dio();
+    : _dio = dio ?? Dio() {
+    // Garmin ties an MFA challenge to the session that started the login:
+    // /mobile/api/mfa/verifyCode only accepts the code when the SSO cookies
+    // set during /mobile/api/login are sent back with it, otherwise it
+    // answers 409. So every request from this client shares one cookie jar,
+    // and login + completeMfa must run on the *same* client instance.
+    _dio.interceptors.add(CookieManager(CookieJar()));
+    _dio.interceptors.add(const ApiLogInterceptor());
+  }
 
   final Dio _dio;
   final String _domain;
@@ -296,16 +308,59 @@ class GarminAuthClient {
     return 'Basic ${base64Encode(utf8.encode('$clientId:'))}';
   }
 
+  /// Turns Dio's raw transport errors into something a user can act on -
+  /// the default message is a wall of HTTP-spec text that says nothing
+  /// about what to do next.
   GarminAuthException _mapDioError(DioException e, {required String context}) {
-    if (e.response?.statusCode == 429) {
+    final status = e.response?.statusCode;
+
+    if (status == 429) {
       return GarminAuthException(
         GarminAuthErrorType.rateLimited,
-        '$context: Zu viele Anfragen (429), bitte später erneut versuchen.',
+        '$context: Garmin hat zu viele Versuche registriert. Bitte einige '
+        'Minuten warten und erneut versuchen.',
+      );
+    }
+    if (status == 401 || status == 400) {
+      return GarminAuthException(
+        GarminAuthErrorType.invalidCredentials,
+        '$context: Von Garmin abgelehnt - Eingabe prüfen.',
+      );
+    }
+    if (status == 409) {
+      // Garmin uses 409 here for "this code doesn't belong to a login I'm
+      // currently tracking": wrong/expired code, or a login session that
+      // was lost between the two steps.
+      return GarminAuthException(
+        GarminAuthErrorType.invalidCredentials,
+        '$context: Der Code wurde nicht akzeptiert. Er ist möglicherweise '
+        'abgelaufen oder gehört zu einem älteren Login-Versuch. Bitte den '
+        'Login neu starten und den neuesten Code verwenden.',
+      );
+    }
+    if (status == 403) {
+      return GarminAuthException(
+        GarminAuthErrorType.connectionError,
+        '$context: Garmin hat die Anfrage blockiert (Bot-Schutz). Bitte '
+        'später erneut versuchen oder die FIT-Datei importieren.',
+      );
+    }
+    if (e.type == DioExceptionType.connectionTimeout ||
+        e.type == DioExceptionType.receiveTimeout ||
+        e.type == DioExceptionType.connectionError) {
+      return GarminAuthException(
+        GarminAuthErrorType.connectionError,
+        '$context: Keine Verbindung zu Garmin. Internetverbindung prüfen.',
       );
     }
     return GarminAuthException(
       GarminAuthErrorType.connectionError,
-      '$context fehlgeschlagen: ${e.message}',
+      '$context fehlgeschlagen'
+      '${status != null ? ' (HTTP $status)' : ''}.',
+      details: ApiLog.instance.enabled
+          ? '${e.requestOptions.method} ${e.requestOptions.uri}\n'
+                'Antwort: ${e.response?.data}'
+          : null,
     );
   }
 }

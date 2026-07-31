@@ -1,9 +1,15 @@
 # Setup unter Windows (VS Code)
 
 Anleitung, um das Projekt lokal zu bauen und auf einem Android-Tablet/-Handy
-zu testen. iOS-Builds brauchen einen Mac mit Xcode - unter Windows nicht
-möglich, dafür später ggf. ein Cloud-Build-Dienst (z.B. Codemagic) oder
-Zugriff auf einen Mac.
+zu testen.
+
+> **iOS unter Windows nicht möglich:** iOS-Apps lassen sich ausschließlich auf
+> einem Mac mit Xcode bauen (Apples Toolchain gibt es nicht für Windows). Ein
+> per USB angeschlossenes iPhone/iPad taucht unter Windows deshalb gar nicht
+> erst als Zielgerät auf. Optionen für später: ein Mac, oder ein Cloud-Build-
+> Dienst wie Codemagic bzw. GitHub Actions mit macOS-Runner (zum Installieren
+> auf einem echten iOS-Gerät ist dann zusätzlich ein Apple-Developer-Programm
+> nötig). Für den vollständigen Funktionstest reicht Android völlig aus.
 
 ## 1. Vorbereitung (einmalig, ca. 30-60 Min inkl. Downloads)
 
@@ -15,11 +21,14 @@ Zugriff auf einen Mac.
      Leerzeichen/Rechten)
    - `C:\src\flutter\bin` zum PATH hinzufügen (Windows-Suche → "Umgebungsvariablen
      bearbeiten")
-3. **Android Studio** installieren (wird nur für das Android SDK + den
-   Emulator gebraucht, nicht zum Programmieren):
-   https://developer.android.com/studio
+3. **Android Studio** installieren (wird nur für das Android SDK gebraucht,
+   nicht zum Programmieren): https://developer.android.com/studio
    - beim ersten Start den SDK-Setup-Assistenten durchlaufen lassen
-     (installiert Android SDK, Platform-Tools, ein Emulator-Image)
+   - **Wichtig:** anschließend die Command-line Tools nachinstallieren, sonst
+     fehlt u.a. `avdmanager` (siehe Abschnitt 5, "Häufige Probleme"):
+     Android Studio → Settings → `Languages & Frameworks` → **Android SDK** →
+     Tab **SDK Tools** → Haken bei **"Android SDK Command-line Tools (latest)"**
+     → Apply
 4. **VS Code** + Erweiterungen installieren:
    - VS Code: https://code.visualstudio.com/
    - Erweiterungen: "Flutter" und "Dart" (von Dart Code) über den
@@ -40,7 +49,6 @@ Zugriff auf einen Mac.
 ```powershell
 git clone https://github.com/asautermeister/ssi-connect.git
 cd ssi-connect
-git checkout claude/ssi-connect-new-project-t7rsej
 flutter pub get
 ```
 
@@ -49,33 +57,94 @@ Danach den Ordner `ssi-connect` in VS Code öffnen (`code .`).
 ## 3. Auf einem echten Android-Gerät testen (empfohlen statt Emulator)
 
 Da die App als Tablet-App gedacht ist und mit echten Garmin-Zugangsdaten
-läuft, ist ein echtes Gerät sinnvoller als der Emulator:
+läuft, ist ein echtes Gerät sinnvoller als der Emulator.
 
-1. Auf dem Android-Tablet/-Handy: Einstellungen → Über das Telefon →
-   7x auf "Build-Nummer" tippen (aktiviert Entwickleroptionen)
-2. Einstellungen → Entwickleroptionen → "USB-Debugging" aktivieren
-3. Gerät per USB-Kabel an den PC anschließen, auf dem Gerät den Hinweis
-   "USB-Debugging zulassen?" bestätigen
-4. In VS Code unten rechts in der Statusleiste das Gerät als Zielgerät
-   auswählen (oder `flutter devices` im Terminal zur Kontrolle)
+**a) Entwickleroptionen freischalten**
+
+Einstellungen → "Über das Telefon" / "Telefoninfo" → 7x auf **"Build-Nummer"**
+tippen, bis die Meldung "Du bist jetzt ein Entwickler" erscheint.
+
+**b) Entwickleroptionen finden** – der Menüpunkt taucht je nach Hersteller an
+unterschiedlicher Stelle auf und ist oft nicht dort, wo man ihn erwartet:
+
+| Hersteller | Pfad |
+|---|---|
+| Pixel / Stock-Android | Einstellungen → **System** → Entwickleroptionen |
+| Samsung | Einstellungen → ganz unten: **Entwickleroptionen** |
+| Xiaomi / Redmi / POCO (MIUI/HyperOS) | Einstellungen → **Zusätzliche Einstellungen** → Entwickleroptionen |
+| OnePlus / Oppo / Realme | Einstellungen → **Zusätzliche Einstellungen** → Entwickleroptionen |
+| Huawei | Einstellungen → **System & Aktualisierungen** → Entwickleroptionen |
+
+Am schnellsten geht es meist über die **Suchfunktion in den Einstellungen**:
+oben in das Lupensymbol tippen und "Entwickler" oder "USB" eingeben.
+
+**c) USB-Debugging aktivieren**
+
+In den Entwickleroptionen **"USB-Debugging"** einschalten.
+(Bei Xiaomi/MIUI zusätzlich **"USB-Debugging (Sicherheitseinstellungen)"**
+aktivieren, sonst schlägt die Installation fehl – dafür muss ggf. eine
+Mi-Konto-Anmeldung bestehen.)
+
+**d) Gerät verbinden und starten**
+
+1. Gerät per USB-Kabel an den PC anschließen (Datenkabel, kein reines Ladekabel)
+2. Auf dem Gerät den Hinweis **"USB-Debugging zulassen?"** bestätigen
+   (Häkchen "Von diesem Computer immer zulassen" setzen)
+3. Prüfen, ob das Gerät erkannt wird:
+   ```powershell
+   flutter devices
+   ```
+4. In VS Code unten rechts in der Statusleiste das Gerät als Zielgerät auswählen
 5. Mit F5 (oder `flutter run` im Terminal) starten
 
-Alternativ ohne echtes Gerät: in Android Studio unter "Device Manager" ein
+**Alternative ohne echtes Gerät:** In Android Studio unter "Device Manager" ein
 virtuelles Gerät (Tablet-Profil) anlegen und in VS Code als Zielgerät wählen.
+Zum Testen des QR-Codes muss dann das Handy mit der SSI-App den QR-Code vom
+PC-Bildschirm abscannen.
 
 ## 4. Nützliche Befehle
 
 ```powershell
-flutter analyze     # Statische Codeprüfung
+flutter analyze      # Statische Codeprüfung
 flutter test         # Unit-Tests (laufen ohne Gerät/Emulator)
+flutter devices      # Zeigt erkannte Geräte/Emulatoren
 flutter run          # App bauen + auf gewähltem Gerät starten
 flutter pub get      # Nach jedem Pull: Abhängigkeiten aktualisieren
 ```
 
-## 5. Bekannte offene Punkte beim ersten echten Test
+## 5. Häufige Probleme
+
+**"avdmanager is missing from the Android SDK"** (beim Anlegen eines Emulators)
+
+Das Paket "Android SDK Command-line Tools" fehlt – Android Studio installiert es
+nicht immer automatisch mit. Nachinstallieren:
+Android Studio → Settings → `Languages & Frameworks` → **Android SDK** →
+Tab **SDK Tools** → Haken bei **"Android SDK Command-line Tools (latest)"** →
+Apply. Danach VS Code neu starten.
+
+**Entwickleroptionen sind freigeschaltet, aber nicht auffindbar**
+
+Siehe Tabelle in Abschnitt 3b – der Menüpunkt liegt je nach Hersteller an
+unterschiedlicher Stelle. Notfalls die Suche in den Einstellungen nutzen.
+
+**Gerät wird von `flutter devices` nicht angezeigt**
+
+- Ein reines Ladekabel verwendet? Ein Datenkabel nutzen.
+- USB-Modus am Gerät auf "Dateiübertragung" statt "Nur laden" stellen
+  (Benachrichtigungsleiste antippen).
+- USB-Debugging-Dialog auf dem Gerät bestätigt?
+- Bei manchen Windows-Systemen fehlt der USB-Treiber des Herstellers –
+  Google USB Driver via Android Studio → SDK Manager → SDK Tools installieren.
+
+**iOS-Gerät wird nicht erkannt**
+
+Erwartetes Verhalten unter Windows – siehe Hinweis ganz oben.
+
+## 6. Bekannte offene Punkte beim ersten echten Test
 
 - Der Garmin-Login ist eine inoffizielle Schnittstelle und kann fehlschlagen
-  (Cloudflare-Blockade, geänderte API) - siehe Fehlermeldung in der App.
+  (Cloudflare-Blockade, geänderte API) - siehe Fehlermeldung in der App. In dem
+  Fall über den Upload-Button den FIT-Datei-Import als Alternative nutzen.
 - Die genauen Feldnamen für Tiefe/Wassertemperatur bei Tauchgängen sind noch
   nicht gegen einen echten Account verifiziert.
 - Bitte beim ersten erfolgreichen Login mit einem echten Tauchgang kurz

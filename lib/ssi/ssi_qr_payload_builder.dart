@@ -41,7 +41,9 @@ class SsiQrPayloadBuilder {
     final maxDepth = dive.maxDepthMeters;
     final duration = dive.duration;
     if (maxDepth == null) {
-      throw ArgumentError('Tauchgang hat keine maximale Tiefe - QR-Code nicht möglich.');
+      throw ArgumentError(
+        'Tauchgang hat keine maximale Tiefe - QR-Code nicht möglich.',
+      );
     }
     if (duration == null) {
       throw ArgumentError('Tauchgang hat keine Dauer - QR-Code nicht möglich.');
