@@ -42,6 +42,7 @@ dependencies:
   uuid: ^4.6.0
   fit_tool: ^1.0.5
   file_picker: ^12.0.0-beta.7
+  dio_cookie_manager: ^3.5.0
 
 dev_dependencies:
   flutter_test:
