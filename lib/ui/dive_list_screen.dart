@@ -6,6 +6,7 @@ import '../accounts/models/garmin_account.dart';
 import '../garmin/garmin_activity_client.dart';
 import '../garmin/garmin_auth_exceptions.dart';
 import '../models/dive.dart';
+import 'debug_log_screen.dart';
 import 'dive_list_tile.dart';
 import 'fit_import_flow.dart';
 
@@ -69,16 +70,28 @@ class _DiveListScreenState extends State<DiveListScreen> {
             return const Center(child: CircularProgressIndicator());
           }
           if (snapshot.hasError) {
-            final message = snapshot.error is GarminAuthException
-                ? (snapshot.error as GarminAuthException).message
+            final error = snapshot.error;
+            final message = error is GarminAuthException
+                ? error.message
                 : 'Tauchgänge konnten nicht geladen werden.';
+            final details = error is GarminAuthException ? error.details : null;
             return Center(
-              child: Padding(
+              child: SingleChildScrollView(
                 padding: const EdgeInsets.all(24),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(message, textAlign: TextAlign.center),
+                    if (details != null) ...[
+                      const SizedBox(height: 12),
+                      SelectableText(
+                        details,
+                        style: const TextStyle(
+                          fontSize: 11,
+                          fontFamily: 'monospace',
+                        ),
+                      ),
+                    ],
                     const SizedBox(height: 16),
                     FilledButton(
                       onPressed: _retry,
@@ -88,6 +101,14 @@ class _DiveListScreenState extends State<DiveListScreen> {
                     OutlinedButton(
                       onPressed: () => pickAndImportFitFile(context),
                       child: const Text('Stattdessen FIT-Datei importieren'),
+                    ),
+                    const SizedBox(height: 8),
+                    TextButton.icon(
+                      icon: const Icon(Icons.bug_report_outlined),
+                      label: const Text('API-Protokoll öffnen'),
+                      onPressed: () => Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => const DebugLogScreen()),
+                      ),
                     ),
                   ],
                 ),

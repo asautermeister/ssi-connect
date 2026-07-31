@@ -4,6 +4,8 @@ import 'package:cookie_jar/cookie_jar.dart';
 import 'package:dio/dio.dart';
 import 'package:dio_cookie_manager/dio_cookie_manager.dart';
 
+import '../debug/api_log.dart';
+import '../debug/api_log_interceptor.dart';
 import 'garmin_auth_exceptions.dart';
 import 'models/garmin_session.dart';
 
@@ -32,6 +34,7 @@ class GarminAuthClient {
     // answers 409. So every request from this client shares one cookie jar,
     // and login + completeMfa must run on the *same* client instance.
     _dio.interceptors.add(CookieManager(CookieJar()));
+    _dio.interceptors.add(const ApiLogInterceptor());
   }
 
   final Dio _dio;
@@ -354,6 +357,10 @@ class GarminAuthClient {
       GarminAuthErrorType.connectionError,
       '$context fehlgeschlagen'
       '${status != null ? ' (HTTP $status)' : ''}.',
+      details: ApiLog.instance.enabled
+          ? '${e.requestOptions.method} ${e.requestOptions.uri}\n'
+                'Antwort: ${e.response?.data}'
+          : null,
     );
   }
 }

@@ -27,6 +27,7 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
   GarminMfaContext? _mfaContext;
   bool _busy = false;
   String? _error;
+  String? _errorDetails;
 
   @override
   void dispose() {
@@ -40,6 +41,7 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
     setState(() {
       _busy = true;
       _error = null;
+      _errorDetails = null;
     });
     final controller = context.read<AccountsController>();
     try {
@@ -62,7 +64,10 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
           });
       }
     } on GarminAuthException catch (e) {
-      setState(() => _error = e.message);
+      setState(() {
+        _error = e.message;
+        _errorDetails = e.details;
+      });
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -74,6 +79,7 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
     setState(() {
       _busy = true;
       _error = null;
+      _errorDetails = null;
     });
     final controller = context.read<AccountsController>();
     try {
@@ -84,7 +90,10 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
       );
       if (mounted) Navigator.of(context).pop();
     } on GarminAuthException catch (e) {
-      setState(() => _error = e.message);
+      setState(() {
+        _error = e.message;
+        _errorDetails = e.details;
+      });
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -109,6 +118,13 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
                 Text(
                   _error!,
                   style: TextStyle(color: Theme.of(context).colorScheme.error),
+                ),
+              ],
+              if (_errorDetails != null) ...[
+                const SizedBox(height: 8),
+                SelectableText(
+                  _errorDetails!,
+                  style: const TextStyle(fontSize: 11, fontFamily: 'monospace'),
                 ),
               ],
               const SizedBox(height: 24),
