@@ -38,9 +38,9 @@ Future<void> pickAndImportFitFile(BuildContext context) async {
   try {
     final dives = FitDiveImporter.parse(bytes);
     if (!context.mounted) return;
-    Navigator.of(
-      context,
-    ).push(MaterialPageRoute(builder: (_) => ImportedDiveListScreen(dives: dives)));
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => ImportedDiveListScreen(dives: dives)),
+    );
   } on FitImportException catch (e) {
     if (!context.mounted) return;
     _showError(context, e.message);

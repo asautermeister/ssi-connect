@@ -34,9 +34,9 @@ class _DebugLogScreenState extends State<DebugLogScreen> {
     final text = ApiLog.instance.allAsText();
     await Clipboard.setData(ClipboardData(text: text));
     if (!mounted) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Log in die Zwischenablage kopiert')));
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Log in die Zwischenablage kopiert')),
+    );
   }
 
   @override

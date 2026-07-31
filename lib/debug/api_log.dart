@@ -20,7 +20,8 @@ class ApiLogEntry {
   final String? responseBody;
   final String? error;
 
-  bool get isFailure => error != null || (statusCode != null && statusCode! >= 400);
+  bool get isFailure =>
+      error != null || (statusCode != null && statusCode! >= 400);
 
   /// Plain-text rendering, used for the copy-to-clipboard button so the
   /// details can be pasted into a chat/issue instead of retyped from a

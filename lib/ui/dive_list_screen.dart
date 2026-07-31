@@ -107,7 +107,9 @@ class _DiveListScreenState extends State<DiveListScreen> {
                       icon: const Icon(Icons.bug_report_outlined),
                       label: const Text('API-Protokoll öffnen'),
                       onPressed: () => Navigator.of(context).push(
-                        MaterialPageRoute(builder: (_) => const DebugLogScreen()),
+                        MaterialPageRoute(
+                          builder: (_) => const DebugLogScreen(),
+                        ),
                       ),
                     ),
                   ],
