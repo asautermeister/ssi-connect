@@ -5,6 +5,7 @@ import 'format.dart';
 import 'qr_screen.dart';
 import 'theme/app_theme.dart';
 import 'widgets/app_card.dart';
+import 'widgets/dive_type_icon.dart';
 import 'widgets/stat_tile.dart';
 
 /// One dive in full. Max depth leads as the hero number, the remaining
@@ -36,9 +37,26 @@ class DiveDetailScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  '${Fmt.weekday(dive.dateTime)}, ${Fmt.dateTime(dive.dateTime)} Uhr',
-                  style: theme.textTheme.bodyMedium,
+                Row(
+                  children: [
+                    DiveTypeIcon(type: dive.type, size: 34),
+                    const SizedBox(width: AppSpacing.md),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            dive.type.label,
+                            style: theme.textTheme.titleMedium,
+                          ),
+                          Text(
+                            '${Fmt.weekday(dive.dateTime)}, ${Fmt.dateTime(dive.dateTime)} Uhr',
+                            style: theme.textTheme.bodySmall,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: AppSpacing.lg),
                 StatTile(

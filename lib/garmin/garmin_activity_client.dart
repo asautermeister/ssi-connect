@@ -67,11 +67,12 @@ class GarminActivityClient {
 
       final list = response.data;
       if (list is List) {
-        results.addAll(
-          list.whereType<Map>().map(
-            (e) => GarminActivity(e.cast<String, dynamic>()),
-          ),
-        );
+        final activities = list
+            .whereType<Map>()
+            .map((e) => GarminActivity(e.cast<String, dynamic>()))
+            .toList();
+        results.addAll(activities);
+        _logMeasurementProbe(activityType, activities);
       }
     }
 
@@ -146,6 +147,35 @@ class GarminActivityClient {
         details: ApiLog.instance.enabled ? _describe(e) : null,
       );
     }
+  }
+
+  /// Writes the depth/temperature fields of the first activity of a type
+  /// into the API log.
+  ///
+  /// The list response is tens of thousands of characters, so the log's
+  /// truncation hides exactly the fields whose names and units we still
+  /// need to confirm. This pulls just those out, one line per activity
+  /// type, so a misread value can be traced to a specific key.
+  void _logMeasurementProbe(String activityType, List<GarminActivity> items) {
+    if (!ApiLog.instance.enabled || items.isEmpty) return;
+    final sample = items.first;
+    final fields = sample.probeMeasurementFields();
+    ApiLog.instance.add(
+      ApiLogEntry(
+        timestamp: DateTime.now(),
+        method: 'PROBE',
+        url: 'Messfelder · $activityType',
+        statusCode: 200,
+        responseBody: [
+          'startTimeLocal=${sample.raw['startTimeLocal']}',
+          'gelesene max. Tiefe=${sample.maxDepthMeters}',
+          if (fields.isEmpty)
+            'Keine Felder mit "depth"/"temperature" gefunden'
+          else
+            ...fields.entries.map((e) => '${e.key}=${e.value}'),
+        ].join('\n'),
+      ),
+    );
   }
 
   /// Raw request/response summary, shown in the UI only while API logging

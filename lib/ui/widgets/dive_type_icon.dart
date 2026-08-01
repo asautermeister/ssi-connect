@@ -1,0 +1,191 @@
+import 'package:flutter/material.dart';
+
+import '../../models/dive_type.dart';
+
+/// Round badge showing what kind of dive this was: freediving fins, one
+/// cylinder, two cylinders, or a rebreather loop.
+///
+/// Hand-drawn rather than icon-font glyphs because no standard icon set
+/// ships dive cylinders or freediving fins. The shapes are deliberately
+/// simple - they are read at 40px in a list, so they need a recognisable
+/// silhouette, not detail.
+///
+/// The badge is decorative in the accessibility sense: the dive type is
+/// also written out in the card, so nothing depends on recognising the
+/// picture. A [Semantics] label is still attached for screen readers.
+class DiveTypeIcon extends StatelessWidget {
+  const DiveTypeIcon({super.key, required this.type, this.size = 40});
+
+  final DiveType type;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
+    return Semantics(
+      label: type.label,
+      child: Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          color: scheme.primary,
+          shape: BoxShape.circle,
+        ),
+        child: CustomPaint(
+          painter: _DiveTypePainter(
+            type: type,
+            color: scheme.onPrimary,
+            badgeColor: scheme.primary,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _DiveTypePainter extends CustomPainter {
+  const _DiveTypePainter({
+    required this.type,
+    required this.color,
+    required this.badgeColor,
+  });
+
+  final DiveType type;
+  final Color color;
+
+  /// The circle behind the glyph. Used to knock shapes back out of a
+  /// filled form (the mask lens) - painting in the badge colour rather
+  /// than clearing, since clearing without its own layer would punch
+  /// through to whatever is behind the badge.
+  final Color badgeColor;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    // Everything below is authored against a 24x24 box and scaled, so the
+    // shapes stay proportional at any badge size.
+    canvas.save();
+    canvas.scale(size.width / 24, size.height / 24);
+
+    final fill = Paint()
+      ..color = color
+      ..style = PaintingStyle.fill;
+    final stroke = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.6
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+
+    switch (type) {
+      case DiveType.apnea:
+        _paintFins(canvas, fill);
+      case DiveType.singleGas:
+        _paintCylinder(canvas, fill, centerX: 12);
+      case DiveType.multiGas:
+        _paintCylinder(canvas, fill, centerX: 8.6, width: 5.4);
+        _paintCylinder(canvas, fill, centerX: 15.4, width: 5.4);
+      case DiveType.rebreather:
+        _paintRebreather(canvas, fill, stroke);
+      case DiveType.scuba:
+        _paintCylinder(canvas, fill, centerX: 12);
+    }
+
+    canvas.restore();
+  }
+
+  /// A pair of long freediving fins, seen from behind and splayed slightly
+  /// apart: a small foot pocket at the top of each, then a long blade that
+  /// widens toward a rounded tip. Drawing them as two separate blades is
+  /// what makes them read as fins - a single joined shape looks like a
+  /// funnel at badge size.
+  void _paintFins(Canvas canvas, Paint fill) {
+    // A monofin / whale-tail silhouette: a narrow stem widening into two
+    // swept flukes with a notch between them.
+    //
+    // Earlier attempts drew a realistic pair of blades, but at badge size
+    // two narrow near-vertical shapes are indistinguishable from the
+    // multi-gas cylinders. The tail's horizontal sweep and centre notch
+    // read instantly at 40px and can't be confused with an upright tank.
+    final path = Path()
+      // Stem.
+      ..moveTo(10.9, 3.4)
+      ..lineTo(13.1, 3.4)
+      ..lineTo(13.1, 11.4)
+      // Right fluke, sweeping out and down.
+      ..cubicTo(16.2, 12.4, 19.6, 14.9, 21.0, 18.4)
+      ..cubicTo(19.0, 20.2, 15.4, 19.1, 13.2, 16.3)
+      // Notch between the flukes.
+      ..lineTo(12.0, 14.7)
+      ..lineTo(10.8, 16.3)
+      // Left fluke, mirrored.
+      ..cubicTo(8.6, 19.1, 5.0, 20.2, 3.0, 18.4)
+      ..cubicTo(4.4, 14.9, 7.8, 12.4, 10.9, 11.4)
+      ..close();
+    canvas.drawPath(path, fill);
+  }
+
+  /// One cylinder: a rounded tank body with a valve stub on top.
+  void _paintCylinder(
+    Canvas canvas,
+    Paint fill, {
+    required double centerX,
+    double width = 7.2,
+  }) {
+    final half = width / 2;
+
+    // Valve.
+    canvas.drawRRect(
+      RRect.fromLTRBR(
+        centerX - 1.1,
+        3.2,
+        centerX + 1.1,
+        6.2,
+        const Radius.circular(0.5),
+      ),
+      fill,
+    );
+    // Body.
+    canvas.drawRRect(
+      RRect.fromLTRBAndCorners(
+        centerX - half,
+        5.6,
+        centerX + half,
+        20.4,
+        topLeft: Radius.circular(half * 0.7),
+        topRight: Radius.circular(half * 0.7),
+        bottomLeft: Radius.circular(half * 0.45),
+        bottomRight: Radius.circular(half * 0.45),
+      ),
+      fill,
+    );
+  }
+
+  /// A rebreather: the full-face mask with the breathing loop curving away
+  /// from it on both sides.
+  void _paintRebreather(Canvas canvas, Paint fill, Paint stroke) {
+    // Mask body.
+    canvas.drawRRect(
+      RRect.fromLTRBR(6.6, 7.4, 17.4, 15.2, const Radius.circular(3.4)),
+      fill,
+    );
+    // Lens, so the mask reads as a mask rather than a blob.
+    canvas.drawRRect(
+      RRect.fromLTRBR(8.4, 9.2, 15.6, 12.6, const Radius.circular(1.8)),
+      Paint()..color = badgeColor,
+    );
+    // Breathing loop, one hose each side.
+    final loop = Path()
+      ..moveTo(6.8, 14)
+      ..cubicTo(3.6, 15.6, 3.8, 19.2, 7.4, 19.8)
+      ..moveTo(17.2, 14)
+      ..cubicTo(20.4, 15.6, 20.2, 19.2, 16.6, 19.8);
+    canvas.drawPath(loop, stroke);
+  }
+
+  @override
+  bool shouldRepaint(_DiveTypePainter oldDelegate) =>
+      oldDelegate.type != type ||
+      oldDelegate.color != color ||
+      oldDelegate.badgeColor != badgeColor;
+}

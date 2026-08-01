@@ -1,4 +1,5 @@
 import '../garmin/models/garmin_activity.dart';
+import 'dive_type.dart';
 
 /// Our own domain model for a dive, mapped from Garmin's raw activity JSON.
 /// [diveNumberOfDay] is not something Garmin provides - it's computed
@@ -12,6 +13,7 @@ class Dive {
     required this.waterTemperatureCelsius,
     required this.duration,
     required this.locationName,
+    this.type = DiveType.scuba,
     this.diveNumberOfDay = 1,
   });
 
@@ -22,6 +24,7 @@ class Dive {
   final double? waterTemperatureCelsius;
   final Duration? duration;
   final String? locationName;
+  final DiveType type;
   final int diveNumberOfDay;
 
   Dive copyWith({int? diveNumberOfDay}) => Dive(
@@ -32,6 +35,7 @@ class Dive {
     waterTemperatureCelsius: waterTemperatureCelsius,
     duration: duration,
     locationName: locationName,
+    type: type,
     diveNumberOfDay: diveNumberOfDay ?? this.diveNumberOfDay,
   );
 
@@ -52,6 +56,7 @@ class Dive {
           ? null
           : Duration(seconds: durationSeconds.round()),
       locationName: activity.locationName,
+      type: DiveType.fromGarminTypeKey(activity.typeKey),
     );
   }
 }

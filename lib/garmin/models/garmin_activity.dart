@@ -44,6 +44,35 @@ class GarminActivity {
   String? get locationName =>
       raw['locationName'] as String? ?? raw['startLocationName'] as String?;
 
+  /// Every numeric field whose name mentions depth or temperature, with the
+  /// value Garmin actually sent.
+  ///
+  /// Exists because the response for a single activity is far too large to
+  /// read in the API log, and the interesting fields are a handful of keys
+  /// buried in it. Written into the log so a wrong reading (a depth of
+  /// 1149.3 for an 11 m dive, say) can be traced to the exact key and unit
+  /// instead of guessed at.
+  Map<String, Object?> probeMeasurementFields() {
+    final found = <String, Object?>{};
+    void walk(String prefix, Map<dynamic, dynamic> map) {
+      for (final entry in map.entries) {
+        final key = '$prefix${entry.key}';
+        final value = entry.value;
+        if (value is Map) {
+          walk('$key.', value);
+        } else if (value is num) {
+          final lower = key.toLowerCase();
+          if (lower.contains('depth') || lower.contains('temperature')) {
+            found[key] = value;
+          }
+        }
+      }
+    }
+
+    walk('', raw);
+    return found;
+  }
+
   /// Looks up each candidate key in turn; keys containing "." are read as a
   /// one-level nested path (e.g. "summaryDTO.maxDepth").
   double? _numAny(List<String> candidateKeys) {

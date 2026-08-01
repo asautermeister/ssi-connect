@@ -1,10 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ssi_connect/models/dive.dart';
+import 'package:ssi_connect/models/dive_type.dart';
 import 'package:ssi_connect/ui/dive_list_tile.dart';
 import 'package:ssi_connect/ui/theme/app_theme.dart';
+import 'package:ssi_connect/ui/widgets/dive_type_icon.dart';
 
-Dive _dive({double? maxDepth, Duration? duration, int diveNumberOfDay = 1}) {
+Dive _dive({
+  double? maxDepth,
+  Duration? duration,
+  int diveNumberOfDay = 1,
+  DiveType type = DiveType.scuba,
+}) {
   return Dive(
     id: 'a',
     dateTime: DateTime(2025, 11, 8, 8, 56),
@@ -13,6 +20,7 @@ Dive _dive({double? maxDepth, Duration? duration, int diveNumberOfDay = 1}) {
     waterTemperatureCelsius: null,
     duration: duration,
     locationName: null,
+    type: type,
     diveNumberOfDay: diveNumberOfDay,
   );
 }
@@ -41,7 +49,38 @@ void main() {
       expect(find.text('44,0'), findsOneWidget);
       expect(find.text('MAX. TIEFE'), findsOneWidget);
       expect(find.textContaining('92 min'), findsOneWidget);
-      expect(find.text('1. TG DES TAGES'), findsOneWidget);
+      expect(find.textContaining('1. TG'), findsOneWidget);
+    });
+
+    testWidgets('shows a type badge and names the type in text', (
+      tester,
+    ) async {
+      await _pump(
+        tester,
+        DiveListTile(
+          dive: _dive(maxDepth: 11.5, type: DiveType.apnea),
+          maxDepthInList: 11.5,
+        ),
+      );
+
+      final badge = tester.widget<DiveTypeIcon>(find.byType(DiveTypeIcon));
+      expect(badge.type, DiveType.apnea);
+      // The label is written out too, so the drawing never carries the
+      // meaning on its own.
+      expect(find.textContaining('Apnoe'), findsOneWidget);
+    });
+
+    testWidgets('renders every dive type without error', (tester) async {
+      for (final type in DiveType.values) {
+        await _pump(
+          tester,
+          DiveListTile(
+            dive: _dive(maxDepth: 20, type: type),
+            maxDepthInList: 20,
+          ),
+        );
+        expect(tester.takeException(), isNull);
+      }
     });
 
     testWidgets('renders without a depth, showing the placeholder', (

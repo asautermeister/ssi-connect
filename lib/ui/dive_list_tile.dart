@@ -5,6 +5,7 @@ import 'dive_detail_screen.dart';
 import 'format.dart';
 import 'theme/app_theme.dart';
 import 'widgets/app_card.dart';
+import 'widgets/dive_type_icon.dart';
 import 'widgets/stat_tile.dart';
 
 /// One dive in a list, as a card: date and dive-of-day on the left, max
@@ -40,6 +41,8 @@ class DiveListTile extends StatelessWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              DiveTypeIcon(type: dive.type),
+              const SizedBox(width: AppSpacing.md),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -55,9 +58,10 @@ class DiveListTile extends StatelessWidget {
                       style: theme.textTheme.bodySmall,
                     ),
                     const SizedBox(height: AppSpacing.sm),
+                    // The dive type is spelled out here as well, so the
+                    // badge never has to be decoded from its shape.
                     AppChip(
-                      label: '${dive.diveNumberOfDay}. TG DES TAGES',
-                      icon: Icons.scuba_diving,
+                      label: '${dive.diveNumberOfDay}. TG · ${dive.type.label}',
                     ),
                   ],
                 ),
