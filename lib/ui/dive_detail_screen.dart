@@ -142,18 +142,31 @@ class DiveDetailScreen extends StatelessWidget {
                 // beside the badge at the top of the screen. Only the
                 // descent count needs a tile, and only for the freediving
                 // sessions that have more than one.
-                if (dive.descentCount != null) ...[
+                //
+                // The water type is shown because it travels into the SSI
+                // logbook as var_watertype_id: a value that ends up in the
+                // export should be readable before it is scanned.
+                if (dive.descentCount != null || dive.waterType != null) ...[
                   const SizedBox(height: AppSpacing.xl),
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Expanded(
-                        child: StatTile(
-                          label: 'Abtauchvorgänge',
-                          value: '${dive.descentCount}',
-                        ),
+                        child: dive.waterType != null
+                            ? StatTile(
+                                label: 'Wasser',
+                                value: dive.waterType!.label,
+                              )
+                            : const SizedBox.shrink(),
                       ),
-                      const Expanded(child: SizedBox.shrink()),
+                      Expanded(
+                        child: dive.descentCount != null
+                            ? StatTile(
+                                label: 'Abtauchvorgänge',
+                                value: '${dive.descentCount}',
+                              )
+                            : const SizedBox.shrink(),
+                      ),
                     ],
                   ),
                 ],

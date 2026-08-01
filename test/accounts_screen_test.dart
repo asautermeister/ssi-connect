@@ -168,6 +168,24 @@ void main() {
       expect(find.text('SSI-Identität'), findsOneWidget);
     });
 
+    testWidgets('an account can be renamed from its options menu', (
+      tester,
+    ) async {
+      await _pump(tester, accounts: [_account('lang@example.com')]);
+
+      await tester.tap(find.byIcon(Icons.more_horiz));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Namen ändern'));
+      await tester.pumpAndSettle();
+
+      await tester.enterText(find.byType(TextField), 'Marie');
+      await tester.tap(find.text('Speichern'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Marie'), findsOneWidget);
+      expect(find.text('lang@example.com'), findsNothing);
+    });
+
     testWidgets('a broken account is named, not silently dropped', (
       tester,
     ) async {

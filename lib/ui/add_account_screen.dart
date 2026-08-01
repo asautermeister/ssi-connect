@@ -19,6 +19,7 @@ class AddAccountScreen extends StatefulWidget {
 enum _Step { credentials, mfa }
 
 class _AddAccountScreenState extends State<AddAccountScreen> {
+  final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _mfaController = TextEditingController();
@@ -31,6 +32,7 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
 
   @override
   void dispose() {
+    _nameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     _mfaController.dispose();
@@ -55,6 +57,7 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
           await controller.addAccountFromSuccess(
             email: _emailController.text.trim(),
             session: session,
+            displayName: _nameController.text,
           );
           if (mounted) Navigator.of(context).pop();
         case GarminLoginMfaRequired(:final mfaContext):
@@ -87,6 +90,7 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
         email: _emailController.text.trim(),
         context: mfaContext,
         code: _mfaController.text.trim(),
+        displayName: _nameController.text,
       );
       if (mounted) Navigator.of(context).pop();
     } on GarminAuthException catch (e) {
@@ -152,6 +156,15 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
   }
 
   List<Widget> _credentialsFields() => [
+    TextField(
+      controller: _nameController,
+      decoration: const InputDecoration(
+        labelText: 'Name',
+        helperText: 'Optional – sonst wird die E-Mail-Adresse angezeigt',
+      ),
+      textCapitalization: TextCapitalization.words,
+    ),
+    const SizedBox(height: 12),
     TextField(
       controller: _emailController,
       decoration: const InputDecoration(labelText: 'Garmin E-Mail'),

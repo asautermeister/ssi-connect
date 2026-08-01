@@ -136,35 +136,51 @@ class _DiveTypePainter extends CustomPainter {
     canvas.restore();
   }
 
-  /// A pair of long freediving fins, seen from behind and splayed slightly
-  /// apart: a small foot pocket at the top of each, then a long blade that
-  /// widens toward a rounded tip. Drawing them as two separate blades is
-  /// what makes them read as fins - a single joined shape looks like a
-  /// funnel at badge size.
+  /// A pair of long freediving fins, standing on their heels and splayed
+  /// apart at the tips.
+  ///
+  /// Two upright shapes risk reading as the multi-gas cylinders, so the
+  /// difference is carried by three things a tank doesn't have: the outward
+  /// splay, the blade widening toward a rounded tip (a cylinder is
+  /// parallel-sided), and the waisted foot pocket at the bottom. An earlier
+  /// monofin silhouette avoided the confusion but looked like a sprouting
+  /// seedling.
   void _paintFins(Canvas canvas, Paint fill) {
-    // A monofin / whale-tail silhouette: a narrow stem widening into two
-    // swept flukes with a notch between them.
-    //
-    // Earlier attempts drew a realistic pair of blades, but at badge size
-    // two narrow near-vertical shapes are indistinguishable from the
-    // multi-gas cylinders. The tail's horizontal sweep and centre notch
-    // read instantly at 40px and can't be confused with an upright tank.
-    final path = Path()
-      // Stem.
-      ..moveTo(10.9, 3.4)
-      ..lineTo(13.1, 3.4)
-      ..lineTo(13.1, 11.4)
-      // Right fluke, sweeping out and down.
-      ..cubicTo(16.2, 12.4, 19.6, 14.9, 21.0, 18.4)
-      ..cubicTo(19.0, 20.2, 15.4, 19.1, 13.2, 16.3)
-      // Notch between the flukes.
-      ..lineTo(12.0, 14.7)
-      ..lineTo(10.8, 16.3)
-      // Left fluke, mirrored.
-      ..cubicTo(8.6, 19.1, 5.0, 20.2, 3.0, 18.4)
-      ..cubicTo(4.4, 14.9, 7.8, 12.4, 10.9, 11.4)
+    _paintFin(canvas, fill, pivotX: 9.7, radians: -0.21);
+    _paintFin(canvas, fill, pivotX: 14.3, radians: 0.21);
+  }
+
+  /// One fin, drawn upright around a pivot at its heel and then rotated
+  /// into place, so both fins are the same shape mirrored rather than two
+  /// hand-tuned outlines.
+  void _paintFin(
+    Canvas canvas,
+    Paint fill, {
+    required double pivotX,
+    required double radians,
+  }) {
+    canvas.save();
+    canvas.translate(pivotX, 14.2);
+    canvas.rotate(radians);
+
+    final fin = Path()
+      // Heel of the foot pocket, the widest point at the bottom.
+      ..moveTo(-2.3, 2.8)
+      // Instep: waisted where the pocket meets the blade, which is what
+      // makes the foot pocket visible as a separate part.
+      ..quadraticBezierTo(-2.6, 0.4, -1.5, -1.6)
+      // Blade, widening slightly toward the tip.
+      ..lineTo(-2.5, -11.4)
+      // Rounded tip.
+      ..quadraticBezierTo(0, -13.8, 2.5, -11.4)
+      ..lineTo(1.5, -1.6)
+      ..quadraticBezierTo(2.6, 0.4, 2.3, 2.8)
+      // Heel, rounded off.
+      ..quadraticBezierTo(0, 4.0, -2.3, 2.8)
       ..close();
-    canvas.drawPath(path, fill);
+    canvas.drawPath(fin, fill);
+
+    canvas.restore();
   }
 
   /// One cylinder: a rounded tank body with a valve stub on top.

@@ -1,28 +1,42 @@
 import '../models/dive.dart';
+import '../models/dive_type.dart';
 import 'ssi_buddy_code.dart';
 
 /// Builds the text payload the official SSI app (com.divessi.ssi) expects
 /// when scanning a QR code to import a dive.
 ///
 /// The format is not officially documented. It was first reconstructed from
-/// independently-reported example payloads, then confirmed against a real
-/// QR code exported from the SSI app itself:
-/// `dive;noid;dive_type:2;divetime:92.0;datetime:202511080856;depth_m:44.0;
-/// site:1074;var_watertype_id:5;var_divetype_id:24;user_master_id:...;
-/// user_firstname:...;user_lastname:...;user_leader_id:`
+/// independently-reported example payloads, then confirmed against several
+/// real QR codes exported from the SSI app itself. One recreational dive
+/// and one XR (extended range) dive from the same logbook:
+/// `dive;noid;dive_type:0;divetime:54.0;datetime:202511071050;depth_m:28.0;
+/// site:303948;var_watertype_id:5;var_divetype_id:24;var_divetype_id:24;
+/// user_master_id:3902893;user_firstname:...;user_lastname:...;
+/// user_leader_id:`
+/// `dive;noid;dive_type:2;divetime:75.0;datetime:202511060853;depth_m:46.4;
+/// site:202305;...` (same tail)
 ///
-/// Key findings from that real example:
+/// Key findings from those real examples:
 /// - `depth_m` and `divetime` always carry one decimal place, even for
 ///   whole numbers (`44.0`, not `44`).
 /// - `divetime` is dive duration in *minutes*, as a float (so fractional
 ///   minutes are possible), not whole seconds/minutes.
-/// - Field order doesn't matter - the real example has `divetime` before
+/// - Field order doesn't matter - one example has `divetime` before
 ///   `datetime`, the reverse of earlier reference payloads, so this is
 ///   evidently parsed as an order-independent key/value bag.
+/// - Keys may even repeat: SSI's own export emits `var_divetype_id:24`
+///   twice. So the parser tolerates duplicates, and nothing here needs to
+///   guard against them.
+/// - `dive_type` distinguishes recreational (`0`) from XR (`2`).
 ///
 /// Emitted: `dive_type`, `datetime`, `divetime`, `depth_m`, plus
-/// `watertemp_c` when Garmin reported one, plus the `user_*` fields when
-/// an SSI identity has been scanned for the account.
+/// `watertemp_c` and `var_watertype_id` when the source reported them, plus
+/// the `user_*` fields when an SSI identity has been scanned for the
+/// account.
+///
+/// `var_watertype_id` was settled by contrast rather than by assumption:
+/// three sea dives from one logbook exported `5`, a lake dive from the same
+/// logbook exported `4`. See `DiveWaterType`.
 ///
 /// Deliberately left out, because filling them would mean inventing values
 /// for code tables SSI has never published:
@@ -30,9 +44,7 @@ import 'ssi_buddy_code.dart';
 /// - `var_weather_id`, `var_entry_id`, `var_water_body_id`,
 ///   `var_current_id`, `var_surface_id`, `vis_m` - subjective conditions
 ///   that aren't in the dive computer's data at all.
-/// - `var_watertype_id` - Garmin does report a water type and density
-///   (1025 kg/m3 = salt), but SSI's numbering for it is unknown.
-/// - `var_divetype_id` - both captured exports carry `24`; copying a
+/// - `var_divetype_id` - all captured exports carry `24`; copying a
 ///   constant whose meaning nobody knows would be cargo cult.
 /// - `airtemp_c` - Garmin's `maxTemperature` is plausibly the air reading,
 ///   but that is a guess, and a wrong air temperature is worse than none.
@@ -43,12 +55,24 @@ import 'ssi_buddy_code.dart';
 class SsiQrPayloadBuilder {
   const SsiQrPayloadBuilder._();
 
-  /// Default recreational scuba dive. The real example above used `2`
-  /// (technical/cave dive, matching its dive site/dive shop) - the mapping
-  /// for `dive_type` isn't public, so this stays the same default used by
-  /// prior reference payloads for ordinary recreational dives, which is
-  /// what this app targets.
-  static const _diveTypeScuba = 0;
+  /// `dive_type`, from two captured exports of the same diver's logbook:
+  /// an ordinary recreational scuba dive carries `0`, an XR (extended
+  /// range / technical) dive carries `2`.
+  ///
+  /// Garmin's `multi_gas_diving` is that second case - a stage or deco
+  /// cylinder alongside the back gas is what makes a dive technical - so it
+  /// maps to `2`. A closed-circuit rebreather is technical by the same
+  /// measure and maps there too; that one is reasoning rather than a
+  /// captured example, and is the first thing to correct if an XR
+  /// rebreather export ever says otherwise.
+  ///
+  /// Everything else, freediving included, stays at `0`. SSI very likely
+  /// has its own code for freediving, but none of the captured exports is a
+  /// freedive, and `0` is at least the value we have seen work.
+  static int _diveTypeFor(DiveType type) => switch (type) {
+    DiveType.multiGas || DiveType.rebreather => 2,
+    DiveType.apnea || DiveType.singleGas || DiveType.scuba => 0,
+  };
 
   /// [diver] attributes the dive to an SSI member. Optional: without it
   /// the payload is exactly what it was before, and SSI attributes the
@@ -69,11 +93,16 @@ class SsiQrPayloadBuilder {
     }
 
     final fields = <String>[
-      'dive_type:$_diveTypeScuba',
+      'dive_type:${_diveTypeFor(dive.type)}',
       'datetime:${_formatDateTime(dive.dateTime)}',
       'divetime:${_formatFixed(duration.inSeconds / 60.0)}',
       'depth_m:${_formatFixed(maxDepth)}',
     ];
+
+    final waterType = dive.waterType;
+    if (waterType != null) {
+      fields.add('var_watertype_id:${waterType.ssiVarId}');
+    }
 
     final waterTemp = dive.waterTemperatureCelsius;
     if (waterTemp != null) {

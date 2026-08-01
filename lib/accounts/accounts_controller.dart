@@ -50,26 +50,41 @@ class AccountsController extends ChangeNotifier {
     required String email,
     required GarminMfaContext context,
     required String code,
+    String? displayName,
   }) async {
     final session = await _authClient.completeMfa(context: context, code: code);
-    return _addAccount(email: email, session: session);
+    return _addAccount(
+      email: email,
+      session: session,
+      displayName: displayName,
+    );
   }
 
   Future<GarminAccount> addAccountFromSuccess({
     required String email,
     required GarminSession session,
+    String? displayName,
   }) {
-    return _addAccount(email: email, session: session);
+    return _addAccount(
+      email: email,
+      session: session,
+      displayName: displayName,
+    );
   }
 
+  /// [displayName] is what the family calls this person. Falls back to the
+  /// mail address, which is at least unique - but "Marie" reads better on a
+  /// shared tablet than "marie.mustermann.1987@example.com".
   Future<GarminAccount> _addAccount({
     required String email,
     required GarminSession session,
+    String? displayName,
   }) async {
+    final name = displayName?.trim();
     final account = GarminAccount(
       id: _uuid.v4(),
       email: email,
-      displayName: email,
+      displayName: (name == null || name.isEmpty) ? email : name,
       session: session,
     );
     _accounts = [..._accounts, account];
@@ -98,6 +113,17 @@ class AccountsController extends ChangeNotifier {
     await _repository.save(updated);
     notifyListeners();
     return refreshed;
+  }
+
+  /// Renames an account. An empty name falls back to the mail address
+  /// rather than leaving a nameless card on the start screen.
+  Future<void> rename(String accountId, String displayName) async {
+    final name = displayName.trim();
+    await _updateAccount(
+      accountId,
+      (account) =>
+          account.copyWith(displayName: name.isEmpty ? account.email : name),
+    );
   }
 
   /// Stores the SSI identity read from a scanned member QR code.

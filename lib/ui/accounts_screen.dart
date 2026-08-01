@@ -275,7 +275,7 @@ class _EmptyAccounts extends StatelessWidget {
   }
 }
 
-enum _AccountAction { ssiIdentity, remove }
+enum _AccountAction { rename, ssiIdentity, remove }
 
 class _AccountCard extends StatelessWidget {
   const _AccountCard({required this.account, required this.dives});
@@ -334,6 +334,7 @@ class _AccountCard extends StatelessWidget {
             icon: const Icon(Icons.more_horiz),
             tooltip: 'Optionen',
             onSelected: (action) => switch (action) {
+              _AccountAction.rename => _rename(context),
               _AccountAction.ssiIdentity => Navigator.of(context).push(
                 MaterialPageRoute(
                   builder: (_) => SsiIdentityScreen(accountId: account.id),
@@ -342,6 +343,10 @@ class _AccountCard extends StatelessWidget {
               _AccountAction.remove => _confirmRemove(context),
             },
             itemBuilder: (context) => const [
+              PopupMenuItem(
+                value: _AccountAction.rename,
+                child: Text('Namen ändern'),
+              ),
               PopupMenuItem(
                 value: _AccountAction.ssiIdentity,
                 child: Text('SSI-Identität'),
@@ -372,6 +377,16 @@ class _AccountCard extends StatelessWidget {
     return trimmed.characters.first.toUpperCase();
   }
 
+  Future<void> _rename(BuildContext context) async {
+    final controller = context.read<AccountsController>();
+    final name = await showDialog<String>(
+      context: context,
+      builder: (_) => _RenameDialog(initialValue: account.displayName),
+    );
+    if (name == null) return;
+    await controller.rename(account.id, name);
+  }
+
   /// Removing an account drops its stored tokens, which means a full
   /// re-login with a fresh MFA code - worth a confirmation step.
   Future<void> _confirmRemove(BuildContext context) async {
@@ -399,6 +414,52 @@ class _AccountCard extends StatelessWidget {
     if (confirmed ?? false) {
       await controller.removeAccount(account.id);
     }
+  }
+}
+
+class _RenameDialog extends StatefulWidget {
+  const _RenameDialog({required this.initialValue});
+
+  final String initialValue;
+
+  @override
+  State<_RenameDialog> createState() => _RenameDialogState();
+}
+
+class _RenameDialogState extends State<_RenameDialog> {
+  late final _controller = TextEditingController(text: widget.initialValue);
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Name'),
+      content: TextField(
+        controller: _controller,
+        autofocus: true,
+        textCapitalization: TextCapitalization.words,
+        decoration: const InputDecoration(
+          labelText: 'Angezeigter Name',
+          helperText: 'Leer lassen für die E-Mail-Adresse',
+        ),
+        onSubmitted: (value) => Navigator.of(context).pop(value),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Abbrechen'),
+        ),
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(_controller.text),
+          child: const Text('Speichern'),
+        ),
+      ],
+    );
   }
 }
 

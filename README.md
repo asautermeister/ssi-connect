@@ -48,6 +48,9 @@ deshalb ist die App als Tablet-/Zweitgerät-App gedacht und nicht als Handy-App 
   in dem Fall hilft der FIT-Datei-Import als Fallback.
 - Das SSI-QR-Format ist ebenfalls nicht offiziell dokumentiert, sondern wurde anhand echter
   Exporte aus der SSI-App rekonstruiert (siehe `lib/ssi/ssi_qr_payload_builder.dart`).
+- Ob Garmins Web-API überhaupt Süß-/Salzwasser mitliefert, ist noch offen – beim FIT-Import
+  steht es fest in der Datei. Fehlt die Angabe, bleibt das Feld im QR-Code leer, statt geraten
+  zu werden.
 - **Buddies stehen noch nicht im QR-Code.** Wie SSI sie im Import benennt, geht aus den bisher
   vorliegenden Exporten nicht hervor, und ein geratener Feldname würde stillschweigend
   verschwinden. Bis das geklärt ist, dient die Auswahl als Merkzettel für den Eintrag in der
