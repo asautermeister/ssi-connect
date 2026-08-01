@@ -6,6 +6,7 @@ import '../accounts/models/garmin_account.dart';
 import '../garmin/garmin_activity_client.dart';
 import '../garmin/garmin_auth_exceptions.dart';
 import '../models/dive.dart';
+import '../ssi/ssi_buddy_code.dart';
 import 'debug_log_screen.dart';
 import 'dive_list_tile.dart';
 import 'fit_import_flow.dart';
@@ -103,7 +104,7 @@ class _DiveListScreenState extends State<DiveListScreen> {
           }
           return RefreshIndicator(
             onRefresh: () async => _retry(),
-            child: DiveList(dives: dives),
+            child: DiveList(dives: dives, diver: widget.account.ssiIdentity),
           );
         },
       ),
@@ -114,9 +115,13 @@ class _DiveListScreenState extends State<DiveListScreen> {
 /// Shared list body, so Garmin-loaded and FIT-imported dives render
 /// identically. Computes the shared depth scale the cards' meters use.
 class DiveList extends StatelessWidget {
-  const DiveList({super.key, required this.dives});
+  const DiveList({super.key, required this.dives, this.diver});
 
   final List<Dive> dives;
+
+  /// SSI member these dives belong to, passed down so the generated QR
+  /// code can name them. Null for FIT imports, which carry no account.
+  final SsiBuddyCode? diver;
 
   @override
   Widget build(BuildContext context) {
@@ -133,8 +138,11 @@ class DiveList extends StatelessWidget {
       ),
       itemCount: dives.length,
       separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.md),
-      itemBuilder: (context, index) =>
-          DiveListTile(dive: dives[index], maxDepthInList: maxDepth),
+      itemBuilder: (context, index) => DiveListTile(
+        dive: dives[index],
+        maxDepthInList: maxDepth,
+        diver: diver,
+      ),
     );
   }
 }

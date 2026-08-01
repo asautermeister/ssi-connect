@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
 import '../models/dive.dart';
+import '../ssi/ssi_buddy_code.dart';
 import '../ssi/ssi_qr_payload_builder.dart';
 import 'format.dart';
 import 'theme/app_theme.dart';
@@ -13,16 +14,20 @@ import 'widgets/error_state.dart';
 /// scan target, and a dark-mode QR code is unreliable for camera scanners.
 /// The dive is restated above it so the right one is being exported.
 class QrScreen extends StatelessWidget {
-  const QrScreen({super.key, required this.dive});
+  const QrScreen({super.key, required this.dive, this.diver});
 
   final Dive dive;
+
+  /// SSI member the dive belongs to. When set, the payload attributes the
+  /// dive to them; otherwise SSI files it under whoever is logged in.
+  final SsiBuddyCode? diver;
 
   @override
   Widget build(BuildContext context) {
     String? payload;
     String? error;
     try {
-      payload = SsiQrPayloadBuilder.build(dive);
+      payload = SsiQrPayloadBuilder.build(dive, diver: diver);
     } on ArgumentError catch (e) {
       error = e.message.toString();
     }

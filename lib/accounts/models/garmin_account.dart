@@ -1,4 +1,5 @@
 import '../../garmin/models/garmin_session.dart';
+import '../../ssi/ssi_buddy_code.dart';
 
 /// One logged-in Garmin account stored on this tablet (one per family
 /// member), together with the SSI identity its dives belong to.
@@ -31,6 +32,19 @@ class GarminAccount {
   final String? ssiEmail;
 
   bool get hasSsiIdentity => ssiMemberId != null;
+
+  /// The stored identity in the shape the QR payload builder wants, or
+  /// null when none has been scanned yet.
+  SsiBuddyCode? get ssiIdentity {
+    final memberId = ssiMemberId;
+    if (memberId == null) return null;
+    return SsiBuddyCode(
+      memberId: memberId,
+      firstName: ssiFirstName,
+      lastName: ssiLastName,
+      email: ssiEmail,
+    );
+  }
 
   String? get ssiFullName {
     final parts = [

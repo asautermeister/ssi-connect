@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ssi_connect/models/dive.dart';
+import 'package:ssi_connect/ssi/ssi_buddy_code.dart';
 import 'package:ssi_connect/ssi/ssi_qr_payload_builder.dart';
 
 Dive _dive({
@@ -132,6 +133,86 @@ void main() {
         () => SsiQrPayloadBuilder.build(_dive(maxDepthMeters: 10)),
         throwsArgumentError,
       );
+    });
+
+    test('attributes the dive to a scanned SSI member', () {
+      // Field names and values as SSI writes them in its own export.
+      final payload = SsiQrPayloadBuilder.build(
+        _dive(maxDepthMeters: 28, duration: const Duration(minutes: 54)),
+        diver: const SsiBuddyCode(
+          memberId: '3902893',
+          firstName: 'Andreas',
+          lastName: 'Sautermeister',
+          email: 'andreas@example.com',
+        ),
+      );
+
+      expect(payload, contains('user_master_id:3902893'));
+      expect(payload, contains('user_firstname:Andreas'));
+      expect(payload, contains('user_lastname:Sautermeister'));
+      // The email is part of the buddy code but not of a dive record.
+      expect(payload, isNot(contains('andreas@example.com')));
+    });
+
+    test('emits only the member id when no name was scanned', () {
+      final payload = SsiQrPayloadBuilder.build(
+        _dive(maxDepthMeters: 28, duration: const Duration(minutes: 54)),
+        diver: const SsiBuddyCode(memberId: '3902893'),
+      );
+
+      expect(payload, contains('user_master_id:3902893'));
+      expect(payload, isNot(contains('user_firstname')));
+      expect(payload, isNot(contains('user_lastname')));
+    });
+
+    test('without a diver the payload is unchanged', () {
+      // The no-identity case has to stay byte-identical to what was
+      // verified against real SSI imports.
+      final payload = SsiQrPayloadBuilder.build(
+        _dive(
+          dateTime: DateTime(2025, 11, 7, 10, 50),
+          maxDepthMeters: 28,
+          duration: const Duration(minutes: 54),
+        ),
+      );
+
+      expect(
+        payload,
+        'dive;noid;dive_type:0;datetime:202511071050;divetime:54.0;depth_m:28.0',
+      );
+    });
+
+    test('never emits fields whose SSI code tables are unknown', () {
+      final payload = SsiQrPayloadBuilder.build(
+        _dive(
+          maxDepthMeters: 28,
+          duration: const Duration(minutes: 54),
+          waterTemperatureCelsius: 22,
+        ),
+        diver: const SsiBuddyCode(memberId: '3902893'),
+      );
+
+      for (final guessed in const [
+        'site:',
+        'var_weather_id',
+        'var_entry_id',
+        'var_water_body_id',
+        'var_watertype_id',
+        'var_current_id',
+        'var_surface_id',
+        'var_divetype_id',
+        'airtemp_c',
+        'vis_m',
+        'user_leader_id',
+      ]) {
+        expect(
+          payload,
+          isNot(contains(guessed)),
+          reason:
+              '$guessed would have to be invented, and a wrong value '
+              'lands silently in the logbook',
+        );
+      }
     });
 
     test('pads single-digit month/day/hour/minute in datetime', () {

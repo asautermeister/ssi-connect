@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../models/dive.dart';
+import '../ssi/ssi_buddy_code.dart';
 import 'dive_detail_screen.dart';
 import 'format.dart';
 import 'theme/app_theme.dart';
@@ -16,9 +17,11 @@ class DiveListTile extends StatelessWidget {
     super.key,
     required this.dive,
     required this.maxDepthInList,
+    this.diver,
   });
 
   final Dive dive;
+  final SsiBuddyCode? diver;
 
   /// Deepest dive currently listed, so the bars share one scale. Pass 0 to
   /// hide the bar entirely.
@@ -32,9 +35,11 @@ class DiveListTile extends StatelessWidget {
     final showMeter = maxDepthInList > 0 && depth != null;
 
     return AppCard(
-      onTap: () => Navigator.of(
-        context,
-      ).push(MaterialPageRoute(builder: (_) => DiveDetailScreen(dive: dive))),
+      onTap: () => Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => DiveDetailScreen(dive: dive, diver: diver),
+        ),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
