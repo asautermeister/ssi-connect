@@ -44,9 +44,9 @@ import 'ssi_buddy_code.dart';
 /// - `var_surface_id` - `10` calm, `11` moving, `12` stormy.
 ///
 /// Emitted: `dive_type`, `datetime`, `divetime`, `depth_m`,
-/// `var_divetype_id`, plus `watertemp_c` and `var_watertype_id` when the
-/// source reported them, plus the `user_*` fields when an SSI identity has
-/// been scanned for the account.
+/// `var_divetype_id`, plus `watertemp_c`, `var_watertype_id` and `deco`
+/// when the source reported them, plus the `user_*` fields when an SSI
+/// identity has been scanned for the account.
 ///
 /// Still left out, now for a different reason - not because the code is
 /// unknown, but because Garmin never reports the value:
@@ -55,9 +55,6 @@ import 'ssi_buddy_code.dart';
 ///   `var_current_id`, `var_surface_id`, `vis_m` - conditions a dive
 ///   computer doesn't record. Fresh water narrows the water body to lake,
 ///   river, quarry or indoor, but not to one of them.
-/// - `deco` - a dive computer knows this, but no captured Garmin response
-///   carries it. The FIT `record.ndl_time` could answer it by looking for
-///   a zero, which is a per-sample scan this app doesn't do yet.
 /// - `airtemp_c` - Garmin's `maxTemperature` is plausibly the air reading,
 ///   but that is a guess, and a wrong air temperature is worse than none.
 /// - `user_leader_id` - empty in every captured export.
@@ -121,6 +118,12 @@ class SsiQrPayloadBuilder {
     ];
 
     fields.add('var_divetype_id:$_diveSubTypeFunDive');
+
+    final isDecoDive = dive.isDecoDive;
+    if (isDecoDive != null) {
+      // SSI: 0 no, 1 yes. Garmin says it outright as `decoDive`.
+      fields.add('deco:${isDecoDive ? 1 : 0}');
+    }
 
     final waterType = dive.waterType;
     if (waterType != null) {

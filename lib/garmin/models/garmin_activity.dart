@@ -94,29 +94,56 @@ class GarminActivity {
     return rounded > 0 ? rounded : null;
   }
 
-  /// Fresh or salt water, if the response says so.
+  /// Fresh or salt water.
   ///
-  /// Read primarily from water density in kg/m³ - a physical quantity that
-  /// cannot be mistaken for something else, unlike a numeric "water type"
-  /// whose coding we would have to assume. A spelled-out string is accepted
-  /// too. Anything else leaves this null, and the SSI payload then omits
-  /// the field rather than filing the dive in the wrong water.
+  /// A real response carries `summarizedDiveInfo.waterDensity: 1025.0`, so
+  /// the value is read from the density in kg/m³ - a physical quantity that
+  /// cannot be mistaken for something else. The same object also holds
+  /// `waterType: 1`, which lines up with FIT's enum (0 fresh, 1 salt), but
+  /// that is a code table inferred from a single sample; the density says
+  /// the same thing with nothing to assume.
   ///
-  /// Whether the activity endpoints carry either key is still unconfirmed;
-  /// [probeMeasurementFields] lists whatever water-related keys a real
-  /// response actually has.
+  /// A spelled-out string is accepted as a fallback. Anything else leaves
+  /// this null, and the SSI payload then omits the field rather than filing
+  /// the dive in the wrong water.
   DiveWaterType? get waterType {
     final byDensity = DiveWaterType.fromDensity(
-      _numAny(['waterDensity', 'summaryDTO.waterDensity']),
+      _numAny([
+        'summarizedDiveInfo.waterDensity',
+        'waterDensity',
+        'summaryDTO.waterDensity',
+      ]),
     );
     if (byDensity != null) return byDensity;
 
-    for (final key in const ['waterType', 'summaryDTO.waterType']) {
-      final value = key.contains('.') ? _nested(key) : raw[key];
+    for (final key in const [
+      'summarizedDiveInfo.waterType',
+      'waterType',
+      'summaryDTO.waterType',
+    ]) {
       // Only a string: a number here would be a code table we have not
       // verified, and reading it as one would be a guess.
+      final value = _nested(key);
       final byName = DiveWaterType.fromName(value is String ? value : null);
       if (byName != null) return byName;
+    }
+    return null;
+  }
+
+  /// Whether the dive went into decompression.
+  ///
+  /// Garmin states it outright as `decoDive: false`, which is exactly what
+  /// SSI's `deco` field wants. Null when the response is silent - and null
+  /// is not the same as false, so the payload then leaves the field out
+  /// instead of asserting a no-deco dive.
+  bool? get isDecoDive {
+    for (final key in const [
+      'decoDive',
+      'summarizedDiveInfo.decoDive',
+      'summaryDTO.decoDive',
+    ]) {
+      final value = _nested(key);
+      if (value is bool) return value;
     }
     return null;
   }

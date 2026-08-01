@@ -17,6 +17,7 @@ class Dive {
     this.diveNumber,
     this.descentCount,
     this.waterType,
+    this.isDecoDive,
     this.type = DiveType.scuba,
     this.diveNumberOfDay = 1,
   });
@@ -43,6 +44,11 @@ class Dive {
   /// reported", and the SSI payload then leaves the field out.
   final DiveWaterType? waterType;
 
+  /// Whether the dive went into decompression. Null is "not reported",
+  /// which is not the same as "no deco" - so the payload stays silent
+  /// rather than asserting the safer-sounding of the two.
+  final bool? isDecoDive;
+
   final DiveType type;
   final int diveNumberOfDay;
 
@@ -57,6 +63,7 @@ class Dive {
     diveNumber: diveNumber,
     descentCount: descentCount,
     waterType: waterType,
+    isDecoDive: isDecoDive,
     type: type,
     diveNumberOfDay: diveNumberOfDay ?? this.diveNumberOfDay,
   );
@@ -75,6 +82,7 @@ class Dive {
     'diveNumber': diveNumber,
     'descentCount': descentCount,
     'waterType': waterType?.name,
+    'isDecoDive': isDecoDive,
     'type': type.name,
     'diveNumberOfDay': diveNumberOfDay,
   };
@@ -97,6 +105,7 @@ class Dive {
       diveNumber: json['diveNumber'] as int?,
       descentCount: json['descentCount'] as int?,
       waterType: _enumByName(DiveWaterType.values, json['waterType']),
+      isDecoDive: json['isDecoDive'] as bool?,
       type: _enumByName(DiveType.values, json['type']) ?? DiveType.scuba,
       diveNumberOfDay: json['diveNumberOfDay'] as int? ?? 1,
     );
@@ -130,6 +139,7 @@ class Dive {
       diveNumber: activity.diveNumber,
       descentCount: activity.descentCount,
       waterType: activity.waterType,
+      isDecoDive: activity.isDecoDive,
       type: DiveType.fromGarminTypeKey(activity.typeKey),
     );
   }

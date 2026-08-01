@@ -11,6 +11,7 @@ Dive _dive({
   Duration? duration,
   double? waterTemperatureCelsius,
   DiveWaterType? waterType,
+  bool? isDecoDive,
   DiveType type = DiveType.scuba,
 }) {
   return Dive(
@@ -22,6 +23,7 @@ Dive _dive({
     duration: duration,
     locationName: null,
     waterType: waterType,
+    isDecoDive: isDecoDive,
     type: type,
   );
 }
@@ -158,6 +160,22 @@ void main() {
       expect(diveTypeOf(DiveType.multiGas), 2);
       expect(diveTypeOf(DiveType.apnea), 6);
       expect(diveTypeOf(DiveType.rebreather), 8);
+    });
+
+    test('reports decompression as SSI codes it', () {
+      String payloadFor(bool? isDecoDive) => SsiQrPayloadBuilder.build(
+        _dive(
+          maxDepthMeters: 28,
+          duration: const Duration(minutes: 54),
+          isDecoDive: isDecoDive,
+        ),
+      );
+
+      expect(payloadFor(false), contains('deco:0'));
+      expect(payloadFor(true), contains('deco:1'));
+      // Silence is not "no": a dive we were never told about must not be
+      // filed as a no-deco dive.
+      expect(payloadFor(null), isNot(contains('deco:')));
     });
 
     test('marks the dive as a fun dive, which is SSI\'s own default', () {
