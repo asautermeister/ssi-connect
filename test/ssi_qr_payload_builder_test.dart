@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ssi_connect/models/dive.dart';
 import 'package:ssi_connect/models/dive_type.dart';
+import 'package:ssi_connect/models/water_type.dart';
 import 'package:ssi_connect/ssi/ssi_buddy_code.dart';
 import 'package:ssi_connect/ssi/ssi_qr_payload_builder.dart';
 
@@ -9,6 +10,7 @@ Dive _dive({
   double? maxDepthMeters,
   Duration? duration,
   double? waterTemperatureCelsius,
+  DiveWaterType? waterType,
   DiveType type = DiveType.scuba,
 }) {
   return Dive(
@@ -19,6 +21,7 @@ Dive _dive({
     waterTemperatureCelsius: waterTemperatureCelsius,
     duration: duration,
     locationName: null,
+    waterType: waterType,
     type: type,
   );
 }
@@ -89,6 +92,47 @@ void main() {
       expect(payload, contains('datetime:202511060853'));
       expect(payload, contains('divetime:75.0'));
       expect(payload, contains('depth_m:46.4'));
+    });
+
+    test('reproduces the fresh-water export, which differs in one field', () {
+      // Same logbook again, this time a lake dive - the export that told us
+      // what var_watertype_id means:
+      // dive;noid;dive_type:0;divetime:38.0;datetime:202509061328;
+      // depth_m:13.0;site:214234;var_watertype_id:4;... (same tail)
+      final payload = SsiQrPayloadBuilder.build(
+        _dive(
+          dateTime: DateTime(2025, 9, 6, 13, 28),
+          maxDepthMeters: 13.0,
+          duration: const Duration(minutes: 38),
+          waterType: DiveWaterType.fresh,
+        ),
+      );
+
+      expect(payload, contains('var_watertype_id:4'));
+      expect(payload, contains('datetime:202509061328'));
+      expect(payload, contains('depth_m:13.0'));
+    });
+
+    test('salt water is the other captured value', () {
+      final payload = SsiQrPayloadBuilder.build(
+        _dive(
+          maxDepthMeters: 28,
+          duration: const Duration(minutes: 54),
+          waterType: DiveWaterType.salt,
+        ),
+      );
+
+      expect(payload, contains('var_watertype_id:5'));
+    });
+
+    test('an unreported water type leaves the field out entirely', () {
+      final payload = SsiQrPayloadBuilder.build(
+        _dive(maxDepthMeters: 28, duration: const Duration(minutes: 54)),
+      );
+
+      // Not defaulting to salt: a lake dive filed as a sea dive would be
+      // wrong, and an absent field simply isn't imported.
+      expect(payload, isNot(contains('var_watertype_id')));
     });
 
     test('files multi-gas and rebreather dives as XR, the rest as normal', () {
@@ -234,7 +278,6 @@ void main() {
         'var_weather_id',
         'var_entry_id',
         'var_water_body_id',
-        'var_watertype_id',
         'var_current_id',
         'var_surface_id',
         'var_divetype_id',

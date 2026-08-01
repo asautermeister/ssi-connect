@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:fit_tool/fit_tool.dart';
 
 import '../models/dive.dart';
+import '../models/water_type.dart';
 import 'fit_import_exception.dart';
 
 /// Reads dives out of a Garmin-exported .fit file, as a fallback for when
@@ -31,11 +32,17 @@ class FitDiveImporter {
 
     final diveSummaries = <DiveSummaryMessage>[];
     final sessions = <SessionMessage>[];
+    DiveSettingsMessage? diveSettings;
     for (final record in fitFile.records) {
       final message = record.message;
       if (message is DiveSummaryMessage) diveSummaries.add(message);
       if (message is SessionMessage) sessions.add(message);
+      // The computer's settings for this file - they carry the one thing
+      // the summary doesn't: whether this was fresh or salt water.
+      if (message is DiveSettingsMessage) diveSettings ??= message;
     }
+
+    final waterType = _waterTypeOf(diveSettings);
 
     if (diveSummaries.isEmpty) {
       throw FitImportException(
@@ -71,6 +78,7 @@ class FitDiveImporter {
           // Unlike the Garmin list endpoint, the FIT dive_summary carries
           // the diver's running dive number outright.
           diveNumber: summary.diveNumber,
+          waterType: waterType,
         ),
       );
     }
@@ -82,6 +90,21 @@ class FitDiveImporter {
     }
 
     return assignDiveNumbersOfDay(dives);
+  }
+
+  /// Fresh or salt water from the dive computer's settings.
+  ///
+  /// FIT states it outright as an enum, so unlike the Garmin web API there
+  /// is nothing to infer here. `en13319` and `custom` mean the diver set a
+  /// density by hand, so those fall back to the density value; anything
+  /// else leaves the water type unset.
+  static DiveWaterType? _waterTypeOf(DiveSettingsMessage? settings) {
+    if (settings == null) return null;
+    return switch (settings.waterType) {
+      WaterType.fresh => DiveWaterType.fresh,
+      WaterType.salt => DiveWaterType.salt,
+      _ => DiveWaterType.fromDensity(settings.waterDensity),
+    };
   }
 
   /// If there's exactly one session in the file (the common single-dive

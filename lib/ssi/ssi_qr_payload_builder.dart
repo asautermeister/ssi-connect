@@ -30,8 +30,13 @@ import 'ssi_buddy_code.dart';
 /// - `dive_type` distinguishes recreational (`0`) from XR (`2`).
 ///
 /// Emitted: `dive_type`, `datetime`, `divetime`, `depth_m`, plus
-/// `watertemp_c` when Garmin reported one, plus the `user_*` fields when
-/// an SSI identity has been scanned for the account.
+/// `watertemp_c` and `var_watertype_id` when the source reported them, plus
+/// the `user_*` fields when an SSI identity has been scanned for the
+/// account.
+///
+/// `var_watertype_id` was settled by contrast rather than by assumption:
+/// three sea dives from one logbook exported `5`, a lake dive from the same
+/// logbook exported `4`. See `DiveWaterType`.
 ///
 /// Deliberately left out, because filling them would mean inventing values
 /// for code tables SSI has never published:
@@ -39,11 +44,6 @@ import 'ssi_buddy_code.dart';
 /// - `var_weather_id`, `var_entry_id`, `var_water_body_id`,
 ///   `var_current_id`, `var_surface_id`, `vis_m` - subjective conditions
 ///   that aren't in the dive computer's data at all.
-/// - `var_watertype_id` - every captured export carries `5`, and Garmin
-///   does report a water type and density (1025 kg/m3 = salt). But all the
-///   captures are salt-water dives, so `5` might equally mean "salt" or
-///   "whatever this diver always logs". A fresh-water export would settle
-///   it; until then this stays out.
 /// - `var_divetype_id` - all captured exports carry `24`; copying a
 ///   constant whose meaning nobody knows would be cargo cult.
 /// - `airtemp_c` - Garmin's `maxTemperature` is plausibly the air reading,
@@ -98,6 +98,11 @@ class SsiQrPayloadBuilder {
       'divetime:${_formatFixed(duration.inSeconds / 60.0)}',
       'depth_m:${_formatFixed(maxDepth)}',
     ];
+
+    final waterType = dive.waterType;
+    if (waterType != null) {
+      fields.add('var_watertype_id:${waterType.ssiVarId}');
+    }
 
     final waterTemp = dive.waterTemperatureCelsius;
     if (waterTemp != null) {

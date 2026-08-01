@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ssi_connect/garmin/models/garmin_activity.dart';
 import 'package:ssi_connect/models/dive.dart';
+import 'package:ssi_connect/models/water_type.dart';
 
 void main() {
   group('GarminActivity depth conversion', () {
@@ -125,6 +126,69 @@ void main() {
 
       expect(fields['diveNumber'], 142);
       expect(fields.containsKey('distance'), isFalse);
+    });
+
+    test('the probe also reports water fields, spelled out or numeric', () {
+      // Whether Garmin says fresh or salt at all is still unconfirmed, so
+      // the probe has to surface whatever water-related keys exist -
+      // including string values, which an earlier numbers-only probe would
+      // have missed.
+      final fields = GarminActivity({
+        'waterDensity': 1025,
+        'waterType': 'salt',
+        'salinity': 35,
+        'elevationGain': 3,
+      }).probeMeasurementFields();
+
+      expect(fields['waterDensity'], 1025);
+      expect(fields['waterType'], 'salt');
+      expect(fields['salinity'], 35);
+      expect(fields.containsKey('elevationGain'), isFalse);
+    });
+  });
+
+  group('GarminActivity.waterType', () {
+    test('reads the density, which cannot mean anything else', () {
+      expect(
+        GarminActivity({'waterDensity': 1025}).waterType,
+        DiveWaterType.salt,
+      );
+      expect(
+        GarminActivity({'waterDensity': 1000}).waterType,
+        DiveWaterType.fresh,
+      );
+    });
+
+    test('accepts a spelled-out type when there is no density', () {
+      expect(
+        GarminActivity({'waterType': 'fresh'}).waterType,
+        DiveWaterType.fresh,
+      );
+    });
+
+    test('ignores a numeric water type rather than assuming its coding', () {
+      // FIT codes fresh as 0 and salt as 1, but whether the web API uses
+      // that same table is unverified - and a wrong guess would file dives
+      // in the wrong water without ever looking wrong.
+      expect(GarminActivity({'waterType': 1}).waterType, isNull);
+      expect(GarminActivity({'waterType': 0}).waterType, isNull);
+    });
+
+    test('is null when the response says nothing about the water', () {
+      expect(GarminActivity({'maxDepth': 2800}).waterType, isNull);
+    });
+
+    test('carries through to the Dive model', () {
+      final dive = Dive.fromGarminActivity(
+        GarminActivity({
+          'activityId': 1,
+          'startTimeLocal': '2025-09-06 13:28:00',
+          'maxDepth': 1300,
+          'waterDensity': 1000,
+        }),
+      );
+
+      expect(dive?.waterType, DiveWaterType.fresh);
     });
   });
 }

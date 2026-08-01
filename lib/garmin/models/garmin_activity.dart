@@ -1,3 +1,5 @@
+import '../../models/water_type.dart';
+
 /// Thin wrapper around one activity JSON object from Garmin Connect's
 /// `activitylist-service` / `activity-service` endpoints.
 ///
@@ -92,6 +94,33 @@ class GarminActivity {
     return rounded > 0 ? rounded : null;
   }
 
+  /// Fresh or salt water, if the response says so.
+  ///
+  /// Read primarily from water density in kg/m³ - a physical quantity that
+  /// cannot be mistaken for something else, unlike a numeric "water type"
+  /// whose coding we would have to assume. A spelled-out string is accepted
+  /// too. Anything else leaves this null, and the SSI payload then omits
+  /// the field rather than filing the dive in the wrong water.
+  ///
+  /// Whether the activity endpoints carry either key is still unconfirmed;
+  /// [probeMeasurementFields] lists whatever water-related keys a real
+  /// response actually has.
+  DiveWaterType? get waterType {
+    final byDensity = DiveWaterType.fromDensity(
+      _numAny(['waterDensity', 'summaryDTO.waterDensity']),
+    );
+    if (byDensity != null) return byDensity;
+
+    for (final key in const ['waterType', 'summaryDTO.waterType']) {
+      final value = key.contains('.') ? _nested(key) : raw[key];
+      // Only a string: a number here would be a code table we have not
+      // verified, and reading it as one would be a guess.
+      final byName = DiveWaterType.fromName(value is String ? value : null);
+      if (byName != null) return byName;
+    }
+    return null;
+  }
+
   static double? _metresFromCentimetres(double? centimetres) {
     if (centimetres == null) return null;
     return double.parse((centimetres / 100).toStringAsFixed(1));
@@ -100,14 +129,30 @@ class GarminActivity {
   String? get locationName =>
       raw['locationName'] as String? ?? raw['startLocationName'] as String?;
 
-  /// Every numeric field whose name mentions depth, temperature, a dive or
-  /// a number, with the value Garmin actually sent.
+  /// Which key names count as a measurement worth reporting in the probe.
+  static const _probeKeyParts = [
+    'depth',
+    'temperature',
+    'dive',
+    'number',
+    // Added to settle whether Garmin says fresh or salt water at all -
+    // the SSI import wants that, and guessing it is not an option.
+    'water',
+    'density',
+    'salin',
+  ];
+
+  /// Every field whose name mentions one of [_probeKeyParts], with the
+  /// value Garmin actually sent.
   ///
   /// Exists because the response for a single activity is far too large to
   /// read in the API log, and the interesting fields are a handful of keys
   /// buried in it. Written into the log so a wrong reading (a depth of
   /// 1149.3 for an 11 m dive, say) can be traced to the exact key and unit
   /// instead of guessed at.
+  ///
+  /// Strings are reported alongside numbers: a water type may well arrive
+  /// spelled out, and a probe that only looked at numbers would miss it.
   Map<String, Object?> probeMeasurementFields() {
     final found = <String, Object?>{};
     void walk(String prefix, Map<dynamic, dynamic> map) {
@@ -116,12 +161,9 @@ class GarminActivity {
         final value = entry.value;
         if (value is Map) {
           walk('$key.', value);
-        } else if (value is num) {
+        } else if (value is num || value is String || value is bool) {
           final lower = key.toLowerCase();
-          if (lower.contains('depth') ||
-              lower.contains('temperature') ||
-              lower.contains('dive') ||
-              lower.contains('number')) {
+          if (_probeKeyParts.any(lower.contains)) {
             found[key] = value;
           }
         }

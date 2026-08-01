@@ -1,5 +1,6 @@
 import '../garmin/models/garmin_activity.dart';
 import 'dive_type.dart';
+import 'water_type.dart';
 
 /// Our own domain model for a dive, mapped from Garmin's raw activity JSON.
 /// [diveNumberOfDay] is not something Garmin provides - it's computed
@@ -15,6 +16,7 @@ class Dive {
     required this.locationName,
     this.diveNumber,
     this.descentCount,
+    this.waterType,
     this.type = DiveType.scuba,
     this.diveNumberOfDay = 1,
   });
@@ -37,6 +39,10 @@ class Dive {
   /// activity. Null for an ordinary single dive.
   final int? descentCount;
 
+  /// Fresh or salt water, when the source reported it. Null means "not
+  /// reported", and the SSI payload then leaves the field out.
+  final DiveWaterType? waterType;
+
   final DiveType type;
   final int diveNumberOfDay;
 
@@ -50,6 +56,7 @@ class Dive {
     locationName: locationName,
     diveNumber: diveNumber,
     descentCount: descentCount,
+    waterType: waterType,
     type: type,
     diveNumberOfDay: diveNumberOfDay ?? this.diveNumberOfDay,
   );
@@ -73,6 +80,7 @@ class Dive {
       locationName: activity.locationName,
       diveNumber: activity.diveNumber,
       descentCount: activity.descentCount,
+      waterType: activity.waterType,
       type: DiveType.fromGarminTypeKey(activity.typeKey),
     );
   }
