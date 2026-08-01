@@ -247,11 +247,14 @@ void main() {
       for (final label in const [
         'SSI-Buddies',
         'FIT-Datei importieren',
-        'API-Protokoll',
+        'Info',
       ]) {
         expect(find.text(label), findsOneWidget);
       }
-      expect(find.byIcon(Icons.bug_report_outlined), findsOneWidget);
+      // The diagnostic tools moved behind the version tap in the info
+      // screen, so nothing on the start screen mentions them.
+      expect(find.text('API-Protokoll'), findsNothing);
+      expect(find.byIcon(Icons.bug_report_outlined), findsNothing);
     });
 
     testWidgets('a dive is marked with its account colour', (tester) async {

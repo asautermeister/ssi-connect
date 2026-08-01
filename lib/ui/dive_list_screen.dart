@@ -9,6 +9,7 @@ import '../garmin/garmin_auth_exceptions.dart';
 import '../models/dive.dart';
 import '../ssi/ssi_buddy_code.dart';
 import 'debug_log_screen.dart';
+import 'developer_mode.dart';
 import 'dive_list_tile.dart';
 import 'fit_import_flow.dart';
 import 'theme/app_theme.dart';
@@ -58,13 +59,16 @@ class _DiveListScreenState extends State<DiveListScreen> {
       appBar: AppBar(
         title: Text(widget.account.displayName),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.bug_report_outlined),
-            tooltip: 'API-Protokoll',
-            onPressed: () => Navigator.of(
-              context,
-            ).push(MaterialPageRoute(builder: (_) => const DebugLogScreen())),
-          ),
+          // Only once the diagnostic tools have been unlocked in the info
+          // screen - otherwise this is a bug icon on a screen about diving.
+          if (context.watch<DeveloperMode>().enabled)
+            IconButton(
+              icon: const Icon(Icons.bug_report_outlined),
+              tooltip: 'API-Protokoll',
+              onPressed: () => Navigator.of(
+                context,
+              ).push(MaterialPageRoute(builder: (_) => const DebugLogScreen())),
+            ),
         ],
       ),
       body: _body(load),

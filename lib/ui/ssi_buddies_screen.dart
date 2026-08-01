@@ -3,12 +3,18 @@ import 'package:provider/provider.dart';
 
 import '../ssi/ssi_buddies_controller.dart';
 import '../ssi/ssi_buddy_code.dart';
+import 'qr_display_screen.dart';
 import 'ssi_scan_screen.dart';
 import 'theme/app_theme.dart';
 import 'widgets/app_card.dart';
 
-/// The saved SSI buddies: divers who have no Garmin account on this device
-/// but who show up as buddies when a dive is exported.
+/// The saved SSI buddies: divers who have no Garmin account on this device.
+///
+/// Their member codes are kept so they can be handed on - tapping one shows
+/// it as a QR code for someone else's app to scan. They do not travel with
+/// an exported dive: SSI's import format has no buddy field, so the picker
+/// that used to sit under the dive QR code was removed rather than left
+/// looking functional.
 ///
 /// Deliberately its own list rather than a second kind of account - these
 /// people can't be logged in and have no dives to fetch here.
@@ -91,7 +97,7 @@ class _EmptyBuddies extends StatelessWidget {
   }
 }
 
-enum _BuddyAction { edit, remove }
+enum _BuddyAction { showQr, edit, remove }
 
 class _BuddyCard extends StatelessWidget {
   const _BuddyCard({required this.buddy});
@@ -110,6 +116,9 @@ class _BuddyCard extends StatelessWidget {
     ].whereType<String>().join(' · ');
 
     return AppCard(
+      // Tapping shows the code, which is the thing you do with a buddy
+      // when someone else wants to save them.
+      onTap: () => _showQr(context, buddy),
       child: Row(
         children: [
           CircleAvatar(
@@ -146,11 +155,16 @@ class _BuddyCard extends StatelessWidget {
             icon: const Icon(Icons.more_horiz),
             tooltip: 'Optionen',
             onSelected: (action) => switch (action) {
+              _BuddyAction.showQr => _showQr(context, buddy),
               _BuddyAction.edit => enterBuddyManually(context, existing: buddy),
               _BuddyAction.remove =>
                 context.read<SsiBuddiesController>().remove(buddy.memberId),
             },
             itemBuilder: (context) => const [
+              PopupMenuItem(
+                value: _BuddyAction.showQr,
+                child: Text('Als QR-Code zeigen'),
+              ),
               PopupMenuItem(
                 value: _BuddyAction.edit,
                 child: Text('Bearbeiten'),
@@ -165,6 +179,24 @@ class _BuddyCard extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Shows the member as the same kind of code the SSI app shows under
+/// "Dein QR-Code", so another device can scan them straight into its own
+/// buddy list - including this app's scanner.
+void _showQr(BuildContext context, SsiBuddyCode buddy) {
+  Navigator.of(context).push(
+    MaterialPageRoute(
+      builder: (_) => QrDisplayScreen(
+        title: buddy.displayName,
+        payload: buddy.toPayload(),
+        caption: 'SSI-Nr. ${buddy.memberId}',
+        hint:
+            'Mit der Kamera eines anderen Geräts scannen, um diesen Buddy '
+            'dort zu speichern.',
+      ),
+    ),
+  );
 }
 
 Future<void> _scan(BuildContext context) async {

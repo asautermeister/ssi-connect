@@ -232,9 +232,9 @@
       SSI-Codes.
     </p>
     <p class="note">
-      Die Buddy-Auswahl landet <strong>noch nicht</strong> im QR-Code: keiner der vorliegenden
-      SSI-Exporte enthielt einen Buddy, der Feldname ist also unbekannt. Der Screen sagt das
-      offen, statt so zu tun, als wäre es erledigt.
+      Buddies stehen <strong>nicht</strong> im QR-Code: SSIs Import-Format hat kein Feld dafür.
+      Die Auswahl, die es dort einmal gab, ist wieder weg – ein Bedienelement ohne Wirkung ist
+      schlechter als keines.
     </p>
   </header>
 
@@ -347,8 +347,8 @@
           <div class="card" style="padding:9px"><div class="row" style="align-items:center;gap:8px">
             <span class="badge">⛭</span>
             <div style="flex:1">
-              <div class="title">API-Protokoll</div>
-              <div class="sub">Fehler nachsehen und SSI-Codes analysieren</div>
+              <div class="title">Info</div>
+              <div class="sub">Version, Rechtliches und Quelltext</div>
             </div><span style="color:var(--ink-3)">›</span>
           </div></div>
         </div>
@@ -503,9 +503,9 @@
 
   <h2 class="group">Neu: Buddies <span class="new-flag">neu</span></h2>
   <p class="group-sub">
-    Die QR-Seite kennt jetzt alle Personen, zu denen das Gerät eine SSI-Nummer hat – die
-    SSI-Identitäten der Garmin-Accounts und die eigens gespeicherten Buddies. Wer den
-    Tauchgang selbst geloggt hat, fällt aus der Auswahl heraus.
+    Buddies reisen nicht mit einem Tauchgang mit – SSIs Import-Format hat kein Feld dafür.
+    Sie haben stattdessen eine eigene Liste, aus der sich jeder Eintrag wieder als QR-Code
+    zeigen lässt, damit ein anderes Gerät ihn scannen kann.
   </p>
 
   <div class="gallery">
@@ -516,33 +516,14 @@
           <div class="qr-appbar">← Mit SSI-App scannen</div>
           <div class="qr-meta">08.11.2025 · 44,0 m · 92 min</div>
           <div style="width:100%;display:grid;place-items:center">
-            <canvas id="qr" width="168" height="168" style="width:52%;aspect-ratio:1"></canvas>
+            <canvas id="qr" width="168" height="168" style="width:66%;aspect-ratio:1"></canvas>
           </div>
           <div class="qr-hint">In der SSI-App einen Tauchgang hinzufügen und „QR-Code scannen" wählen.</div>
-          <div class="qr-scroll">
-            <div class="section-head" style="margin:2px 2px 6px">Buddies</div>
-            <div class="card" style="padding:10px">
-              <div class="filter-row">
-                <span class="filter on">Marie</span>
-                <span class="filter">Cem Yilmaz</span>
-                <span class="filter on">SSI-Nr. 123456</span>
-              </div>
-              <div class="hint-text">
-                Hinweis: Buddies stehen noch nicht im QR-Code – wie SSI sie im Import benennt,
-                ist noch nicht bekannt. Bis dahin dient die Auswahl als Merkzettel.
-              </div>
-            </div>
-            <div class="card" style="padding:10px">
-              <div class="label">In der SSI-App eintragen</div>
-              <div class="sub" style="color:#14201E;margin-top:4px">Marie · SSI-Nr. 4711</div>
-              <div class="sub" style="color:#14201E">SSI-Nr. 123456</div>
-            </div>
-          </div>
         </div>
       </div></div>
       <figcaption>
-        <span class="name">4 · QR-Code mit Buddy-Auswahl</span>
-        <span class="desc">Immer hell mit Ruhezone. Darunter die Buddies – angekreuzte werden mit Nummer aufgelistet, solange sie nicht in den Code wandern können.</span>
+        <span class="name">4 · QR-Code</span>
+        <span class="desc">Immer hell mit Ruhezone – ein Scan-Ziel, das im Dunkelmodus unzuverlässig wäre. Ohne Buddy-Auswahl: SSIs Import kennt kein Feld dafür, und ein Bedienelement ohne Wirkung ist schlechter als keines.</span>
       </figcaption>
     </figure>
 
@@ -570,7 +551,7 @@
       </div></div>
       <figcaption>
         <span class="name">5 · SSI-Buddies</span>
-        <span class="desc">Eigene Liste für Mittaucher ohne Garmin-Account. Wer keinen Namen im Code hat, wird über seine Nummer benannt – nichts wird erfunden.</span>
+        <span class="desc">Eigene Liste für Mittaucher ohne Garmin-Account. Ein Tippen zeigt den Buddy wieder als QR-Code, damit ein anderes Gerät ihn einlesen kann. Wer keinen Namen im Code hat, wird über seine Nummer benannt.</span>
       </figcaption>
     </figure>
 

@@ -7,10 +7,10 @@ import '../accounts/models/garmin_account.dart';
 import '../dives/dive_loader.dart';
 import '../dives/recent_dives_controller.dart';
 import 'add_account_screen.dart';
-import 'debug_log_screen.dart';
 import 'dive_list_screen.dart';
 import 'fit_import_flow.dart';
 import 'format.dart';
+import 'info_screen.dart';
 import 'qr_screen.dart';
 import 'ssi_buddies_screen.dart';
 import 'ssi_identity_screen.dart';
@@ -681,12 +681,12 @@ class _QuickActions extends StatelessWidget {
         ),
         const SizedBox(height: AppSpacing.md),
         _ActionCard(
-          icon: Icons.bug_report_outlined,
-          title: 'API-Protokoll',
-          subtitle: 'Fehler nachsehen und SSI-Codes analysieren',
+          icon: Icons.info_outline,
+          title: 'Info',
+          subtitle: 'Version, Rechtliches und Quelltext',
           onTap: () => Navigator.of(
             context,
-          ).push(MaterialPageRoute(builder: (_) => const DebugLogScreen())),
+          ).push(MaterialPageRoute(builder: (_) => const InfoScreen())),
         ),
       ],
     );
