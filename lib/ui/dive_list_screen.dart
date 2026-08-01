@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../accounts/accounts_controller.dart';
 import '../accounts/models/garmin_account.dart';
-import '../garmin/garmin_activity_client.dart';
+import '../dives/dive_loader.dart';
 import '../garmin/garmin_auth_exceptions.dart';
 import '../models/dive.dart';
 import '../ssi/ssi_buddy_code.dart';
@@ -23,42 +23,16 @@ class DiveListScreen extends StatefulWidget {
 }
 
 class _DiveListScreenState extends State<DiveListScreen> {
-  final _activityClient = GarminActivityClient();
+  late final GarminDiveLoader _loader = GarminDiveLoader(
+    refreshSession: (account) =>
+        context.read<AccountsController>().ensureFreshSession(account),
+  );
 
-  late Future<List<Dive>> _divesFuture;
-
-  @override
-  void initState() {
-    super.initState();
-    _divesFuture = _loadDives();
-  }
-
-  Future<List<Dive>> _loadDives({bool forceRefreshSession = false}) async {
-    final controller = context.read<AccountsController>();
-    var session = widget.account.session;
-    if (forceRefreshSession) {
-      session = await controller.ensureFreshSession(widget.account);
-    }
-
-    try {
-      final activities = await _activityClient.getDiveActivities(session);
-      final dives = activities
-          .map(Dive.fromGarminActivity)
-          .whereType<Dive>()
-          .toList();
-      return assignDiveNumbersOfDay(dives);
-    } on GarminAuthException catch (e) {
-      if (e.type == GarminAuthErrorType.invalidCredentials &&
-          !forceRefreshSession) {
-        return _loadDives(forceRefreshSession: true);
-      }
-      rethrow;
-    }
-  }
+  late Future<List<Dive>> _divesFuture = _loader.load(widget.account);
 
   void _retry() {
     setState(() {
-      _divesFuture = _loadDives();
+      _divesFuture = _loader.load(widget.account);
     });
   }
 

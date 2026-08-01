@@ -211,8 +211,9 @@
     <span class="eyebrow">Design-Vorschau · nachgebaut, kein Screenshot</span>
     <h1>SSI Connect – Stand nach den SSI-Buddies</h1>
     <p>
-      Gegenüber der ersten Vorschau sind vier Dinge dazugekommen: die Tauchgangs-Nummer und
-      das Typ-Symbol an der linken Kante, die SSI-Mitgliedsnummer am Account, die Buddy-Auswahl
+      Gegenüber der ersten Vorschau ist einiges dazugekommen: eine Startseite, die mit den
+      Tauchgängen beginnt statt mit einer Namensliste, die Tauchgangs-Nummer und das
+      Typ-Symbol an der linken Kante, die SSI-Mitgliedsnummer am Account, die Buddy-Auswahl
       unter dem QR-Code samt eigener Buddy-Liste – und ein kleines Analyse-Werkzeug für
       SSI-Codes.
     </p>
@@ -223,39 +224,115 @@
     </p>
   </header>
 
-  <h2 class="group">Bekannte Screens, weiterentwickelt</h2>
+  <h2 class="group">Startseite und Tauchgänge</h2>
   <p class="group-sub">
     Gleiche Struktur wie bisher – flache Karten auf hellem Untergrund, die Zahl führt,
-    die Beschriftung folgt. Neu sind die Angaben an den Rändern.
+    die Beschriftung folgt. Die Startseite beginnt jetzt mit den Tauchgängen statt mit
+    einer Namensliste: von hier ist der QR-Code ein Tap entfernt.
   </p>
 
   <div class="gallery">
-    <!-- 1 Accounts -->
+    <!-- 1 Start -->
     <figure class="screen">
       <div class="device"><div class="screen-surface">
         <div class="statusbar"><span>21:32</span><span>▾ ▮</span></div>
-        <div class="appbar">SSI Connect <span class="spacer">👥 ↥ ⛭</span></div>
-        <div class="body-scroll">
-          <div class="card"><div class="row" style="align-items:center;gap:9px">
-            <div class="avatar">A</div>
+        <div class="appbar">SSI Connect</div>
+        <div class="body-scroll" style="padding:2px 11px">
+          <div class="section-head" style="margin:2px 2px 7px">Zuletzt getaucht</div>
+          <div class="card" style="padding:10px">
+            <div class="row" style="align-items:center;gap:8px">
+              <span class="badge" style="width:26px;height:26px;border-radius:50%;background:var(--accent)">
+                <svg viewBox="0 0 24 24" style="width:15px;height:15px">
+                  <rect x="4.5" y="6" width="6" height="14" rx="3" style="stroke:var(--surface)"/>
+                  <rect x="13.5" y="6" width="6" height="14" rx="3" style="stroke:var(--surface)"/>
+                </svg>
+              </span>
+              <div style="flex:1">
+                <div class="title">Sa, 08.11.2025</div>
+                <div class="sub">Andreas · 92 min</div>
+              </div>
+              <div class="baseline"><span class="stat" style="font-size:17px">44,0</span><span class="unit">m</span></div>
+              <span style="color:var(--accent);font-size:13px">▦</span>
+            </div>
+          </div>
+          <div class="card" style="padding:10px">
+            <div class="row" style="align-items:center;gap:8px">
+              <span class="badge" style="width:26px;height:26px;border-radius:50%;background:var(--accent)">
+                <svg viewBox="0 0 24 24" style="width:15px;height:15px">
+                  <rect x="8.5" y="5.5" width="7" height="15" rx="3.5" style="stroke:var(--surface)"/>
+                </svg>
+              </span>
+              <div style="flex:1">
+                <div class="title">Fr, 07.11.2025</div>
+                <div class="sub">Andreas · 54 min</div>
+              </div>
+              <div class="baseline"><span class="stat" style="font-size:17px">28,0</span><span class="unit">m</span></div>
+              <span style="color:var(--accent);font-size:13px">▦</span>
+            </div>
+          </div>
+          <div class="card" style="padding:10px">
+            <div class="row" style="align-items:center;gap:8px">
+              <span class="badge" style="width:26px;height:26px;border-radius:50%;background:var(--accent)">
+                <svg viewBox="0 0 24 24" style="width:15px;height:15px">
+                  <path d="M12 4v8" style="stroke:var(--surface)"/>
+                  <path d="M12 12c-3.4 0-6.8 2.2-8 5.6 3.1 1.2 6 .3 8-2.2 2 2.5 4.9 3.4 8 2.2-1.2-3.4-4.6-5.6-8-5.6z" style="stroke:var(--surface)"/>
+                </svg>
+              </span>
+              <div style="flex:1">
+                <div class="title">Do, 06.11.2025</div>
+                <div class="sub">Marie · 38 min</div>
+              </div>
+              <div class="baseline"><span class="stat" style="font-size:17px">11,5</span><span class="unit">m</span></div>
+              <span style="color:var(--accent);font-size:13px">▦</span>
+            </div>
+          </div>
+
+          <div class="section-head" style="margin:11px 2px 7px">Accounts</div>
+          <div class="card" style="padding:10px"><div class="row" style="align-items:center;gap:8px">
+            <div class="avatar" style="width:28px;height:28px;font-size:12px">A</div>
             <div style="flex:1">
               <div class="title">Andreas</div>
-              <div class="sub">SSI-Nr. 3902893</div>
+              <div class="sub">Zuletzt: 08.11.2025 · 44,0 m</div>
+              <div class="sub" style="color:var(--accent);font-weight:600">🎫 SSI-Nr. 3902893</div>
             </div><span style="color:var(--ink-3)">⋯</span>
           </div></div>
-          <div class="card"><div class="row" style="align-items:center;gap:9px">
-            <div class="avatar">M</div>
+          <div class="card" style="padding:10px"><div class="row" style="align-items:center;gap:8px">
+            <div class="avatar" style="width:28px;height:28px;font-size:12px">M</div>
             <div style="flex:1">
               <div class="title">Marie</div>
-              <div class="sub">Keine SSI-Nummer hinterlegt</div>
+              <div class="sub">Zuletzt: 06.11.2025 · 11,5 m</div>
+              <div class="sub" style="color:var(--accent);font-weight:600">🎫 SSI-Nummer hinterlegen</div>
             </div><span style="color:var(--ink-3)">⋯</span>
+          </div></div>
+
+          <div class="section-head" style="margin:11px 2px 7px">Mehr</div>
+          <div class="card" style="padding:9px"><div class="row" style="align-items:center;gap:8px">
+            <span class="badge">👥</span>
+            <div style="flex:1">
+              <div class="title">SSI-Buddies</div>
+              <div class="sub">Mittaucher speichern und beim Export auswählen</div>
+            </div><span style="color:var(--ink-3)">›</span>
+          </div></div>
+          <div class="card" style="padding:9px"><div class="row" style="align-items:center;gap:8px">
+            <span class="badge">↥</span>
+            <div style="flex:1">
+              <div class="title">FIT-Datei importieren</div>
+              <div class="sub">Falls der Garmin-Login gerade nicht funktioniert</div>
+            </div><span style="color:var(--ink-3)">›</span>
+          </div></div>
+          <div class="card" style="padding:9px"><div class="row" style="align-items:center;gap:8px">
+            <span class="badge">⛭</span>
+            <div style="flex:1">
+              <div class="title">API-Protokoll</div>
+              <div class="sub">Fehler nachsehen und SSI-Codes analysieren</div>
+            </div><span style="color:var(--ink-3)">›</span>
           </div></div>
         </div>
         <div class="fab">＋ Account</div>
       </div></div>
       <figcaption>
-        <span class="name">1 · Accounts</span>
-        <span class="desc">Die Karte zeigt jetzt, ob eine SSI-Nummer hinterlegt ist. Neu oben rechts: das Buddy-Symbol.</span>
+        <span class="name">1 · Startseite</span>
+        <span class="desc">Die Tauchgänge führen: der jüngste aus allen Accounts zuoberst, ein Tap darauf öffnet direkt den QR-Code. Darunter die Accounts mit letztem Tauchgang, ganz unten die Wege, die vorher als Symbole in der Leiste versteckt waren.</span>
       </figcaption>
     </figure>
 
