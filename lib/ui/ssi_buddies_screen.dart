@@ -1,56 +1,147 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../accounts/accounts_controller.dart';
+import '../accounts/models/garmin_account.dart';
 import '../ssi/ssi_buddies_controller.dart';
 import '../ssi/ssi_buddy_code.dart';
 import 'qr_display_screen.dart';
 import 'ssi_scan_screen.dart';
 import 'theme/app_theme.dart';
 import 'widgets/app_card.dart';
+import 'widgets/stat_tile.dart';
 
-/// The saved SSI buddies: divers who have no Garmin account on this device.
+/// Everyone this device knows an SSI member number for.
 ///
-/// Their member codes are kept so they can be handed on - tapping one shows
-/// it as a QR code for someone else's app to scan. They do not travel with
-/// an exported dive: SSI's import format has no buddy field, so the picker
-/// that used to sit under the dive QR code was removed rather than left
-/// looking functional.
+/// Two groups, kept apart rather than merged: the accounts that have an SSI
+/// identity stored, and the standalone buddies scanned in here. They look
+/// alike but behave differently - an account's number is maintained on the
+/// account screen, so it can be shown here but not edited or deleted here.
+/// One list with different menus depending on the row would be worse.
 ///
-/// Deliberately its own list rather than a second kind of account - these
-/// people can't be logged in and have no dives to fetch here.
+/// Any of them can be shown as a QR code for someone else's app to scan.
+/// None of them travel with an exported dive: SSI's import format has no
+/// buddy field, so the picker that used to sit under the dive QR code was
+/// removed rather than left looking functional.
 class SsiBuddiesScreen extends StatelessWidget {
   const SsiBuddiesScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final buddies = context.watch<SsiBuddiesController>();
+    final accounts = context.watch<AccountsController>();
+
+    final withIdentity = [
+      for (final account in accounts.accounts)
+        if (account.ssiIdentity != null) account,
+    ];
+    final accountMemberIds = {
+      for (final account in withIdentity) account.ssiMemberId,
+    };
+    // A member who also has an account here is listed once, under the
+    // account: that is the entry the user maintains, and a rescan
+    // shouldn't produce a second row for the same person.
+    final standalone = [
+      for (final buddy in buddies.buddies)
+        if (!accountMemberIds.contains(buddy.memberId)) buddy,
+    ];
+
     return Scaffold(
       appBar: AppBar(title: const Text('SSI-Buddies')),
-      body: Consumer<SsiBuddiesController>(
-        builder: (context, controller, _) {
-          if (!controller.loaded) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (controller.buddies.isEmpty) {
-            return const _EmptyBuddies();
-          }
-          return ListView.separated(
-            padding: const EdgeInsets.fromLTRB(
-              AppSpacing.lg,
-              AppSpacing.lg,
-              AppSpacing.lg,
-              96,
+      body: !buddies.loaded || !accounts.loaded
+          ? const Center(child: CircularProgressIndicator())
+          : (withIdentity.isEmpty && standalone.isEmpty)
+          ? const _EmptyBuddies()
+          : ListView(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.lg,
+                0,
+                AppSpacing.lg,
+                96,
+              ),
+              children: [
+                if (withIdentity.isNotEmpty) ...[
+                  const SectionHeader(title: 'Aus den Accounts'),
+                  for (final account in withIdentity) ...[
+                    _AccountBuddyCard(account: account),
+                    const SizedBox(height: AppSpacing.md),
+                  ],
+                ],
+                if (standalone.isNotEmpty) ...[
+                  SectionHeader(
+                    title: withIdentity.isEmpty
+                        ? 'Gespeichert'
+                        : 'Zusätzlich gespeichert',
+                  ),
+                  for (final buddy in standalone) ...[
+                    _BuddyCard(buddy: buddy),
+                    const SizedBox(height: AppSpacing.md),
+                  ],
+                ],
+              ],
             ),
-            itemCount: controller.buddies.length,
-            separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.md),
-            itemBuilder: (context, index) =>
-                _BuddyCard(buddy: controller.buddies[index]),
-          );
-        },
-      ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _scan(context),
         icon: const Icon(Icons.qr_code_scanner),
         label: const Text('Buddy scannen'),
+      ),
+    );
+  }
+}
+
+/// An account that has an SSI number stored. Shown for the same reason as
+/// a buddy - so their code can be handed to someone - but without the edit
+/// and delete actions: those belong to the account, not to this list.
+class _AccountBuddyCard extends StatelessWidget {
+  const _AccountBuddyCard({required this.account});
+
+  final GarminAccount account;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final palette = theme.extension<AppPalette>()!;
+    final identity = account.ssiIdentity!;
+    final color = account.color?.of(context);
+
+    return AppCard(
+      edgeColor: color,
+      onTap: () => _showQr(context, identity),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 20,
+            backgroundColor: color ?? palette.accentContainer,
+            child: Icon(
+              Icons.watch_outlined,
+              size: 20,
+              color: account.color?.inkOn(context) ?? theme.colorScheme.primary,
+            ),
+          ),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  account.displayName,
+                  style: theme.textTheme.titleMedium,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'SSI-Nr. ${account.ssiMemberId}',
+                  style: theme.textTheme.bodySmall,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                // Says why this row has no options menu.
+                const AppChip(label: 'GARMIN-ACCOUNT'),
+              ],
+            ),
+          ),
+          Icon(Icons.qr_code_2, size: 20, color: theme.colorScheme.primary),
+        ],
       ),
     );
   }

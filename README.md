@@ -25,8 +25,9 @@ Kamera der SSI-App scannt.
 - **Detailansicht** mit allen geladenen Werten (Tiefe, Dauer, Wassertemperatur, ...)
 - **QR-Code-Export** im Format, das der SSI-QR-Scanner beim Anlegen eines Tauchgangs erwartet –
   inklusive der SSI-Mitgliedsnummer, wenn für den Account eine hinterlegt ist
-- **SSI-Buddies**: Mittaucher ohne eigenen Garmin-Account lassen sich per QR-Code-Scan speichern
-  und jederzeit wieder als QR-Code anzeigen, damit ein anderes Gerät sie einlesen kann
+- **SSI-Buddies**: eine Liste aller Personen, zu denen das Gerät eine SSI-Nummer kennt – die
+  Accounts mit hinterlegter Nummer und zusätzlich gescannte Mittaucher. Jeder Eintrag lässt sich
+  wieder als QR-Code anzeigen, damit ein anderes Gerät ihn einlesen kann
 - **FIT-Datei-Import** als Alternative, falls der Garmin-Login gerade nicht funktioniert
   (z.B. Original-FIT-Export aus Garmin Connect Web)
 - **Offline nutzbar**: die zuletzt geladenen Tauchgänge liegen auf dem Gerät und stehen auch
