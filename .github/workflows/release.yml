@@ -1,0 +1,171 @@
+name: Release
+
+# Baut auf einen Versions-Tag hin und hängt die Ergebnisse an ein
+# GitHub-Release. Bewusst nicht bei jedem Push: die Artefakte gehören zu
+# einer benannten Version, nicht zu jedem Zwischenstand.
+#
+#   git tag v1.0.1 && git push origin v1.0.1
+#
+# Siehe RELEASING.md für Keystore und Secrets.
+on:
+  push:
+    tags:
+      - 'v*'
+  # Zum Ausprobieren ohne Tag - erzeugt kein Release, nur Artefakte.
+  workflow_dispatch:
+
+# Für `gh release create`. Sonst darf der Workflow nur lesen.
+permissions:
+  contents: write
+
+env:
+  FLUTTER_VERSION: '3.44.7'
+
+jobs:
+  # Erst prüfen, dann bauen: eine Version mit roten Tests soll gar nicht
+  # erst als Datei existieren.
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - run: flutter analyze
+      - run: flutter test
+
+  android:
+    needs: test
+    runs-on: ubuntu-latest
+    env:
+      KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          # Passend zu sourceCompatibility in android/app/build.gradle.kts.
+          java-version: '17'
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: Keystore einrichten
+        if: env.KEYSTORE_BASE64 != ''
+        env:
+          STORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+        run: |
+          set -euo pipefail
+          # Ausserhalb des Arbeitsverzeichnisses, damit der Schluessel
+          # nicht versehentlich in ein Artefakt wandert.
+          keystore="$RUNNER_TEMP/upload-keystore.jks"
+          echo "$KEYSTORE_BASE64" | base64 --decode > "$keystore"
+          cat > android/key.properties <<EOF
+          storeFile=$keystore
+          storePassword=$STORE_PASSWORD
+          keyAlias=$KEY_ALIAS
+          keyPassword=$KEY_PASSWORD
+          EOF
+
+      - name: Ohne Keystore weiterbauen
+        if: env.KEYSTORE_BASE64 == ''
+        run: |
+          echo "::warning::Kein ANDROID_KEYSTORE_BASE64-Secret gesetzt." \
+            "Die APK wird mit dem Debug-Schluessel signiert und laesst sich" \
+            "spaeter nicht durch ein Update ersetzen. Siehe RELEASING.md."
+
+      - run: flutter pub get
+      - run: flutter build apk --release
+
+      - name: APK benennen
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts
+          cp build/app/outputs/flutter-apk/app-release.apk \
+             "artifacts/ssi-connect-${GITHUB_REF_NAME}.apk"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android
+          path: artifacts/*.apk
+          if-no-files-found: error
+
+  ios:
+    needs: test
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+      - run: flutter pub get
+
+      # Ohne Apple-Developer-Zertifikat laesst sich nur unsigniert bauen.
+      # Das Ergebnis ist keine installierbare App: es muss mit einer
+      # Apple-ID neu signiert werden (Sideloadly, AltStore) - siehe
+      # RELEASING.md.
+      - run: flutter build ios --release --no-codesign
+
+      - name: Unsignierte IPA packen
+        run: |
+          set -euo pipefail
+          mkdir -p build/ipa/Payload
+          cp -R build/ios/iphoneos/Runner.app build/ipa/Payload/
+          mkdir -p artifacts
+          cd build/ipa
+          zip -qry "$GITHUB_WORKSPACE/artifacts/ssi-connect-${GITHUB_REF_NAME}-unsigned.ipa" Payload
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ios
+          path: artifacts/*.ipa
+          if-no-files-found: error
+
+  release:
+    needs: [android, ios]
+    # Nur echte Tags bekommen ein Release; ein manueller Lauf liefert die
+    # Artefakte am Job, mehr nicht.
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - name: Release anlegen
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          cat > notes.md <<'EOF'
+          ## Installation
+
+          **Android:** Die `.apk` herunterladen und öffnen. Android fragt
+          einmalig nach der Erlaubnis, Apps aus dieser Quelle zu
+          installieren.
+
+          **iOS:** Die `.ipa` ist **unsigniert** und lässt sich nicht direkt
+          installieren. Sie muss mit einer Apple-ID neu signiert werden,
+          z.B. mit Sideloadly oder AltStore; mit einer kostenlosen Apple-ID
+          läuft die Installation nach sieben Tagen ab. Der einfachere Weg
+          steht in `SETUP.md`, Abschnitt 3b: einmal mit Xcode auf das Gerät
+          bauen.
+
+          Diese App nutzt eine inoffizielle Garmin-Schnittstelle und steht
+          in keiner Verbindung zu Garmin oder SSI.
+          EOF
+          gh release create "$GITHUB_REF_NAME" \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "SSI Connect $GITHUB_REF_NAME" \
+            --notes-file notes.md \
+            artifacts/*
