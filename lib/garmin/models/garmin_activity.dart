@@ -42,14 +42,35 @@ class GarminActivity {
     _numAny(['averageDepth', 'avgDepth', 'summaryDTO.averageDepth']),
   );
 
-  /// Water temperature in °C. Unlike depth, the unit here has not been
-  /// checked against a real dive yet - if these come out implausible, the
-  /// PROBE entry in the API log names the field and its raw value.
+  /// Water temperature in °C.
+  ///
+  /// The list endpoint reports `minTemperature` / `maxTemperature` (no
+  /// "water" in the name), already in °C - a real dive came back as 22.0 /
+  /// 25.0. The minimum is used: it is the reading from depth, which is what
+  /// a dive log means by water temperature, whereas the maximum tends to be
+  /// the warmer surface value.
+  ///
+  /// The `water*` keys are kept ahead of it in case the per-activity detail
+  /// endpoint names them that way.
   double? get waterTemperatureCelsius => _numAny([
     'waterTemperature',
     'minWaterTemperature',
     'summaryDTO.waterTemperature',
+    'minTemperature',
   ]);
+
+  /// How many individual descents this activity contains.
+  ///
+  /// Garmin sends this as `diveCount`. It is emphatically *not* a lifetime
+  /// dive number: a 19-minute freediving session came back with 31, one per
+  /// descent. Only meaningful above 1, so a single scuba dive doesn't get a
+  /// pointless "1 descent" line.
+  int? get descentCount {
+    final value = _numAny(['diveCount', 'summaryDTO.diveCount']);
+    if (value == null) return null;
+    final rounded = value.round();
+    return rounded > 1 ? rounded : null;
+  }
 
   /// The diver's running dive number, if Garmin ships one.
   ///

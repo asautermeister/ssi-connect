@@ -131,20 +131,30 @@ class DiveDetailScreen extends StatelessWidget {
                     ),
                   ],
                 ),
-                // Only present when the source reported a running number:
-                // Garmin's activity list does not always pass it through.
-                if (dive.diveNumber != null) ...[
+                // Both only appear when the source reported them: Garmin's
+                // activity list carries no running dive number, and a
+                // descent count is only meaningful for freediving.
+                if (dive.diveNumber != null || dive.descentCount != null) ...[
                   const SizedBox(height: AppSpacing.xl),
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Expanded(
-                        child: StatTile(
-                          label: 'Tauchgang gesamt',
-                          value: '#${dive.diveNumber}',
-                        ),
+                        child: dive.diveNumber != null
+                            ? StatTile(
+                                label: 'Tauchgang gesamt',
+                                value: '#${dive.diveNumber}',
+                              )
+                            : const SizedBox.shrink(),
                       ),
-                      const Expanded(child: SizedBox.shrink()),
+                      Expanded(
+                        child: dive.descentCount != null
+                            ? StatTile(
+                                label: 'Abtauchvorgänge',
+                                value: '${dive.descentCount}',
+                              )
+                            : const SizedBox.shrink(),
+                      ),
                     ],
                   ),
                 ],

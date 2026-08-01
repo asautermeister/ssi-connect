@@ -14,6 +14,7 @@ class Dive {
     required this.duration,
     required this.locationName,
     this.diveNumber,
+    this.descentCount,
     this.type = DiveType.scuba,
     this.diveNumberOfDay = 1,
   });
@@ -31,6 +32,11 @@ class Dive {
   /// would look identical to a real one.
   final int? diveNumber;
 
+  /// Number of individual descents inside this activity, when there was
+  /// more than one - a freediving session is many descents under one
+  /// activity. Null for an ordinary single dive.
+  final int? descentCount;
+
   final DiveType type;
   final int diveNumberOfDay;
 
@@ -43,6 +49,7 @@ class Dive {
     duration: duration,
     locationName: locationName,
     diveNumber: diveNumber,
+    descentCount: descentCount,
     type: type,
     diveNumberOfDay: diveNumberOfDay ?? this.diveNumberOfDay,
   );
@@ -65,6 +72,7 @@ class Dive {
           : Duration(seconds: durationSeconds.round()),
       locationName: activity.locationName,
       diveNumber: activity.diveNumber,
+      descentCount: activity.descentCount,
       type: DiveType.fromGarminTypeKey(activity.typeKey),
     );
   }

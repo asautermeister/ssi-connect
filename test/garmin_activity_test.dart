@@ -36,6 +36,57 @@ void main() {
     });
   });
 
+  group('GarminActivity from a real activity-list entry', () {
+    /// The measurement fields exactly as a real freediving activity
+    /// returned them (captured via the PROBE log entry).
+    GarminActivity realApneaActivity() => GarminActivity({
+      'activityId': 23159324330,
+      'startTimeLocal': '2026-06-07 09:16:29',
+      'activityType': {'typeId': 148, 'typeKey': 'apnea_diving'},
+      'duration': 1153.6240234375,
+      'minTemperature': 22.0,
+      'maxTemperature': 25.0,
+      'maxDepth': 1149.3000030517578,
+      'avgDepth': 274.6000051498413,
+      'diveCount': 31,
+    });
+
+    test('converts both depths out of centimetres', () {
+      final activity = realApneaActivity();
+
+      expect(activity.maxDepthMeters, 11.5);
+      expect(activity.avgDepthMeters, 2.7);
+    });
+
+    test('takes the minimum temperature as the water temperature', () {
+      // The maximum is the warmer surface reading; a dive log means the
+      // one from depth.
+      expect(realApneaActivity().waterTemperatureCelsius, 22.0);
+    });
+
+    test('reads diveCount as descents, not as a running dive number', () {
+      final activity = realApneaActivity();
+
+      expect(activity.descentCount, 31);
+      // 31 descents in one freediving session is not "dive number 31".
+      expect(activity.diveNumber, isNull);
+    });
+
+    test('hides a descent count of one, which says nothing', () {
+      expect(GarminActivity({'diveCount': 1}).descentCount, isNull);
+      expect(GarminActivity({'diveCount': 0}).descentCount, isNull);
+    });
+
+    test('carries the values through to the Dive model', () {
+      final dive = Dive.fromGarminActivity(realApneaActivity())!;
+
+      expect(dive.maxDepthMeters, 11.5);
+      expect(dive.waterTemperatureCelsius, 22.0);
+      expect(dive.descentCount, 31);
+      expect(dive.diveNumber, isNull);
+    });
+  });
+
   group('GarminActivity.diveNumber', () {
     test('reads a running dive number when one is present', () {
       expect(GarminActivity({'diveNumber': 142}).diveNumber, 142);

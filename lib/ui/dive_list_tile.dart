@@ -60,6 +60,8 @@ class DiveListTile extends StatelessWidget {
                         // Only shown when the source actually reported a
                         // running number.
                         if (dive.diveNumber != null) 'TG #${dive.diveNumber}',
+                        if (dive.descentCount != null)
+                          '${dive.descentCount}× abgetaucht',
                       ].join(' · '),
                       style: theme.textTheme.bodySmall,
                     ),
