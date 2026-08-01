@@ -102,6 +102,12 @@ class _BuddyCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final palette = theme.extension<AppPalette>()!;
+    // A buddy without a name is already titled by their number, so only
+    // repeat it here when the title is an actual name.
+    final subtitle = [
+      buddy.memberIdLine,
+      buddy.email,
+    ].whereType<String>().join(' · ');
 
     return AppCard(
       child: Row(
@@ -125,13 +131,14 @@ class _BuddyCard extends StatelessWidget {
                   style: theme.textTheme.titleMedium,
                   overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  'SSI-Nr. ${buddy.memberId}'
-                  '${buddy.email != null ? ' · ${buddy.email}' : ''}',
-                  style: theme.textTheme.bodySmall,
-                  overflow: TextOverflow.ellipsis,
-                ),
+                if (subtitle.isNotEmpty) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: theme.textTheme.bodySmall,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
               ],
             ),
           ),

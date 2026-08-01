@@ -35,6 +35,11 @@ class SsiBuddyCode {
   /// one, otherwise the member number, which is all we know about them.
   String get displayName => fullName ?? 'SSI-Nr. $memberId';
 
+  /// The member number as a secondary line - null when [displayName] is
+  /// already that number, so a nameless buddy isn't labelled twice with the
+  /// same digits.
+  String? get memberIdLine => fullName == null ? null : 'SSI-Nr. $memberId';
+
   Map<String, dynamic> toJson() => {
     'memberId': memberId,
     if (firstName != null) 'firstName': firstName,

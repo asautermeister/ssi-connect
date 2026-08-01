@@ -117,5 +117,14 @@ void main() {
         'Ada',
       );
     });
+
+    test('does not repeat the number as a second line under itself', () {
+      // Titled "SSI-Nr. 42" already - a subtitle saying the same is noise.
+      expect(const SsiBuddyCode(memberId: '42').memberIdLine, isNull);
+      expect(
+        const SsiBuddyCode(memberId: '42', firstName: 'Ada').memberIdLine,
+        'SSI-Nr. 42',
+      );
+    });
   });
 }

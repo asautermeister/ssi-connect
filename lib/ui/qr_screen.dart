@@ -242,7 +242,10 @@ class _SelectedBuddiesNote extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.only(bottom: AppSpacing.xs),
               child: Text(
-                '${buddy.displayName} · SSI-Nr. ${buddy.memberId}',
+                [
+                  buddy.displayName,
+                  buddy.memberIdLine,
+                ].whereType<String>().join(' · '),
                 style: theme.textTheme.bodyMedium,
               ),
             ),
