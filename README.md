@@ -27,8 +27,11 @@ Kamera der SSI-App scannt.
   und beim Export auswählen (siehe Einschränkungen)
 - **FIT-Datei-Import** als Alternative, falls der Garmin-Login gerade nicht funktioniert
   (z.B. Original-FIT-Export aus Garmin Connect Web)
-- Zugangsdaten werden verschlüsselt auf dem Gerät gespeichert; Tauchgangsdaten selbst werden
-  **nicht** dauerhaft gespeichert, sondern nur für die laufende Sitzung geladen
+- **Offline nutzbar**: die zuletzt geladenen Tauchgänge liegen auf dem Gerät und stehen auch
+  ohne Netz zur Verfügung – mit sichtbarem Hinweis, von wann sie sind
+- Zugangsdaten *und* die zwischengespeicherten Tauchgänge liegen verschlüsselt im
+  Schlüsselspeicher des Geräts (Android Keystore / iOS Keychain). Der Zwischenspeicher lässt
+  sich pro Account jederzeit löschen und verschwindet automatisch mit dem Account
 
 ## Wie benutzt man es
 

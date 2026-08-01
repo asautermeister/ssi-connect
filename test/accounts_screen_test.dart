@@ -4,7 +4,10 @@ import 'package:provider/provider.dart';
 import 'package:ssi_connect/accounts/account_repository.dart';
 import 'package:ssi_connect/accounts/accounts_controller.dart';
 import 'package:ssi_connect/accounts/models/garmin_account.dart';
+import 'package:ssi_connect/dives/dive_cache_repository.dart';
+import 'package:ssi_connect/dives/dive_loader.dart';
 import 'package:ssi_connect/dives/recent_dives_controller.dart';
+import 'package:ssi_connect/garmin/garmin_auth_exceptions.dart';
 import 'package:ssi_connect/garmin/models/garmin_session.dart';
 import 'package:ssi_connect/models/dive.dart';
 import 'package:ssi_connect/ssi/ssi_buddies_controller.dart';
@@ -34,6 +37,21 @@ class _InMemoryBuddies extends SsiBuddyRepository {
 
   @override
   Future<void> saveAll(List<SsiBuddyCode> buddies) async {}
+}
+
+class _InMemoryCache extends DiveCacheRepository {
+  final stored = <String, CachedDives>{};
+
+  @override
+  Future<CachedDives?> load(String accountId) async => stored[accountId];
+
+  @override
+  Future<void> save(String accountId, List<Dive> dives) async {
+    stored[accountId] = CachedDives(dives: dives, fetchedAt: DateTime.now());
+  }
+
+  @override
+  Future<void> clear(String accountId) async => stored.remove(accountId);
 }
 
 GarminAccount _account(String name, {String? ssiMemberId}) => GarminAccount(
@@ -66,6 +84,8 @@ Future<void> _pump(
   required List<GarminAccount> accounts,
   Map<String, List<Dive>> dives = const {},
   Set<String> failing = const {},
+  Map<String, CachedDives> cached = const {},
+  bool offline = false,
 }) async {
   tester.view.physicalSize = const Size(1100, 2200);
   tester.view.devicePixelRatio = 1.0;
@@ -75,17 +95,24 @@ Future<void> _pump(
     repository: _InMemoryAccounts(accounts),
   );
   final buddies = SsiBuddiesController(repository: _InMemoryBuddies());
-  final recent = RecentDivesController();
+  final cache = _InMemoryCache()..stored.addAll(cached);
+  final recent = RecentDivesController(cache: cache);
   await accountsController.loadFromStorage();
   await buddies.loadFromStorage();
+
+  Future<List<Dive>> fetch(GarminAccount account) async {
+    if (offline) {
+      throw GarminAuthException(
+        GarminAuthErrorType.offline,
+        'Keine Internetverbindung.',
+      );
+    }
+    if (failing.contains(account.id)) throw StateError('nicht erreichbar');
+    return dives[account.id] ?? const [];
+  }
+
   if (accounts.isNotEmpty) {
-    await recent.load(
-      accounts: accounts,
-      fetch: (account) async {
-        if (failing.contains(account.id)) throw StateError('nicht erreichbar');
-        return dives[account.id] ?? const [];
-      },
-    );
+    await recent.load(accounts: accounts, fetch: fetch);
   }
 
   await tester.pumpWidget(
@@ -94,6 +121,7 @@ Future<void> _pump(
         ChangeNotifierProvider.value(value: accountsController),
         ChangeNotifierProvider.value(value: buddies),
         ChangeNotifierProvider.value(value: recent),
+        Provider<DiveFetcher>.value(value: fetch),
       ],
       child: MaterialApp(theme: AppTheme.light(), home: const AccountsScreen()),
     ),
@@ -217,6 +245,88 @@ void main() {
         expect(find.text(label), findsOneWidget);
       }
       expect(find.byIcon(Icons.bug_report_outlined), findsOneWidget);
+    });
+
+    testWidgets('offline, it shows the cached dives and says so', (
+      tester,
+    ) async {
+      await _pump(
+        tester,
+        accounts: [_account('Andreas')],
+        cached: {
+          'Andreas': CachedDives(
+            dives: [_dive('a1', DateTime(2025, 11, 7), depth: 28)],
+            fetchedAt: DateTime(2025, 11, 7, 16, 30),
+          ),
+        },
+        offline: true,
+      );
+
+      expect(find.text('Keine Internetverbindung'), findsOneWidget);
+      // The age is the thing that decides whether this is the dive you just
+      // did, so it has to be on screen.
+      expect(find.text('Stand: 07.11.2025 · 16:30 Uhr'), findsOneWidget);
+      // And the dives are still usable, which is the whole point.
+      expect(find.text('Fr, 07.11.2025'), findsOneWidget);
+    });
+
+    testWidgets('a failure that reached Garmin is not called offline', (
+      tester,
+    ) async {
+      await _pump(
+        tester,
+        accounts: [_account('Andreas')],
+        cached: {
+          'Andreas': CachedDives(
+            dives: [_dive('a1', DateTime(2025, 11, 7))],
+            fetchedAt: DateTime(2025, 11, 7, 16, 30),
+          ),
+        },
+        failing: {'Andreas'},
+      );
+
+      // Telling someone to check their connection when the request got
+      // through would send them looking in the wrong place.
+      expect(find.text('Keine Internetverbindung'), findsNothing);
+      expect(find.text('Gespeicherte Tauchgänge'), findsOneWidget);
+    });
+
+    testWidgets('online, nothing claims the data is stale', (tester) async {
+      await _pump(
+        tester,
+        accounts: [_account('Andreas')],
+        dives: {
+          'Andreas': [_dive('a1', DateTime(2025, 11, 7))],
+        },
+      );
+
+      expect(find.text('Keine Internetverbindung'), findsNothing);
+      expect(find.text('Gespeicherte Tauchgänge'), findsNothing);
+    });
+
+    testWidgets('cached dives can be deleted from the account menu', (
+      tester,
+    ) async {
+      await _pump(
+        tester,
+        accounts: [_account('Andreas')],
+        dives: {
+          'Andreas': [_dive('a1', DateTime(2025, 11, 7))],
+        },
+      );
+
+      expect(find.text('Fr, 07.11.2025'), findsOneWidget);
+
+      await tester.tap(find.byIcon(Icons.more_horiz));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Gespeicherte Tauchgänge löschen'));
+      await tester.pump();
+
+      expect(find.text('Gespeicherte Tauchgänge gelöscht'), findsOneWidget);
+
+      // Let the snack bar time out, so the test doesn't end with a pending
+      // timer.
+      await tester.pump(const Duration(seconds: 5));
     });
 
     testWidgets('without accounts it still offers a way forward', (

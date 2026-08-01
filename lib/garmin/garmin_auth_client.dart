@@ -345,11 +345,9 @@ class GarminAuthClient {
         'später erneut versuchen oder die FIT-Datei importieren.',
       );
     }
-    if (e.type == DioExceptionType.connectionTimeout ||
-        e.type == DioExceptionType.receiveTimeout ||
-        e.type == DioExceptionType.connectionError) {
+    if (isOfflineDioError(e)) {
       return GarminAuthException(
-        GarminAuthErrorType.connectionError,
+        GarminAuthErrorType.offline,
         '$context: Keine Verbindung zu Garmin. Internetverbindung prüfen.',
       );
     }

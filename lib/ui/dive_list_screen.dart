@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../accounts/accounts_controller.dart';
 import '../accounts/models/garmin_account.dart';
 import '../dives/dive_loader.dart';
+import '../dives/recent_dives_controller.dart';
 import '../garmin/garmin_auth_exceptions.dart';
 import '../models/dive.dart';
 import '../ssi/ssi_buddy_code.dart';
@@ -12,7 +12,13 @@ import 'dive_list_tile.dart';
 import 'fit_import_flow.dart';
 import 'theme/app_theme.dart';
 import 'widgets/error_state.dart';
+import 'widgets/offline_banner.dart';
 
+/// One account's dives.
+///
+/// Reads from the same [RecentDivesController] the start screen uses, so
+/// both show the same data from the same cache. Opening this screen after
+/// the start screen has loaded is therefore instant, and works offline.
 class DiveListScreen extends StatefulWidget {
   const DiveListScreen({super.key, required this.account});
 
@@ -23,21 +29,30 @@ class DiveListScreen extends StatefulWidget {
 }
 
 class _DiveListScreenState extends State<DiveListScreen> {
-  late final GarminDiveLoader _loader = GarminDiveLoader(
-    refreshSession: (account) =>
-        context.read<AccountsController>().ensureFreshSession(account),
-  );
-
-  late Future<List<Dive>> _divesFuture = _loader.load(widget.account);
-
-  void _retry() {
-    setState(() {
-      _divesFuture = _loader.load(widget.account);
-    });
+  void _refresh() {
+    context.read<RecentDivesController>().load(
+      accounts: [widget.account],
+      fetch: context.read<DiveFetcher>(),
+      force: true,
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    final load = context.watch<RecentDivesController>().forAccount(
+      widget.account.id,
+    );
+
+    // Normally the start screen has already loaded this account. It hasn't
+    // if the cache was just cleared, so fetch on arrival. Keyed on
+    // fetchedAt rather than on the dive list being empty, so an account
+    // that genuinely has no dives doesn't re-fetch forever.
+    if (load.fetchedAt == null && !load.isLoading && !load.hasError) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _refresh();
+      });
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.account.displayName),
@@ -51,37 +66,53 @@ class _DiveListScreenState extends State<DiveListScreen> {
           ),
         ],
       ),
-      body: FutureBuilder<List<Dive>>(
-        future: _divesFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState != ConnectionState.done) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (snapshot.hasError) {
-            final error = snapshot.error;
-            return ErrorState(
-              message: error is GarminAuthException
-                  ? error.message
-                  : 'Tauchgänge konnten nicht geladen werden.',
-              details: error is GarminAuthException ? error.details : null,
-              onRetry: _retry,
-              secondaryLabel: 'Stattdessen FIT-Datei importieren',
-              onSecondary: () => pickAndImportFitFile(context),
-            );
-          }
-          final dives = snapshot.data ?? const <Dive>[];
-          if (dives.isEmpty) {
-            return const ErrorState(
-              icon: Icons.scuba_diving_outlined,
-              message: 'Keine Tauchgänge gefunden.',
-            );
-          }
-          return RefreshIndicator(
-            onRefresh: () async => _retry(),
-            child: DiveList(dives: dives, diver: widget.account.ssiIdentity),
-          );
-        },
-      ),
+      body: _body(load),
+    );
+  }
+
+  Widget _body(AccountDives load) {
+    if (load.dives.isNotEmpty) {
+      return RefreshIndicator(
+        onRefresh: () async => _refresh(),
+        child: DiveList(
+          dives: load.dives,
+          diver: widget.account.ssiIdentity,
+          // Only worth saying when the dives on screen aren't current.
+          header: load.isFromCache
+              ? Padding(
+                  padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                  child: OfflineBanner(
+                    isOffline: load.isOffline,
+                    fetchedAt: load.fetchedAt,
+                    onRetry: _refresh,
+                  ),
+                )
+              : null,
+        ),
+      );
+    }
+
+    if (load.isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    final error = load.error;
+    if (error != null) {
+      return ErrorState(
+        icon: load.isOffline ? Icons.cloud_off_outlined : Icons.error_outline,
+        message: error is GarminAuthException
+            ? error.message
+            : 'Tauchgänge konnten nicht geladen werden.',
+        details: error is GarminAuthException ? error.details : null,
+        onRetry: _refresh,
+        secondaryLabel: 'Stattdessen FIT-Datei importieren',
+        onSecondary: () => pickAndImportFitFile(context),
+      );
+    }
+
+    return const ErrorState(
+      icon: Icons.scuba_diving_outlined,
+      message: 'Keine Tauchgänge gefunden.',
     );
   }
 }
@@ -89,7 +120,7 @@ class _DiveListScreenState extends State<DiveListScreen> {
 /// Shared list body, so Garmin-loaded and FIT-imported dives render
 /// identically. Computes the shared depth scale the cards' meters use.
 class DiveList extends StatelessWidget {
-  const DiveList({super.key, required this.dives, this.diver});
+  const DiveList({super.key, required this.dives, this.diver, this.header});
 
   final List<Dive> dives;
 
@@ -97,11 +128,17 @@ class DiveList extends StatelessWidget {
   /// code can name them. Null for FIT imports, which carry no account.
   final SsiBuddyCode? diver;
 
+  /// Optional notice above the list, e.g. that these dives came from the
+  /// cache. Scrolls with the list rather than sticking, so it doesn't eat
+  /// screen height on a long list.
+  final Widget? header;
+
   @override
   Widget build(BuildContext context) {
     final maxDepth = dives
         .map((d) => d.maxDepthMeters ?? 0)
         .fold<double>(0, (a, b) => a > b ? a : b);
+    final header = this.header;
 
     return ListView.separated(
       padding: const EdgeInsets.fromLTRB(
@@ -110,13 +147,19 @@ class DiveList extends StatelessWidget {
         AppSpacing.lg,
         AppSpacing.xxl,
       ),
-      itemCount: dives.length,
+      itemCount: dives.length + (header == null ? 0 : 1),
       separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.md),
-      itemBuilder: (context, index) => DiveListTile(
-        dive: dives[index],
-        maxDepthInList: maxDepth,
-        diver: diver,
-      ),
+      itemBuilder: (context, index) {
+        if (header != null) {
+          if (index == 0) return header;
+          index -= 1;
+        }
+        return DiveListTile(
+          dive: dives[index],
+          maxDepthInList: maxDepth,
+          diver: diver,
+        );
+      },
     );
   }
 }

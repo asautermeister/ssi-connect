@@ -16,6 +16,7 @@ import 'ssi_identity_screen.dart';
 import 'theme/app_theme.dart';
 import 'widgets/app_card.dart';
 import 'widgets/dive_type_icon.dart';
+import 'widgets/offline_banner.dart';
 
 /// Start screen. Leads with the dives themselves rather than with a list of
 /// names: the reason to open this app is to hand a dive to SSI, and from
@@ -31,11 +32,6 @@ class AccountsScreen extends StatefulWidget {
 }
 
 class _AccountsScreenState extends State<AccountsScreen> {
-  late final GarminDiveLoader _loader = GarminDiveLoader(
-    refreshSession: (account) =>
-        context.read<AccountsController>().ensureFreshSession(account),
-  );
-
   /// Kicks off the fetch once the accounts are known. Called from build,
   /// which is safe because [RecentDivesController.load] returns immediately
   /// for a set of accounts it already has.
@@ -45,7 +41,7 @@ class _AccountsScreenState extends State<AccountsScreen> {
       if (!mounted) return;
       context.read<RecentDivesController>().load(
         accounts: accounts,
-        fetch: _loader.load,
+        fetch: context.read<DiveFetcher>(),
         force: force,
       );
     });
@@ -76,6 +72,15 @@ class _AccountsScreenState extends State<AccountsScreen> {
                   if (accounts.isEmpty)
                     const _EmptyAccounts()
                   else ...[
+                    if (recentDives.isOffline || recentDives.isShowingCache)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                        child: OfflineBanner(
+                          isOffline: recentDives.isOffline,
+                          fetchedAt: recentDives.oldestFetchedAt,
+                          onRetry: () => _loadAfterBuild(accounts, force: true),
+                        ),
+                      ),
                     _RecentDives(accounts: accounts, controller: recentDives),
                     const SectionHeader(title: 'Accounts'),
                     for (final account in accounts) ...[
@@ -275,7 +280,7 @@ class _EmptyAccounts extends StatelessWidget {
   }
 }
 
-enum _AccountAction { rename, ssiIdentity, remove }
+enum _AccountAction { rename, ssiIdentity, clearCache, remove }
 
 class _AccountCard extends StatelessWidget {
   const _AccountCard({required this.account, required this.dives});
@@ -340,6 +345,7 @@ class _AccountCard extends StatelessWidget {
                   builder: (_) => SsiIdentityScreen(accountId: account.id),
                 ),
               ),
+              _AccountAction.clearCache => _clearCache(context),
               _AccountAction.remove => _confirmRemove(context),
             },
             itemBuilder: (context) => const [
@@ -350,6 +356,10 @@ class _AccountCard extends StatelessWidget {
               PopupMenuItem(
                 value: _AccountAction.ssiIdentity,
                 child: Text('SSI-Identität'),
+              ),
+              PopupMenuItem(
+                value: _AccountAction.clearCache,
+                child: Text('Gespeicherte Tauchgänge löschen'),
               ),
               PopupMenuItem(
                 value: _AccountAction.remove,
@@ -377,6 +387,17 @@ class _AccountCard extends StatelessWidget {
     return trimmed.characters.first.toUpperCase();
   }
 
+  /// Removes this account's dives from the device. They are health data,
+  /// so getting rid of them has to be possible without deleting the whole
+  /// account.
+  Future<void> _clearCache(BuildContext context) async {
+    final messenger = ScaffoldMessenger.of(context);
+    await context.read<RecentDivesController>().forget(account.id);
+    messenger.showSnackBar(
+      const SnackBar(content: Text('Gespeicherte Tauchgänge gelöscht')),
+    );
+  }
+
   Future<void> _rename(BuildContext context) async {
     final controller = context.read<AccountsController>();
     final name = await showDialog<String>(
@@ -391,13 +412,15 @@ class _AccountCard extends StatelessWidget {
   /// re-login with a fresh MFA code - worth a confirmation step.
   Future<void> _confirmRemove(BuildContext context) async {
     final controller = context.read<AccountsController>();
+    final dives = context.read<RecentDivesController>();
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: const Text('Account entfernen?'),
         content: Text(
-          '${account.displayName} wird von diesem Gerät entfernt. '
-          'Für einen erneuten Zugriff ist ein neuer Login nötig.',
+          '${account.displayName} wird mitsamt den gespeicherten '
+          'Tauchgängen von diesem Gerät entfernt. Für einen erneuten '
+          'Zugriff ist ein neuer Login nötig.',
         ),
         actions: [
           TextButton(
@@ -413,6 +436,10 @@ class _AccountCard extends StatelessWidget {
     );
     if (confirmed ?? false) {
       await controller.removeAccount(account.id);
+      // The cached dives have to go with the account - leaving someone's
+      // dive profiles on the tablet after they were removed from it would
+      // be exactly what nobody expects.
+      await dives.forget(account.id);
     }
   }
 }
