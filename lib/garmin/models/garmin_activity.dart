@@ -140,6 +140,11 @@ class GarminActivity {
     'water',
     'density',
     'salin',
+    // Same question for SSI's `deco` flag: a dive computer knows whether
+    // the dive went into decompression, but whether this endpoint passes
+    // it through - and under which name - is unconfirmed.
+    'deco',
+    'ndl',
   ];
 
   /// Every field whose name mentions one of [_probeKeyParts], with the
