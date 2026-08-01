@@ -10,6 +10,7 @@ Dive _dive({
   double? maxDepth,
   Duration? duration,
   int diveNumberOfDay = 1,
+  int? diveNumber,
   DiveType type = DiveType.scuba,
 }) {
   return Dive(
@@ -20,6 +21,7 @@ Dive _dive({
     waterTemperatureCelsius: null,
     duration: duration,
     locationName: null,
+    diveNumber: diveNumber,
     type: type,
     diveNumberOfDay: diveNumberOfDay,
   );
@@ -68,6 +70,31 @@ void main() {
       // The label is written out too, so the drawing never carries the
       // meaning on its own.
       expect(find.textContaining('Apnoe'), findsOneWidget);
+    });
+
+    testWidgets('shows the running dive number when the source has one', (
+      tester,
+    ) async {
+      await _pump(
+        tester,
+        DiveListTile(
+          dive: _dive(maxDepth: 20, diveNumber: 142),
+          maxDepthInList: 20,
+        ),
+      );
+
+      expect(find.textContaining('TG #142'), findsOneWidget);
+    });
+
+    testWidgets('omits the running number when the source has none', (
+      tester,
+    ) async {
+      await _pump(
+        tester,
+        DiveListTile(dive: _dive(maxDepth: 20), maxDepthInList: 20),
+      );
+
+      expect(find.textContaining('TG #'), findsNothing);
     });
 
     testWidgets('renders every dive type without error', (tester) async {

@@ -68,6 +68,9 @@ class FitDiveImporter {
               ? null
               : Duration(seconds: durationSeconds.round()),
           locationName: null,
+          // Unlike the Garmin list endpoint, the FIT dive_summary carries
+          // the diver's running dive number outright.
+          diveNumber: summary.diveNumber,
         ),
       );
     }

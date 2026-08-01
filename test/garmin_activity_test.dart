@@ -35,4 +35,45 @@ void main() {
       expect(dive!.maxDepthMeters, 11.5);
     });
   });
+
+  group('GarminActivity.diveNumber', () {
+    test('reads a running dive number when one is present', () {
+      expect(GarminActivity({'diveNumber': 142}).diveNumber, 142);
+      expect(
+        GarminActivity({
+          'summaryDTO': {'diveNumber': 7},
+        }).diveNumber,
+        7,
+      );
+    });
+
+    test('is null when the payload has none, so the UI can hide it', () {
+      // Shape of a real activity-list entry, which in the response we have
+      // seen carries no dive number at all.
+      expect(
+        GarminActivity({
+          'activityId': 23159324330,
+          'startTimeLocal': '2026-06-07 09:16:29',
+          'duration': 1153.6,
+          'maxDepth': 1149.3,
+        }).diveNumber,
+        isNull,
+      );
+    });
+
+    test('treats a zero or negative counter as absent', () {
+      expect(GarminActivity({'diveNumber': 0}).diveNumber, isNull);
+      expect(GarminActivity({'diveNumber': -1}).diveNumber, isNull);
+    });
+
+    test('the probe surfaces dive-number candidates for diagnosis', () {
+      final fields = GarminActivity({
+        'diveNumber': 142,
+        'distance': 19.04,
+      }).probeMeasurementFields();
+
+      expect(fields['diveNumber'], 142);
+      expect(fields.containsKey('distance'), isFalse);
+    });
+  });
 }

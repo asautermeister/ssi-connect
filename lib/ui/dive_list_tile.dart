@@ -53,8 +53,14 @@ class DiveListTile extends StatelessWidget {
                     ),
                     const SizedBox(height: AppSpacing.xs),
                     Text(
-                      '${Fmt.time(dive.dateTime)} Uhr'
-                      '${dive.duration != null ? ' · ${Fmt.minutes(dive.duration)} min' : ''}',
+                      [
+                        '${Fmt.time(dive.dateTime)} Uhr',
+                        if (dive.duration != null)
+                          '${Fmt.minutes(dive.duration)} min',
+                        // Only shown when the source actually reported a
+                        // running number.
+                        if (dive.diveNumber != null) 'TG #${dive.diveNumber}',
+                      ].join(' · '),
                       style: theme.textTheme.bodySmall,
                     ),
                     const SizedBox(height: AppSpacing.sm),

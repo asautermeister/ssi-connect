@@ -131,6 +131,23 @@ class DiveDetailScreen extends StatelessWidget {
                     ),
                   ],
                 ),
+                // Only present when the source reported a running number:
+                // Garmin's activity list does not always pass it through.
+                if (dive.diveNumber != null) ...[
+                  const SizedBox(height: AppSpacing.xl),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: StatTile(
+                          label: 'Tauchgang gesamt',
+                          value: '#${dive.diveNumber}',
+                        ),
+                      ),
+                      const Expanded(child: SizedBox.shrink()),
+                    ],
+                  ),
+                ],
               ],
             ),
           ),

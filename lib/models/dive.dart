@@ -13,6 +13,7 @@ class Dive {
     required this.waterTemperatureCelsius,
     required this.duration,
     required this.locationName,
+    this.diveNumber,
     this.type = DiveType.scuba,
     this.diveNumberOfDay = 1,
   });
@@ -24,6 +25,12 @@ class Dive {
   final double? waterTemperatureCelsius;
   final Duration? duration;
   final String? locationName;
+
+  /// The diver's running dive number, when the source provides one. Null
+  /// means "not reported" - it is never invented, since a made-up number
+  /// would look identical to a real one.
+  final int? diveNumber;
+
   final DiveType type;
   final int diveNumberOfDay;
 
@@ -35,6 +42,7 @@ class Dive {
     waterTemperatureCelsius: waterTemperatureCelsius,
     duration: duration,
     locationName: locationName,
+    diveNumber: diveNumber,
     type: type,
     diveNumberOfDay: diveNumberOfDay ?? this.diveNumberOfDay,
   );
@@ -56,6 +64,7 @@ class Dive {
           ? null
           : Duration(seconds: durationSeconds.round()),
       locationName: activity.locationName,
+      diveNumber: activity.diveNumber,
       type: DiveType.fromGarminTypeKey(activity.typeKey),
     );
   }

@@ -51,6 +51,26 @@ class GarminActivity {
     'summaryDTO.waterTemperature',
   ]);
 
+  /// The diver's running dive number, if Garmin ships one.
+  ///
+  /// The Descent watches keep a lifetime counter and the FIT dive_summary
+  /// carries it, but whether the activity-list endpoint passes it through -
+  /// and under which name - is unconfirmed. So this reads only keys that
+  /// unambiguously mean "dive number" and returns null otherwise: the UI
+  /// then hides the field rather than showing a number that might be
+  /// something else. The PROBE log entry lists the real candidates.
+  int? get diveNumber {
+    final value = _numAny([
+      'diveNumber',
+      'diveNum',
+      'summaryDTO.diveNumber',
+      'summaryDTO.diveNum',
+    ]);
+    if (value == null) return null;
+    final rounded = value.round();
+    return rounded > 0 ? rounded : null;
+  }
+
   static double? _metresFromCentimetres(double? centimetres) {
     if (centimetres == null) return null;
     return double.parse((centimetres / 100).toStringAsFixed(1));
@@ -59,8 +79,8 @@ class GarminActivity {
   String? get locationName =>
       raw['locationName'] as String? ?? raw['startLocationName'] as String?;
 
-  /// Every numeric field whose name mentions depth or temperature, with the
-  /// value Garmin actually sent.
+  /// Every numeric field whose name mentions depth, temperature, a dive or
+  /// a number, with the value Garmin actually sent.
   ///
   /// Exists because the response for a single activity is far too large to
   /// read in the API log, and the interesting fields are a handful of keys
@@ -77,7 +97,10 @@ class GarminActivity {
           walk('$key.', value);
         } else if (value is num) {
           final lower = key.toLowerCase();
-          if (lower.contains('depth') || lower.contains('temperature')) {
+          if (lower.contains('depth') ||
+              lower.contains('temperature') ||
+              lower.contains('dive') ||
+              lower.contains('number')) {
             found[key] = value;
           }
         }
