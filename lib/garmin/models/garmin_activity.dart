@@ -27,19 +27,34 @@ class GarminActivity {
   /// Elapsed duration in seconds.
   double? get durationSeconds => _numAny(['duration', 'elapsedDuration']);
 
-  /// Max depth in meters - Garmin generally stores metric internally, but
-  /// this key name is a guess; verify against a real dive activity.
-  double? get maxDepthMeters =>
-      _numAny(['maxDepth', 'maxDepthInMeters', 'summaryDTO.maxDepth']);
+  /// Max depth in metres.
+  ///
+  /// The activity-list endpoint reports depth in **centimetres**, which is
+  /// why an 11 m dive first showed up as 1149.3: the raw value is 1149.3 cm
+  /// (11.493 m). Confirmed against several real dives before the divisor
+  /// was added. Rounded to one decimal, which is the precision the SSI
+  /// import format carries anyway.
+  double? get maxDepthMeters => _metresFromCentimetres(
+    _numAny(['maxDepth', 'maxDepthInMeters', 'summaryDTO.maxDepth']),
+  );
 
-  double? get avgDepthMeters =>
-      _numAny(['averageDepth', 'avgDepth', 'summaryDTO.averageDepth']);
+  double? get avgDepthMeters => _metresFromCentimetres(
+    _numAny(['averageDepth', 'avgDepth', 'summaryDTO.averageDepth']),
+  );
 
+  /// Water temperature in °C. Unlike depth, the unit here has not been
+  /// checked against a real dive yet - if these come out implausible, the
+  /// PROBE entry in the API log names the field and its raw value.
   double? get waterTemperatureCelsius => _numAny([
     'waterTemperature',
     'minWaterTemperature',
     'summaryDTO.waterTemperature',
   ]);
+
+  static double? _metresFromCentimetres(double? centimetres) {
+    if (centimetres == null) return null;
+    return double.parse((centimetres / 100).toStringAsFixed(1));
+  }
 
   String? get locationName =>
       raw['locationName'] as String? ?? raw['startLocationName'] as String?;

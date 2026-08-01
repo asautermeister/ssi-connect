@@ -1,4 +1,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Scanning the SSI member QR code. Not required hardware: without a
+         camera the member id can still be typed in by hand. -->
+    <uses-permission android:name="android.permission.CAMERA"/>
+    <uses-feature android:name="android.hardware.camera" android:required="false"/>
+
     <application
         android:label="SSI Connect"
         android:name="${applicationName}"

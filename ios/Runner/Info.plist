@@ -6,6 +6,8 @@
 	<true/>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Zum Scannen deines SSI-QR-Codes, damit die SSI-Mitgliedsnummer hinterlegt werden kann.</string>
 	<key>CFBundleDisplayName</key>
 	<string>SSI Connect</string>
 	<key>CFBundleExecutable</key>

@@ -7,6 +7,7 @@ import 'add_account_screen.dart';
 import 'debug_log_screen.dart';
 import 'dive_list_screen.dart';
 import 'fit_import_flow.dart';
+import 'ssi_identity_screen.dart';
 import 'theme/app_theme.dart';
 import 'widgets/app_card.dart';
 
@@ -103,6 +104,8 @@ class _EmptyAccounts extends StatelessWidget {
   }
 }
 
+enum _AccountAction { ssiIdentity, remove }
+
 class _AccountCard extends StatelessWidget {
   const _AccountCard({required this.account});
 
@@ -140,14 +143,36 @@ class _AccountCard extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 2),
-                Text('Tauchgänge anzeigen', style: theme.textTheme.bodySmall),
+                Text(
+                  account.hasSsiIdentity
+                      ? 'SSI-Nr. ${account.ssiMemberId}'
+                      : 'Keine SSI-Nummer hinterlegt',
+                  style: theme.textTheme.bodySmall,
+                ),
               ],
             ),
           ),
-          IconButton(
+          PopupMenuButton<_AccountAction>(
             icon: const Icon(Icons.more_horiz),
-            tooltip: 'Account entfernen',
-            onPressed: () => _confirmRemove(context),
+            tooltip: 'Optionen',
+            onSelected: (action) => switch (action) {
+              _AccountAction.ssiIdentity => Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => SsiIdentityScreen(accountId: account.id),
+                ),
+              ),
+              _AccountAction.remove => _confirmRemove(context),
+            },
+            itemBuilder: (context) => const [
+              PopupMenuItem(
+                value: _AccountAction.ssiIdentity,
+                child: Text('SSI-Identität'),
+              ),
+              PopupMenuItem(
+                value: _AccountAction.remove,
+                child: Text('Account entfernen'),
+              ),
+            ],
           ),
         ],
       ),
