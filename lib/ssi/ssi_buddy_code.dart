@@ -40,6 +40,21 @@ class SsiBuddyCode {
   /// same digits.
   String? get memberIdLine => fullName == null ? null : 'SSI-Nr. $memberId';
 
+  /// The payload as SSI writes it, so this member can be shown as a QR
+  /// code for someone else's app to scan.
+  ///
+  /// Field names match the ones [tryParse] reads, in the order the real
+  /// SSI code uses. Empty fields are left out rather than emitted blank -
+  /// a parser that trims values would read them as empty strings.
+  String toPayload() {
+    final fields = <String>[
+      if (firstName != null) 'firstName:$firstName',
+      if (lastName != null) 'lastName:$lastName',
+      if (email != null) 'email:$email',
+    ];
+    return ['buddy', memberId, ...fields].join(';');
+  }
+
   Map<String, dynamic> toJson() => {
     'memberId': memberId,
     if (firstName != null) 'firstName': firstName,

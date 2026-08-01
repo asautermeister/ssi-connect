@@ -11,6 +11,7 @@ Dive _dive({
   Duration? duration,
   double? waterTemperatureCelsius,
   DiveWaterType? waterType,
+  bool? isDecoDive,
   DiveType type = DiveType.scuba,
 }) {
   return Dive(
@@ -22,6 +23,7 @@ Dive _dive({
     duration: duration,
     locationName: null,
     waterType: waterType,
+    isDecoDive: isDecoDive,
     type: type,
   );
 }
@@ -39,7 +41,8 @@ void main() {
 
       expect(
         payload,
-        'dive;noid;dive_type:0;datetime:201907211000;divetime:38.0;depth_m:12.8',
+        'dive;noid;dive_type:0;datetime:201907211000;divetime:38.0;'
+        'depth_m:12.8;var_divetype_id:24',
       );
     });
 
@@ -135,7 +138,7 @@ void main() {
       expect(payload, isNot(contains('var_watertype_id')));
     });
 
-    test('files multi-gas and rebreather dives as XR, the rest as normal', () {
+    test('maps every dive type to its code from the SSI table', () {
       int diveTypeOf(DiveType type) {
         final payload = SsiQrPayloadBuilder.build(
           _dive(
@@ -148,16 +151,41 @@ void main() {
         return int.parse(match!.group(1)!);
       }
 
-      // A stage or deco cylinder is what makes a dive technical, and a
-      // closed-circuit rebreather is technical by the same measure.
-      expect(diveTypeOf(DiveType.multiGas), 2);
-      expect(diveTypeOf(DiveType.rebreather), 2);
-
+      // 0 Scuba, 2 Extended Range, 6 Freediving, 8 Rebreather (closed
+      // circuit). Freediving and rebreather were guessed wrong before the
+      // table turned up - freedives went in as scuba, rebreather dives as
+      // extended range.
       expect(diveTypeOf(DiveType.scuba), 0);
       expect(diveTypeOf(DiveType.singleGas), 0);
-      // No captured freedive export, so this stays at the value we have
-      // seen SSI accept rather than at an invented freediving code.
-      expect(diveTypeOf(DiveType.apnea), 0);
+      expect(diveTypeOf(DiveType.multiGas), 2);
+      expect(diveTypeOf(DiveType.apnea), 6);
+      expect(diveTypeOf(DiveType.rebreather), 8);
+    });
+
+    test('reports decompression as SSI codes it', () {
+      String payloadFor(bool? isDecoDive) => SsiQrPayloadBuilder.build(
+        _dive(
+          maxDepthMeters: 28,
+          duration: const Duration(minutes: 54),
+          isDecoDive: isDecoDive,
+        ),
+      );
+
+      expect(payloadFor(false), contains('deco:0'));
+      expect(payloadFor(true), contains('deco:1'));
+      // Silence is not "no": a dive we were never told about must not be
+      // filed as a no-deco dive.
+      expect(payloadFor(null), isNot(contains('deco:')));
+    });
+
+    test('marks the dive as a fun dive, which is SSI\'s own default', () {
+      final payload = SsiQrPayloadBuilder.build(
+        _dive(maxDepthMeters: 20, duration: const Duration(minutes: 40)),
+      );
+
+      // Every captured SSI export of an ordinary dive carries 24, so this
+      // reproduces what SSI writes itself rather than inventing a purpose.
+      expect(payload, contains('var_divetype_id:24'));
     });
 
     test('keeps one decimal place for whole-number depth and duration', () {
@@ -259,11 +287,12 @@ void main() {
 
       expect(
         payload,
-        'dive;noid;dive_type:0;datetime:202511071050;divetime:54.0;depth_m:28.0',
+        'dive;noid;dive_type:0;datetime:202511071050;divetime:54.0;'
+        'depth_m:28.0;var_divetype_id:24',
       );
     });
 
-    test('never emits fields whose SSI code tables are unknown', () {
+    test('never emits a field whose value Garmin does not report', () {
       final payload = SsiQrPayloadBuilder.build(
         _dive(
           maxDepthMeters: 28,
@@ -280,7 +309,7 @@ void main() {
         'var_water_body_id',
         'var_current_id',
         'var_surface_id',
-        'var_divetype_id',
+        'deco:',
         'airtemp_c',
         'vis_m',
         'user_leader_id',

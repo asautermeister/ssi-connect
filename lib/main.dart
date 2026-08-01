@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'accounts/accounts_controller.dart';
+import 'dives/dive_loader.dart';
 import 'dives/recent_dives_controller.dart';
 import 'ssi/ssi_buddies_controller.dart';
 import 'ui/accounts_screen.dart';
+import 'ui/developer_mode.dart';
 import 'ui/theme/app_theme.dart';
 
 void main() {
@@ -24,9 +26,20 @@ class SsiConnectApp extends StatelessWidget {
         ChangeNotifierProvider(
           create: (_) => SsiBuddiesController()..loadFromStorage(),
         ),
-        // Session-only: dives are never written to storage, so this starts
-        // empty on every launch and the start screen fetches again.
         ChangeNotifierProvider(create: (_) => RecentDivesController()),
+        // Session-only: the diagnostic tools stay hidden until someone
+        // taps the version in the info screen, and a restart hides them
+        // again.
+        ChangeNotifierProvider(create: (_) => DeveloperMode()),
+        // The one way dives are fetched, shared by every screen that shows
+        // them. Provided rather than constructed per screen so there is a
+        // single place that knows how a session gets refreshed.
+        Provider<DiveFetcher>(
+          create: (context) => GarminDiveLoader(
+            refreshSession: (account) =>
+                context.read<AccountsController>().ensureFreshSession(account),
+          ).load,
+        ),
       ],
       child: MaterialApp(
         title: 'SSI Connect',

@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:ssi_connect/accounts/models/account_color.dart';
 import 'package:ssi_connect/accounts/models/garmin_account.dart';
 import 'package:ssi_connect/garmin/models/garmin_session.dart';
 
@@ -82,6 +83,44 @@ void main() {
       // Everything else survives.
       expect(cleared.displayName, 'Andreas');
       expect(cleared.session.accessToken, 'token');
+    });
+  });
+
+  group('GarminAccount colour', () {
+    test('survives a JSON round trip', () {
+      final restored = GarminAccount.fromJson(
+        _account().withColor(AccountColor.violet).toJson(),
+      );
+
+      expect(restored.color, AccountColor.violet);
+    });
+
+    test('an account stored before colours existed simply has none', () {
+      final restored = GarminAccount.fromJson({
+        'id': 'local-1',
+        'email': 'diver@example.com',
+        'displayName': 'Andreas',
+        'session': {
+          'accessToken': 'token',
+          'refreshToken': 'refresh',
+          'diClientId': 'client',
+        },
+      });
+
+      expect(restored.color, isNull);
+    });
+
+    test('withColor(null) clears it, which copyWith cannot', () {
+      final cleared = _account().withColor(AccountColor.blue).withColor(null);
+
+      expect(cleared.color, isNull);
+    });
+
+    test('the colour survives a rename and an SSI identity change', () {
+      final coloured = _account().withColor(AccountColor.green);
+
+      expect(coloured.copyWith(displayName: 'Marie').color, AccountColor.green);
+      expect(coloured.withoutSsiIdentity().color, AccountColor.green);
     });
   });
 }

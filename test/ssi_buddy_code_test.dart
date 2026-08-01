@@ -70,6 +70,46 @@ void main() {
     });
   });
 
+  group('SsiBuddyCode.toPayload', () {
+    test('writes the code SSI itself shows, so it can be scanned back', () {
+      const code = SsiBuddyCode(
+        memberId: '3902893',
+        firstName: 'Andreas',
+        lastName: 'Sautermeister',
+        email: 'a@example.com',
+      );
+
+      expect(
+        code.toPayload(),
+        'buddy;3902893;firstName:Andreas;lastName:Sautermeister;'
+        'email:a@example.com',
+      );
+    });
+
+    test('round-trips through its own parser', () {
+      for (final code in const [
+        SsiBuddyCode(memberId: '1', firstName: 'Ada'),
+        SsiBuddyCode(memberId: '2', lastName: 'Lovelace'),
+        SsiBuddyCode(memberId: '3', email: 'a:b@example.com'),
+        SsiBuddyCode(memberId: '4'),
+      ]) {
+        final parsed = SsiBuddyCode.tryParse(code.toPayload());
+
+        expect(parsed, isNotNull, reason: code.toPayload());
+        expect(parsed!.memberId, code.memberId);
+        expect(parsed.firstName, code.firstName);
+        expect(parsed.lastName, code.lastName);
+        expect(parsed.email, code.email);
+      }
+    });
+
+    test('leaves absent fields out instead of writing them empty', () {
+      // `firstName:` with nothing after it parses back as an empty string
+      // on a stricter reader.
+      expect(const SsiBuddyCode(memberId: '9').toPayload(), 'buddy;9');
+    });
+  });
+
   group('SsiBuddyCode storage', () {
     test('survives a JSON round trip with every field', () {
       const original = SsiBuddyCode(

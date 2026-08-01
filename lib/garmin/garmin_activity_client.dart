@@ -140,6 +140,12 @@ class GarminActivityClient {
           'Zu viele Anfragen an Garmin, bitte später erneut versuchen.',
         );
       }
+      if (isOfflineDioError(e)) {
+        throw GarminAuthException(
+          GarminAuthErrorType.offline,
+          'Keine Internetverbindung.',
+        );
+      }
       throw GarminAuthException(
         GarminAuthErrorType.connectionError,
         'Abfrage fehlgeschlagen${status != null ? ' (HTTP $status)' : ''}.',

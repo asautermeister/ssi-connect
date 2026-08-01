@@ -147,6 +147,64 @@ void main() {
     });
   });
 
+  group('from a real PROBE capture', () {
+    // Exactly the fields a real diving activity came back with.
+    final activity = GarminActivity({
+      'activityId': 1,
+      'startTimeLocal': '2026-06-07 09:16:29',
+      'maxDepth': 1149.3000030517578,
+      'avgDepth': 274.6000051498413,
+      'minTemperature': 22.0,
+      'maxTemperature': 25.0,
+      'diveCount': 31,
+      'decoDive': false,
+      'qualifyingDive': false,
+      'summarizedDiveInfo': {
+        'waterType': 1,
+        'waterDensity': 1025.0,
+        'totalSurfaceTime': 483,
+      },
+    });
+
+    test('finds the water density nested under summarizedDiveInfo', () {
+      // It sits neither at the top level nor under summaryDTO - reading
+      // only those two missed it entirely.
+      expect(activity.waterType, DiveWaterType.salt);
+    });
+
+    test('reads the decompression flag Garmin states outright', () {
+      expect(activity.isDecoDive, isFalse);
+    });
+
+    test('carries both through to the Dive model', () {
+      final dive = Dive.fromGarminActivity(activity);
+
+      expect(dive?.waterType, DiveWaterType.salt);
+      expect(dive?.isDecoDive, isFalse);
+      expect(dive?.maxDepthMeters, 11.5);
+      expect(dive?.waterTemperatureCelsius, 22.0);
+      expect(dive?.descentCount, 31);
+    });
+  });
+
+  group('GarminActivity.isDecoDive', () {
+    test('is null when the response says nothing, which is not "no"', () {
+      // Claiming a no-deco dive we were never told about would put a
+      // wrong safety-relevant value in the logbook.
+      expect(GarminActivity({'maxDepth': 2800}).isDecoDive, isNull);
+    });
+
+    test('reads true as well as false', () {
+      expect(GarminActivity({'decoDive': true}).isDecoDive, isTrue);
+      expect(GarminActivity({'decoDive': false}).isDecoDive, isFalse);
+    });
+
+    test('ignores a non-boolean value under that name', () {
+      expect(GarminActivity({'decoDive': 'maybe'}).isDecoDive, isNull);
+      expect(GarminActivity({'decoDive': 1}).isDecoDive, isNull);
+    });
+  });
+
   group('GarminActivity.waterType', () {
     test('reads the density, which cannot mean anything else', () {
       expect(

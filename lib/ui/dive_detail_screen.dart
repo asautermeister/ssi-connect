@@ -146,7 +146,9 @@ class DiveDetailScreen extends StatelessWidget {
                 // The water type is shown because it travels into the SSI
                 // logbook as var_watertype_id: a value that ends up in the
                 // export should be readable before it is scanned.
-                if (dive.descentCount != null || dive.waterType != null) ...[
+                if (dive.descentCount != null ||
+                    dive.waterType != null ||
+                    dive.isDecoDive != null) ...[
                   const SizedBox(height: AppSpacing.xl),
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -160,15 +162,30 @@ class DiveDetailScreen extends StatelessWidget {
                             : const SizedBox.shrink(),
                       ),
                       Expanded(
-                        child: dive.descentCount != null
+                        child: dive.isDecoDive != null
                             ? StatTile(
-                                label: 'Abtauchvorgänge',
-                                value: '${dive.descentCount}',
+                                label: 'Deko',
+                                value: dive.isDecoDive! ? 'Ja' : 'Nein',
                               )
                             : const SizedBox.shrink(),
                       ),
                     ],
                   ),
+                  if (dive.descentCount != null) ...[
+                    const SizedBox(height: AppSpacing.xl),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: StatTile(
+                            label: 'Abtauchvorgänge',
+                            value: '${dive.descentCount}',
+                          ),
+                        ),
+                        const Expanded(child: SizedBox.shrink()),
+                      ],
+                    ),
+                  ],
                 ],
               ],
             ),

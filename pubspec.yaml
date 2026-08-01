@@ -57,12 +57,19 @@ dev_dependencies:
   flutter_lints: ^6.0.0
   flutter_launcher_icons: ^0.14.4
 
+# Assets are drawn by tool/generate_launcher_icons.dart - edit the shapes
+# there, re-run it, then re-run this.
 flutter_launcher_icons:
   android: true
   ios: true
   image_path: "assets/icon/icon.png"
-  adaptive_icon_background: "#00696B"
+  adaptive_icon_background: "#E3F0EE"
   adaptive_icon_foreground: "assets/icon/icon_foreground.png"
+  # The art is already drawn inside the 66% safe zone, so the extra inset
+  # the tool applies by default would shrink it a second time.
+  adaptive_icon_foreground_inset: 0
+  # Android 13+ tints this one flat shape to match the wallpaper.
+  adaptive_icon_monochrome: "assets/icon/icon_monochrome.png"
   remove_alpha_ios: true
 
 # For information on the generic Dart part of this file, see the

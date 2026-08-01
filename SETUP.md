@@ -10,6 +10,7 @@ zu testen.
 > Dienst wie Codemagic bzw. GitHub Actions mit macOS-Runner (zum Installieren
 > auf einem echten iOS-Gerät ist dann zusätzlich ein Apple-Developer-Programm
 > nötig). Für den vollständigen Funktionstest reicht Android völlig aus.
+> Wenn ein Mac zur Hand ist: siehe **Abschnitt 3b**.
 
 ## 1. Vorbereitung (einmalig, ca. 30-60 Min inkl. Downloads)
 
@@ -101,6 +102,66 @@ Mi-Konto-Anmeldung bestehen.)
 virtuelles Gerät (Tablet-Profil) anlegen und in VS Code als Zielgerät wählen.
 Zum Testen des QR-Codes muss dann das Handy mit der SSI-App den QR-Code vom
 PC-Bildschirm abscannen.
+
+## 3b. Auf einem iPhone/iPad testen (braucht einen Mac)
+
+Nur der Vollständigkeit halber hier, weil unter Windows nichts davon geht –
+siehe Kasten ganz oben. Auf einem Mac ist es dafür kurz.
+
+**Einmalig:**
+
+1. **Xcode** aus dem App Store installieren, einmal öffnen und die
+   Lizenzabfrage bestätigen. Danach im Terminal:
+   ```bash
+   sudo xcode-select --switch /Applications/Xcode.app/Contents/Developer
+   sudo xcodebuild -runFirstLaunch
+   ```
+2. **CocoaPods** installieren (verwaltet die iOS-Abhängigkeiten der Plugins):
+   ```bash
+   sudo gem install cocoapods
+   ```
+3. **Flutter SDK** wie unter Punkt 1, nur die macOS-Variante. Prüfen mit
+   `flutter doctor` – für iOS müssen die Häkchen bei „Xcode" und
+   „CocoaPods" stehen.
+
+**Signieren (der Teil, der erfahrungsgemäß hakt):**
+
+Apple lässt nichts ohne Signatur auf ein Gerät. Eine kostenlose Apple-ID
+reicht zum Testen:
+
+1. `ios/Runner.xcworkspace` in Xcode öffnen – **nicht** `Runner.xcodeproj`,
+   sonst fehlen die Plugin-Abhängigkeiten.
+2. Links `Runner` anwählen → Tab **Signing & Capabilities**.
+3. Haken bei **Automatically manage signing**, bei **Team** die eigene
+   Apple-ID wählen (ggf. über „Add an Account…" anlegen).
+4. **Bundle Identifier** auf etwas Eigenes ändern, z.B.
+   `de.deinname.ssiconnect`. Der Standardwert `com.ssiconnect.ssiConnect`
+   funktioniert nur, solange ihn nicht schon jemand registriert hat.
+
+**Bauen und starten:**
+
+```bash
+flutter pub get
+flutter devices                 # iPhone/iPad muss hier auftauchen
+flutter run --release -d <ID aus flutter devices>
+```
+
+Beim allerersten Start meldet das Gerät „Nicht vertrauter Entwickler".
+Auf dem iPhone/iPad: **Einstellungen → Allgemein → VPN & Geräteverwaltung →
+eigene Apple-ID → Vertrauen**. Danach startet die App.
+
+**Was du dabei wissen solltest:**
+
+- Mit einer **kostenlosen** Apple-ID läuft die Installation nach **7 Tagen**
+  ab; danach einfach erneut `flutter run` – dieselben Daten bleiben erhalten.
+  Mit dem kostenpflichtigen Developer-Programm (99 $/Jahr) sind es 12 Monate,
+  und TestFlight wird möglich.
+- Die App braucht **iOS 14 oder neuer** (`file_picker` setzt das voraus).
+- Beim ersten Scannen fragt iOS nach der **Kamera-Erlaubnis**. Wird sie
+  abgelehnt, lässt sie sich nur in den Systemeinstellungen wieder erteilen –
+  die SSI-Nummer kann man alternativ immer von Hand eintippen.
+- Das **Tablet ist das Anzeigegerät**: den QR-Code muss ein *zweites* Gerät
+  mit der SSI-App abscannen.
 
 ## 4. Nützliche Befehle
 

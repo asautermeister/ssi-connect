@@ -2,20 +2,22 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../accounts/accounts_controller.dart';
+import '../accounts/models/account_color.dart';
 import '../accounts/models/garmin_account.dart';
 import '../dives/dive_loader.dart';
 import '../dives/recent_dives_controller.dart';
 import 'add_account_screen.dart';
-import 'debug_log_screen.dart';
 import 'dive_list_screen.dart';
 import 'fit_import_flow.dart';
 import 'format.dart';
+import 'info_screen.dart';
 import 'qr_screen.dart';
 import 'ssi_buddies_screen.dart';
 import 'ssi_identity_screen.dart';
 import 'theme/app_theme.dart';
 import 'widgets/app_card.dart';
 import 'widgets/dive_type_icon.dart';
+import 'widgets/offline_banner.dart';
 
 /// Start screen. Leads with the dives themselves rather than with a list of
 /// names: the reason to open this app is to hand a dive to SSI, and from
@@ -31,11 +33,6 @@ class AccountsScreen extends StatefulWidget {
 }
 
 class _AccountsScreenState extends State<AccountsScreen> {
-  late final GarminDiveLoader _loader = GarminDiveLoader(
-    refreshSession: (account) =>
-        context.read<AccountsController>().ensureFreshSession(account),
-  );
-
   /// Kicks off the fetch once the accounts are known. Called from build,
   /// which is safe because [RecentDivesController.load] returns immediately
   /// for a set of accounts it already has.
@@ -45,7 +42,7 @@ class _AccountsScreenState extends State<AccountsScreen> {
       if (!mounted) return;
       context.read<RecentDivesController>().load(
         accounts: accounts,
-        fetch: _loader.load,
+        fetch: context.read<DiveFetcher>(),
         force: force,
       );
     });
@@ -76,6 +73,15 @@ class _AccountsScreenState extends State<AccountsScreen> {
                   if (accounts.isEmpty)
                     const _EmptyAccounts()
                   else ...[
+                    if (recentDives.isOffline || recentDives.isShowingCache)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                        child: OfflineBanner(
+                          isOffline: recentDives.isOffline,
+                          fetchedAt: recentDives.oldestFetchedAt,
+                          onRetry: () => _loadAfterBuild(accounts, force: true),
+                        ),
+                      ),
                     _RecentDives(accounts: accounts, controller: recentDives),
                     const SectionHeader(title: 'Accounts'),
                     for (final account in accounts) ...[
@@ -185,6 +191,7 @@ class _RecentDiveCard extends StatelessWidget {
     final dive = entry.dive;
 
     return AppCard(
+      edgeColor: entry.account.color?.of(context),
       onTap: () => Navigator.of(context).push(
         MaterialPageRoute(
           builder: (_) =>
@@ -275,7 +282,7 @@ class _EmptyAccounts extends StatelessWidget {
   }
 }
 
-enum _AccountAction { rename, ssiIdentity, remove }
+enum _AccountAction { rename, color, ssiIdentity, clearCache, remove }
 
 class _AccountCard extends StatelessWidget {
   const _AccountCard({required this.account, required this.dives});
@@ -288,19 +295,25 @@ class _AccountCard extends StatelessWidget {
     final theme = Theme.of(context);
     final palette = theme.extension<AppPalette>()!;
 
+    final color = account.color?.of(context);
+
     return AppCard(
+      edgeColor: color,
       onTap: () => Navigator.of(context).push(
         MaterialPageRoute(builder: (_) => DiveListScreen(account: account)),
       ),
       child: Row(
         children: [
+          // The avatar carries the colour too, so the bar on a dive card
+          // can be traced back to a face on this screen.
           CircleAvatar(
             radius: 20,
-            backgroundColor: palette.accentContainer,
+            backgroundColor: color ?? palette.accentContainer,
             child: Text(
               _initials(account.displayName),
               style: theme.textTheme.titleMedium?.copyWith(
-                color: theme.colorScheme.primary,
+                color:
+                    account.color?.inkOn(context) ?? theme.colorScheme.primary,
               ),
             ),
           ),
@@ -335,11 +348,13 @@ class _AccountCard extends StatelessWidget {
             tooltip: 'Optionen',
             onSelected: (action) => switch (action) {
               _AccountAction.rename => _rename(context),
+              _AccountAction.color => _pickColor(context),
               _AccountAction.ssiIdentity => Navigator.of(context).push(
                 MaterialPageRoute(
                   builder: (_) => SsiIdentityScreen(accountId: account.id),
                 ),
               ),
+              _AccountAction.clearCache => _clearCache(context),
               _AccountAction.remove => _confirmRemove(context),
             },
             itemBuilder: (context) => const [
@@ -348,8 +363,16 @@ class _AccountCard extends StatelessWidget {
                 child: Text('Namen ändern'),
               ),
               PopupMenuItem(
+                value: _AccountAction.color,
+                child: Text('Farbe wählen'),
+              ),
+              PopupMenuItem(
                 value: _AccountAction.ssiIdentity,
                 child: Text('SSI-Identität'),
+              ),
+              PopupMenuItem(
+                value: _AccountAction.clearCache,
+                child: Text('Gespeicherte Tauchgänge löschen'),
               ),
               PopupMenuItem(
                 value: _AccountAction.remove,
@@ -377,6 +400,27 @@ class _AccountCard extends StatelessWidget {
     return trimmed.characters.first.toUpperCase();
   }
 
+  /// Removes this account's dives from the device. They are health data,
+  /// so getting rid of them has to be possible without deleting the whole
+  /// account.
+  Future<void> _clearCache(BuildContext context) async {
+    final messenger = ScaffoldMessenger.of(context);
+    await context.read<RecentDivesController>().forget(account.id);
+    messenger.showSnackBar(
+      const SnackBar(content: Text('Gespeicherte Tauchgänge gelöscht')),
+    );
+  }
+
+  Future<void> _pickColor(BuildContext context) async {
+    final controller = context.read<AccountsController>();
+    final choice = await showDialog<_ColorChoice>(
+      context: context,
+      builder: (_) => _ColorDialog(selected: account.color),
+    );
+    if (choice == null) return;
+    await controller.setColor(account.id, choice.color);
+  }
+
   Future<void> _rename(BuildContext context) async {
     final controller = context.read<AccountsController>();
     final name = await showDialog<String>(
@@ -391,13 +435,15 @@ class _AccountCard extends StatelessWidget {
   /// re-login with a fresh MFA code - worth a confirmation step.
   Future<void> _confirmRemove(BuildContext context) async {
     final controller = context.read<AccountsController>();
+    final dives = context.read<RecentDivesController>();
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: const Text('Account entfernen?'),
         content: Text(
-          '${account.displayName} wird von diesem Gerät entfernt. '
-          'Für einen erneuten Zugriff ist ein neuer Login nötig.',
+          '${account.displayName} wird mitsamt den gespeicherten '
+          'Tauchgängen von diesem Gerät entfernt. Für einen erneuten '
+          'Zugriff ist ein neuer Login nötig.',
         ),
         actions: [
           TextButton(
@@ -413,7 +459,117 @@ class _AccountCard extends StatelessWidget {
     );
     if (confirmed ?? false) {
       await controller.removeAccount(account.id);
+      // The cached dives have to go with the account - leaving someone's
+      // dive profiles on the tablet after they were removed from it would
+      // be exactly what nobody expects.
+      await dives.forget(account.id);
     }
+  }
+}
+
+/// Wrapper so "no colour" can be returned as a real answer rather than as
+/// null, which the dialog already uses to mean "cancelled".
+class _ColorChoice {
+  const _ColorChoice(this.color);
+
+  final AccountColor? color;
+}
+
+class _ColorDialog extends StatelessWidget {
+  const _ColorDialog({required this.selected});
+
+  final AccountColor? selected;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return AlertDialog(
+      title: const Text('Farbe'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Markiert die Tauchgänge dieser Person am linken Rand.',
+            style: theme.textTheme.bodySmall,
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          Wrap(
+            spacing: AppSpacing.md,
+            runSpacing: AppSpacing.md,
+            children: [
+              for (final color in AccountColor.values)
+                _Swatch(
+                  color: color,
+                  isSelected: color == selected,
+                  onTap: () => Navigator.of(context).pop(_ColorChoice(color)),
+                ),
+            ],
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Abbrechen'),
+        ),
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(const _ColorChoice(null)),
+          child: const Text('Keine Farbe'),
+        ),
+      ],
+    );
+  }
+}
+
+class _Swatch extends StatelessWidget {
+  const _Swatch({
+    required this.color,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  final AccountColor color;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final resolved = color.of(context);
+
+    return Semantics(
+      // The name, not just the patch - a colour picker that can only be
+      // used by seeing the colours is the one place that really would
+      // shut someone out.
+      label: color.label,
+      selected: isSelected,
+      button: true,
+      child: Tooltip(
+        message: color.label,
+        child: InkWell(
+          onTap: onTap,
+          customBorder: const CircleBorder(),
+          child: Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: resolved,
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: isSelected
+                    ? Theme.of(context).colorScheme.onSurface
+                    : Colors.transparent,
+                width: 2,
+              ),
+            ),
+            child: isSelected
+                ? Icon(Icons.check, size: 20, color: color.inkOn(context))
+                : null,
+          ),
+        ),
+      ),
+    );
   }
 }
 
@@ -525,12 +681,12 @@ class _QuickActions extends StatelessWidget {
         ),
         const SizedBox(height: AppSpacing.md),
         _ActionCard(
-          icon: Icons.bug_report_outlined,
-          title: 'API-Protokoll',
-          subtitle: 'Fehler nachsehen und SSI-Codes analysieren',
+          icon: Icons.info_outline,
+          title: 'Info',
+          subtitle: 'Version, Rechtliches und Quelltext',
           onTap: () => Navigator.of(
             context,
-          ).push(MaterialPageRoute(builder: (_) => const DebugLogScreen())),
+          ).push(MaterialPageRoute(builder: (_) => const InfoScreen())),
         ),
       ],
     );
