@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'accounts/accounts_controller.dart';
+import 'ssi/ssi_buddies_controller.dart';
 import 'ui/accounts_screen.dart';
 import 'ui/theme/app_theme.dart';
 
@@ -14,8 +15,15 @@ class SsiConnectApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (_) => AccountsController()..loadFromStorage(),
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(
+          create: (_) => AccountsController()..loadFromStorage(),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => SsiBuddiesController()..loadFromStorage(),
+        ),
+      ],
       child: MaterialApp(
         title: 'SSI Connect',
         theme: AppTheme.light(),

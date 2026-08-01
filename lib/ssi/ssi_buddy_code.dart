@@ -31,6 +31,33 @@ class SsiBuddyCode {
     return parts.isEmpty ? null : parts.join(' ');
   }
 
+  /// What to put on screen for this person: their name if the code carried
+  /// one, otherwise the member number, which is all we know about them.
+  String get displayName => fullName ?? 'SSI-Nr. $memberId';
+
+  Map<String, dynamic> toJson() => {
+    'memberId': memberId,
+    if (firstName != null) 'firstName': firstName,
+    if (lastName != null) 'lastName': lastName,
+    if (email != null) 'email': email,
+  };
+
+  factory SsiBuddyCode.fromJson(Map<String, dynamic> json) => SsiBuddyCode(
+    memberId: json['memberId'] as String,
+    firstName: json['firstName'] as String?,
+    lastName: json['lastName'] as String?,
+    email: json['email'] as String?,
+  );
+
+  /// Two codes are the same person when the member number matches - that
+  /// number is SSI's identity for them, names and mail addresses aren't.
+  @override
+  bool operator ==(Object other) =>
+      other is SsiBuddyCode && other.memberId == memberId;
+
+  @override
+  int get hashCode => memberId.hashCode;
+
   /// Parses a scanned payload, or returns null if it isn't an SSI buddy
   /// code. Returning null rather than throwing because the camera hands
   /// us whatever it happens to see - most scans of the wrong thing are

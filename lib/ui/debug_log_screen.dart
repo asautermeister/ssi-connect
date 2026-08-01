@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../debug/api_log.dart';
+import 'ssi_payload_inspect_screen.dart';
 
 /// Shows recent Garmin API calls so a failure can be diagnosed on the
 /// device. Secrets are redacted before entries reach the log, so the text
@@ -48,6 +49,15 @@ class _DebugLogScreenState extends State<DebugLogScreen> {
       appBar: AppBar(
         title: const Text('API-Protokoll'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.qr_code_scanner),
+            tooltip: 'SSI-Code analysieren',
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => const SsiPayloadInspectScreen(),
+              ),
+            ),
+          ),
           IconButton(
             icon: const Icon(Icons.copy_all),
             tooltip: 'Alles kopieren',

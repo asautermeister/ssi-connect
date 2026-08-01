@@ -7,6 +7,7 @@ import 'add_account_screen.dart';
 import 'debug_log_screen.dart';
 import 'dive_list_screen.dart';
 import 'fit_import_flow.dart';
+import 'ssi_buddies_screen.dart';
 import 'ssi_identity_screen.dart';
 import 'theme/app_theme.dart';
 import 'widgets/app_card.dart';
@@ -22,6 +23,13 @@ class AccountsScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('SSI Connect'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.group_outlined),
+            tooltip: 'SSI-Buddies',
+            onPressed: () => Navigator.of(
+              context,
+            ).push(MaterialPageRoute(builder: (_) => const SsiBuddiesScreen())),
+          ),
           IconButton(
             icon: const Icon(Icons.upload_file_outlined),
             tooltip: 'FIT-Datei importieren',

@@ -19,7 +19,10 @@ Kamera der SSI-App scannt.
 - **Mehrere Garmin-Accounts** (z.B. für die ganze Familie), Login inkl. Zwei-Faktor-Code
 - **Tauchgangs-Liste** pro Account: Datum, max. Tiefe, Tauchgangs-Nummer des Tages
 - **Detailansicht** mit allen geladenen Werten (Tiefe, Dauer, Wassertemperatur, ...)
-- **QR-Code-Export** im Format, das der SSI-QR-Scanner beim Anlegen eines Tauchgangs erwartet
+- **QR-Code-Export** im Format, das der SSI-QR-Scanner beim Anlegen eines Tauchgangs erwartet –
+  inklusive der SSI-Mitgliedsnummer, wenn für den Account eine hinterlegt ist
+- **SSI-Buddies**: Mittaucher ohne eigenen Garmin-Account lassen sich per QR-Code-Scan speichern
+  und beim Export auswählen (siehe Einschränkungen)
 - **FIT-Datei-Import** als Alternative, falls der Garmin-Login gerade nicht funktioniert
   (z.B. Original-FIT-Export aus Garmin Connect Web)
 - Zugangsdaten werden verschlüsselt auf dem Gerät gespeichert; Tauchgangsdaten selbst werden
@@ -43,6 +46,11 @@ deshalb ist die App als Tablet-/Zweitgerät-App gedacht und nicht als Handy-App 
   in dem Fall hilft der FIT-Datei-Import als Fallback.
 - Das SSI-QR-Format ist ebenfalls nicht offiziell dokumentiert, sondern wurde anhand echter
   Exporte aus der SSI-App rekonstruiert (siehe `lib/ssi/ssi_qr_payload_builder.dart`).
+- **Buddies stehen noch nicht im QR-Code.** Wie SSI sie im Import benennt, geht aus den bisher
+  vorliegenden Exporten nicht hervor, und ein geratener Feldname würde stillschweigend
+  verschwinden. Bis das geklärt ist, dient die Auswahl als Merkzettel für den Eintrag in der
+  SSI-App. Zum Klären gibt es im API-Protokoll den Punkt „SSI-Code analysieren": einen
+  SSI-Export mit Buddy scannen, dann steht der Feldname da.
 - Diese App steht in keiner Verbindung zu Garmin Ltd. oder Scuba Schools International (SSI).
 
 ## Entwicklung

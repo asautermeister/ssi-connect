@@ -4,22 +4,30 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import '../ssi/ssi_buddy_code.dart';
 import 'theme/app_theme.dart';
 
-/// Camera view for reading the member QR code the SSI app shows under
-/// "Dein QR-Code". Pops with the parsed [SsiBuddyCode], or null if the
-/// user backed out.
+/// Camera view that pops with the first scanned code [parse] accepts.
 ///
 /// Codes that parse as something else are ignored rather than reported one
 /// by one: the camera sees a continuous stream of frames, so anything
-/// pointed at it that isn't an SSI code would otherwise produce a flood of
-/// error messages. A standing hint on screen covers that case instead.
-class SsiScanScreen extends StatefulWidget {
-  const SsiScanScreen({super.key});
+/// pointed at it that isn't wanted would otherwise produce a flood of error
+/// messages. The standing [hint] on screen covers that case instead.
+class QrScanScreen<T extends Object> extends StatefulWidget {
+  const QrScanScreen({
+    super.key,
+    required this.parse,
+    required this.title,
+    required this.hint,
+  });
+
+  /// Returns the value to pop with, or null to keep scanning.
+  final T? Function(String raw) parse;
+  final String title;
+  final String hint;
 
   @override
-  State<SsiScanScreen> createState() => _SsiScanScreenState();
+  State<QrScanScreen<T>> createState() => _QrScanScreenState<T>();
 }
 
-class _SsiScanScreenState extends State<SsiScanScreen> {
+class _QrScanScreenState<T extends Object> extends State<QrScanScreen<T>> {
   final _controller = MobileScannerController(
     formats: const [BarcodeFormat.qrCode],
     detectionSpeed: DetectionSpeed.noDuplicates,
@@ -39,10 +47,10 @@ class _SsiScanScreenState extends State<SsiScanScreen> {
     for (final barcode in capture.barcodes) {
       final value = barcode.rawValue;
       if (value == null) continue;
-      final code = SsiBuddyCode.tryParse(value);
-      if (code != null) {
+      final parsed = widget.parse(value);
+      if (parsed != null) {
         _handled = true;
-        Navigator.of(context).pop(code);
+        Navigator.of(context).pop(parsed);
         return;
       }
     }
@@ -55,7 +63,7 @@ class _SsiScanScreenState extends State<SsiScanScreen> {
       appBar: AppBar(
         backgroundColor: Colors.black,
         foregroundColor: Colors.white,
-        title: const Text('SSI-QR-Code scannen'),
+        title: Text(widget.title),
         actions: [
           IconButton(
             icon: const Icon(Icons.flash_on),
@@ -77,15 +85,34 @@ class _SsiScanScreenState extends State<SsiScanScreen> {
             onDetect: _onDetect,
             errorBuilder: (context, error) => _ScannerError(error: error),
           ),
-          const _ScanHint(),
+          _ScanHint(text: widget.hint),
         ],
       ),
     );
   }
 }
 
+/// Reads the member QR code the SSI app shows under "Dein QR-Code". Pops
+/// with the parsed [SsiBuddyCode], or null if the user backed out.
+class SsiScanScreen extends StatelessWidget {
+  const SsiScanScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return QrScanScreen<SsiBuddyCode>(
+      parse: SsiBuddyCode.tryParse,
+      title: 'SSI-QR-Code scannen',
+      hint:
+          'In der SSI-App „Dein QR-Code" öffnen und die Kamera darauf '
+          'richten.',
+    );
+  }
+}
+
 class _ScanHint extends StatelessWidget {
-  const _ScanHint();
+  const _ScanHint({required this.text});
+
+  final String text;
 
   @override
   Widget build(BuildContext context) {
@@ -99,11 +126,10 @@ class _ScanHint extends StatelessWidget {
             color: Colors.black.withValues(alpha: 0.65),
             borderRadius: BorderRadius.circular(AppRadius.card),
           ),
-          child: const Text(
-            'In der SSI-App „Dein QR-Code" öffnen und die Kamera darauf '
-            'richten.',
+          child: Text(
+            text,
             textAlign: TextAlign.center,
-            style: TextStyle(color: Colors.white, fontSize: 14),
+            style: const TextStyle(color: Colors.white, fontSize: 14),
           ),
         ),
       ),

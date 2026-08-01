@@ -69,4 +69,53 @@ void main() {
       expect(code.email, isNull);
     });
   });
+
+  group('SsiBuddyCode storage', () {
+    test('survives a JSON round trip with every field', () {
+      const original = SsiBuddyCode(
+        memberId: '3902893',
+        firstName: 'Andreas',
+        lastName: 'Sautermeister',
+        email: 'a@example.com',
+      );
+
+      final restored = SsiBuddyCode.fromJson(original.toJson());
+
+      expect(restored.memberId, original.memberId);
+      expect(restored.firstName, original.firstName);
+      expect(restored.lastName, original.lastName);
+      expect(restored.email, original.email);
+    });
+
+    test('survives a JSON round trip with only the member number', () {
+      final restored = SsiBuddyCode.fromJson(
+        const SsiBuddyCode(memberId: '42').toJson(),
+      );
+
+      expect(restored.memberId, '42');
+      expect(restored.fullName, isNull);
+      expect(restored.email, isNull);
+    });
+
+    test('identifies a member by their number, not by their name', () {
+      // Rescanning someone whose name is spelled differently has to update
+      // the existing entry rather than add a second one.
+      expect(
+        const SsiBuddyCode(memberId: '1', firstName: 'Ada'),
+        const SsiBuddyCode(memberId: '1', firstName: 'A.'),
+      );
+      expect(
+        const SsiBuddyCode(memberId: '1', firstName: 'Ada'),
+        isNot(const SsiBuddyCode(memberId: '2', firstName: 'Ada')),
+      );
+    });
+
+    test('names someone by their number when no name is known', () {
+      expect(const SsiBuddyCode(memberId: '42').displayName, 'SSI-Nr. 42');
+      expect(
+        const SsiBuddyCode(memberId: '42', firstName: 'Ada').displayName,
+        'Ada',
+      );
+    });
+  });
 }
