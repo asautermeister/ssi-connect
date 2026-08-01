@@ -1,5 +1,6 @@
 import '../../garmin/models/garmin_session.dart';
 import '../../ssi/ssi_buddy_code.dart';
+import 'account_color.dart';
 
 /// One logged-in Garmin account stored on this tablet (one per family
 /// member), together with the SSI identity its dives belong to.
@@ -18,6 +19,7 @@ class GarminAccount {
     this.ssiFirstName,
     this.ssiLastName,
     this.ssiEmail,
+    this.color,
   });
 
   /// Stable local id (not a Garmin id) used as the secure-storage key.
@@ -30,6 +32,10 @@ class GarminAccount {
   final String? ssiFirstName;
   final String? ssiLastName;
   final String? ssiEmail;
+
+  /// Marks this person's dives with a bar on the left edge, so a shared
+  /// tablet's mixed list can be read at a glance. Null means no bar.
+  final AccountColor? color;
 
   bool get hasSsiIdentity => ssiMemberId != null;
 
@@ -71,8 +77,23 @@ class GarminAccount {
       ssiFirstName: ssiFirstName ?? this.ssiFirstName,
       ssiLastName: ssiLastName ?? this.ssiLastName,
       ssiEmail: ssiEmail ?? this.ssiEmail,
+      color: color,
     );
   }
+
+  /// Separate from [copyWith] for the same reason [withoutSsiIdentity] is:
+  /// null there means "leave unchanged", so it cannot clear the colour.
+  GarminAccount withColor(AccountColor? color) => GarminAccount(
+    id: id,
+    email: email,
+    displayName: displayName,
+    session: session,
+    ssiMemberId: ssiMemberId,
+    ssiFirstName: ssiFirstName,
+    ssiLastName: ssiLastName,
+    ssiEmail: ssiEmail,
+    color: color,
+  );
 
   /// Drops the stored SSI identity. Separate from [copyWith] because that
   /// treats null as "leave unchanged", so it cannot clear a field.
@@ -81,6 +102,7 @@ class GarminAccount {
     email: email,
     displayName: displayName,
     session: session,
+    color: color,
   );
 
   Map<String, dynamic> toJson() => {
@@ -92,6 +114,7 @@ class GarminAccount {
     'ssiFirstName': ssiFirstName,
     'ssiLastName': ssiLastName,
     'ssiEmail': ssiEmail,
+    'color': color?.name,
   };
 
   factory GarminAccount.fromJson(Map<String, dynamic> json) => GarminAccount(
@@ -103,5 +126,6 @@ class GarminAccount {
     ssiFirstName: json['ssiFirstName'] as String?,
     ssiLastName: json['ssiLastName'] as String?,
     ssiEmail: json['ssiEmail'] as String?,
+    color: AccountColor.byName(json['color'] as String?),
   );
 }

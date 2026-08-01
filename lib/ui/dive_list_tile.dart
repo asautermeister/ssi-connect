@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../accounts/models/account_color.dart';
 import '../models/dive.dart';
 import '../ssi/ssi_buddy_code.dart';
 import 'dive_detail_screen.dart';
@@ -18,10 +19,15 @@ class DiveListTile extends StatelessWidget {
     required this.dive,
     required this.maxDepthInList,
     this.diver,
+    this.accountColor,
   });
 
   final Dive dive;
   final SsiBuddyCode? diver;
+
+  /// Colour of the account these dives belong to, drawn as a bar on the
+  /// left edge. Null for FIT imports, which have no account.
+  final AccountColor? accountColor;
 
   /// Deepest dive currently listed, so the bars share one scale. Pass 0 to
   /// hide the bar entirely.
@@ -35,6 +41,7 @@ class DiveListTile extends StatelessWidget {
     final showMeter = maxDepthInList > 0 && depth != null;
 
     return AppCard(
+      edgeColor: accountColor?.of(context),
       onTap: () => Navigator.of(context).push(
         MaterialPageRoute(
           builder: (_) => DiveDetailScreen(dive: dive, diver: diver),

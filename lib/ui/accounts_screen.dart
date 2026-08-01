@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../accounts/accounts_controller.dart';
+import '../accounts/models/account_color.dart';
 import '../accounts/models/garmin_account.dart';
 import '../dives/dive_loader.dart';
 import '../dives/recent_dives_controller.dart';
@@ -190,6 +191,7 @@ class _RecentDiveCard extends StatelessWidget {
     final dive = entry.dive;
 
     return AppCard(
+      edgeColor: entry.account.color?.of(context),
       onTap: () => Navigator.of(context).push(
         MaterialPageRoute(
           builder: (_) =>
@@ -280,7 +282,7 @@ class _EmptyAccounts extends StatelessWidget {
   }
 }
 
-enum _AccountAction { rename, ssiIdentity, clearCache, remove }
+enum _AccountAction { rename, color, ssiIdentity, clearCache, remove }
 
 class _AccountCard extends StatelessWidget {
   const _AccountCard({required this.account, required this.dives});
@@ -293,19 +295,25 @@ class _AccountCard extends StatelessWidget {
     final theme = Theme.of(context);
     final palette = theme.extension<AppPalette>()!;
 
+    final color = account.color?.of(context);
+
     return AppCard(
+      edgeColor: color,
       onTap: () => Navigator.of(context).push(
         MaterialPageRoute(builder: (_) => DiveListScreen(account: account)),
       ),
       child: Row(
         children: [
+          // The avatar carries the colour too, so the bar on a dive card
+          // can be traced back to a face on this screen.
           CircleAvatar(
             radius: 20,
-            backgroundColor: palette.accentContainer,
+            backgroundColor: color ?? palette.accentContainer,
             child: Text(
               _initials(account.displayName),
               style: theme.textTheme.titleMedium?.copyWith(
-                color: theme.colorScheme.primary,
+                color:
+                    account.color?.inkOn(context) ?? theme.colorScheme.primary,
               ),
             ),
           ),
@@ -340,6 +348,7 @@ class _AccountCard extends StatelessWidget {
             tooltip: 'Optionen',
             onSelected: (action) => switch (action) {
               _AccountAction.rename => _rename(context),
+              _AccountAction.color => _pickColor(context),
               _AccountAction.ssiIdentity => Navigator.of(context).push(
                 MaterialPageRoute(
                   builder: (_) => SsiIdentityScreen(accountId: account.id),
@@ -352,6 +361,10 @@ class _AccountCard extends StatelessWidget {
               PopupMenuItem(
                 value: _AccountAction.rename,
                 child: Text('Namen ändern'),
+              ),
+              PopupMenuItem(
+                value: _AccountAction.color,
+                child: Text('Farbe wählen'),
               ),
               PopupMenuItem(
                 value: _AccountAction.ssiIdentity,
@@ -398,6 +411,16 @@ class _AccountCard extends StatelessWidget {
     );
   }
 
+  Future<void> _pickColor(BuildContext context) async {
+    final controller = context.read<AccountsController>();
+    final choice = await showDialog<_ColorChoice>(
+      context: context,
+      builder: (_) => _ColorDialog(selected: account.color),
+    );
+    if (choice == null) return;
+    await controller.setColor(account.id, choice.color);
+  }
+
   Future<void> _rename(BuildContext context) async {
     final controller = context.read<AccountsController>();
     final name = await showDialog<String>(
@@ -441,6 +464,112 @@ class _AccountCard extends StatelessWidget {
       // be exactly what nobody expects.
       await dives.forget(account.id);
     }
+  }
+}
+
+/// Wrapper so "no colour" can be returned as a real answer rather than as
+/// null, which the dialog already uses to mean "cancelled".
+class _ColorChoice {
+  const _ColorChoice(this.color);
+
+  final AccountColor? color;
+}
+
+class _ColorDialog extends StatelessWidget {
+  const _ColorDialog({required this.selected});
+
+  final AccountColor? selected;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return AlertDialog(
+      title: const Text('Farbe'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Markiert die Tauchgänge dieser Person am linken Rand.',
+            style: theme.textTheme.bodySmall,
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          Wrap(
+            spacing: AppSpacing.md,
+            runSpacing: AppSpacing.md,
+            children: [
+              for (final color in AccountColor.values)
+                _Swatch(
+                  color: color,
+                  isSelected: color == selected,
+                  onTap: () => Navigator.of(context).pop(_ColorChoice(color)),
+                ),
+            ],
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Abbrechen'),
+        ),
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(const _ColorChoice(null)),
+          child: const Text('Keine Farbe'),
+        ),
+      ],
+    );
+  }
+}
+
+class _Swatch extends StatelessWidget {
+  const _Swatch({
+    required this.color,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  final AccountColor color;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final resolved = color.of(context);
+
+    return Semantics(
+      // The name, not just the patch - a colour picker that can only be
+      // used by seeing the colours is the one place that really would
+      // shut someone out.
+      label: color.label,
+      selected: isSelected,
+      button: true,
+      child: Tooltip(
+        message: color.label,
+        child: InkWell(
+          onTap: onTap,
+          customBorder: const CircleBorder(),
+          child: Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: resolved,
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: isSelected
+                    ? Theme.of(context).colorScheme.onSurface
+                    : Colors.transparent,
+                width: 2,
+              ),
+            ),
+            child: isSelected
+                ? Icon(Icons.check, size: 20, color: color.inkOn(context))
+                : null,
+          ),
+        ),
+      ),
+    );
   }
 }
 

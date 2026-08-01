@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:ssi_connect/accounts/account_repository.dart';
 import 'package:ssi_connect/accounts/accounts_controller.dart';
+import 'package:ssi_connect/accounts/models/account_color.dart';
 import 'package:ssi_connect/accounts/models/garmin_account.dart';
 import 'package:ssi_connect/dives/dive_cache_repository.dart';
 import 'package:ssi_connect/dives/dive_loader.dart';
@@ -15,6 +16,7 @@ import 'package:ssi_connect/ssi/ssi_buddy_code.dart';
 import 'package:ssi_connect/ssi/ssi_buddy_repository.dart';
 import 'package:ssi_connect/ui/accounts_screen.dart';
 import 'package:ssi_connect/ui/theme/app_theme.dart';
+import 'package:ssi_connect/ui/widgets/app_card.dart';
 
 class _InMemoryAccounts extends AccountRepository {
   _InMemoryAccounts(this.stored);
@@ -54,7 +56,11 @@ class _InMemoryCache extends DiveCacheRepository {
   Future<void> clear(String accountId) async => stored.remove(accountId);
 }
 
-GarminAccount _account(String name, {String? ssiMemberId}) => GarminAccount(
+GarminAccount _account(
+  String name, {
+  String? ssiMemberId,
+  AccountColor? color,
+}) => GarminAccount(
   id: name,
   email: '$name@example.com',
   displayName: name,
@@ -64,6 +70,7 @@ GarminAccount _account(String name, {String? ssiMemberId}) => GarminAccount(
     diClientId: 'c',
   ),
   ssiMemberId: ssiMemberId,
+  color: color,
 );
 
 Dive _dive(String id, DateTime at, {double depth = 28}) => Dive(
@@ -245,6 +252,91 @@ void main() {
         expect(find.text(label), findsOneWidget);
       }
       expect(find.byIcon(Icons.bug_report_outlined), findsOneWidget);
+    });
+
+    testWidgets('a dive is marked with its account colour', (tester) async {
+      await _pump(
+        tester,
+        accounts: [
+          _account('Andreas', color: AccountColor.blue),
+          _account('Marie'),
+        ],
+        dives: {
+          'Andreas': [_dive('a1', DateTime(2025, 11, 8))],
+          'Marie': [_dive('m1', DateTime(2025, 11, 7))],
+        },
+      );
+
+      final blue = AccountColor.blue.resolve(Brightness.light);
+      final marked = tester
+          .widgetList<AppCard>(find.byType(AppCard))
+          .where((card) => card.edgeColor == blue);
+      // Two: the dive card and the account card, so the bar on a dive can
+      // be traced back to a person on the same screen.
+      expect(marked, hasLength(2));
+
+      // Nobody else gets a bar just because someone picked a colour.
+      final unmarked = tester
+          .widgetList<AppCard>(find.byType(AppCard))
+          .where((card) => card.edgeColor == null);
+      expect(unmarked, isNotEmpty);
+    });
+
+    testWidgets('a colour can be picked from the account menu', (tester) async {
+      await _pump(
+        tester,
+        accounts: [_account('Andreas')],
+        dives: {
+          'Andreas': [_dive('a1', DateTime(2025, 11, 8))],
+        },
+      );
+
+      expect(
+        tester
+            .widgetList<AppCard>(find.byType(AppCard))
+            .every((card) => card.edgeColor == null),
+        isTrue,
+      );
+
+      await tester.tap(find.byIcon(Icons.more_horiz));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Farbe wählen'));
+      await tester.pumpAndSettle();
+      // Named, so the picker is usable without seeing the colours.
+      await tester.tap(find.byTooltip('Grün'));
+      await tester.pumpAndSettle();
+
+      final green = AccountColor.green.resolve(Brightness.light);
+      expect(
+        tester
+            .widgetList<AppCard>(find.byType(AppCard))
+            .where((card) => card.edgeColor == green),
+        hasLength(2),
+      );
+    });
+
+    testWidgets('the colour can be taken away again', (tester) async {
+      await _pump(
+        tester,
+        accounts: [_account('Andreas', color: AccountColor.pink)],
+        dives: {
+          'Andreas': [_dive('a1', DateTime(2025, 11, 8))],
+        },
+      );
+
+      await tester.tap(find.byIcon(Icons.more_horiz));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Farbe wählen'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Keine Farbe'));
+      await tester.pumpAndSettle();
+
+      expect(
+        tester
+            .widgetList<AppCard>(find.byType(AppCard))
+            .every((card) => card.edgeColor == null),
+        isTrue,
+      );
     });
 
     testWidgets('offline, it shows the cached dives and says so', (

@@ -19,6 +19,8 @@ Kamera der SSI-App scannt.
 - **Mehrere Garmin-Accounts** (z.B. für die ganze Familie), Login inkl. Zwei-Faktor-Code
 - **Startseite mit den jüngsten Tauchgängen** über alle Accounts hinweg – ein Tippen darauf
   öffnet direkt den QR-Code
+- **Farbe je Account**, als Balken am linken Rand der Tauchgänge – auf einem Familien-Tablet
+  ist so auf einen Blick klar, wessen Tauchgang das ist (der Name steht zusätzlich dabei)
 - **Tauchgangs-Liste** pro Account: Datum, max. Tiefe, Tauchgangs-Nummer des Tages
 - **Detailansicht** mit allen geladenen Werten (Tiefe, Dauer, Wassertemperatur, ...)
 - **QR-Code-Export** im Format, das der SSI-QR-Scanner beim Anlegen eines Tauchgangs erwartet –

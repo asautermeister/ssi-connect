@@ -7,6 +7,7 @@ import '../garmin/garmin_auth_client.dart';
 import '../garmin/models/garmin_session.dart';
 import '../ssi/ssi_buddy_code.dart';
 import 'account_repository.dart';
+import 'models/account_color.dart';
 import 'models/garmin_account.dart';
 
 /// App-wide state for the logged-in Garmin accounts: loads them from secure
@@ -125,6 +126,10 @@ class AccountsController extends ChangeNotifier {
           account.copyWith(displayName: name.isEmpty ? account.email : name),
     );
   }
+
+  /// Sets or clears the colour marking this person's dives.
+  Future<void> setColor(String accountId, AccountColor? color) =>
+      _updateAccount(accountId, (account) => account.withColor(color));
 
   /// Stores the SSI identity read from a scanned member QR code.
   Future<void> setSsiIdentity(String accountId, SsiBuddyCode code) async {

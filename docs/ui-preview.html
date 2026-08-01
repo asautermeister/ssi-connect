@@ -114,6 +114,20 @@
   .card {
     background: var(--surface); border: 1px solid var(--hairline);
     border-radius: 10px; padding: 13px; margin-bottom: 9px;
+    position: relative; overflow: hidden;
+  }
+  /* Account colour: a bar down the left edge of that person's dives. */
+  .card[data-edge]::before {
+    content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
+    background: var(--edge);
+  }
+  .edge-blue { --edge: #2A5FCC; }
+  .edge-coral { --edge: #D1452B; }
+  :root[data-theme="dark"] .edge-blue { --edge: #7FA8FF; }
+  :root[data-theme="dark"] .edge-coral { --edge: #FF8A6B; }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) .edge-blue { --edge: #7FA8FF; }
+    :root:not([data-theme="light"]) .edge-coral { --edge: #FF8A6B; }
   }
   .label {
     font-size: 8px; font-weight: 600; letter-spacing: .06em;
@@ -249,7 +263,7 @@
             </div>
           </div>
           <div class="section-head" style="margin:2px 2px 7px">Zuletzt getaucht</div>
-          <div class="card" style="padding:10px">
+          <div class="card edge-blue" data-edge style="padding:10px">
             <div class="row" style="align-items:center;gap:8px">
               <span class="badge" style="width:26px;height:26px;border-radius:50%;background:var(--accent)">
                 <svg viewBox="0 0 24 24" style="width:15px;height:15px">
@@ -265,7 +279,7 @@
               <span style="color:var(--accent);font-size:13px">▦</span>
             </div>
           </div>
-          <div class="card" style="padding:10px">
+          <div class="card edge-blue" data-edge style="padding:10px">
             <div class="row" style="align-items:center;gap:8px">
               <span class="badge" style="width:26px;height:26px;border-radius:50%;background:var(--accent)">
                 <svg viewBox="0 0 24 24" style="width:15px;height:15px">
@@ -280,7 +294,7 @@
               <span style="color:var(--accent);font-size:13px">▦</span>
             </div>
           </div>
-          <div class="card" style="padding:10px">
+          <div class="card edge-coral" data-edge style="padding:10px">
             <div class="row" style="align-items:center;gap:8px">
               <span class="badge" style="width:26px;height:26px;border-radius:50%;background:var(--accent)">
                 <svg viewBox="0 0 24 24" style="width:15px;height:15px">
@@ -298,16 +312,16 @@
           </div>
 
           <div class="section-head" style="margin:11px 2px 7px">Accounts</div>
-          <div class="card" style="padding:10px"><div class="row" style="align-items:center;gap:8px">
-            <div class="avatar" style="width:28px;height:28px;font-size:12px">A</div>
+          <div class="card edge-blue" data-edge style="padding:10px"><div class="row" style="align-items:center;gap:8px">
+            <div class="avatar" style="width:28px;height:28px;font-size:12px;background:#2A5FCC;color:#fff">A</div>
             <div style="flex:1">
               <div class="title">Andreas</div>
               <div class="sub">Zuletzt: 08.11.2025 · 44,0 m</div>
               <div class="sub" style="color:var(--accent);font-weight:600">🎫 SSI-Nr. 3902893</div>
             </div><span style="color:var(--ink-3)">⋯</span>
           </div></div>
-          <div class="card" style="padding:10px"><div class="row" style="align-items:center;gap:8px">
-            <div class="avatar" style="width:28px;height:28px;font-size:12px">M</div>
+          <div class="card edge-coral" data-edge style="padding:10px"><div class="row" style="align-items:center;gap:8px">
+            <div class="avatar" style="width:28px;height:28px;font-size:12px;background:#D1452B;color:#fff">M</div>
             <div style="flex:1">
               <div class="title">Marie</div>
               <div class="sub">Zuletzt: 06.11.2025 · 11,5 m</div>
@@ -342,7 +356,7 @@
       </div></div>
       <figcaption>
         <span class="name">1 · Startseite (hier ohne Netz)</span>
-        <span class="desc">Die Tauchgänge führen: der jüngste aus allen Accounts zuoberst, ein Tap darauf öffnet direkt den QR-Code. Ohne Verbindung kommen sie aus dem Zwischenspeicher – mit dem Datum, von dem sie stammen. Darunter die Accounts mit letztem Tauchgang, ganz unten die Wege, die vorher als Symbole in der Leiste versteckt waren.</span>
+        <span class="desc">Die Tauchgänge führen: der jüngste aus allen Accounts zuoberst, ein Tap darauf öffnet direkt den QR-Code. Der Farbbalken links zeigt, wessen Tauchgang es ist – dieselbe Farbe trägt der Account weiter unten. Ohne Verbindung kommen die Tauchgänge aus dem Zwischenspeicher, mit dem Datum, von dem sie stammen.</span>
       </figcaption>
     </figure>
 

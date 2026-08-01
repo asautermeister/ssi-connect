@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../accounts/models/account_color.dart';
 import '../accounts/models/garmin_account.dart';
 import '../dives/dive_loader.dart';
 import '../dives/recent_dives_controller.dart';
@@ -77,6 +78,7 @@ class _DiveListScreenState extends State<DiveListScreen> {
         child: DiveList(
           dives: load.dives,
           diver: widget.account.ssiIdentity,
+          accountColor: widget.account.color,
           // Only worth saying when the dives on screen aren't current.
           header: load.isFromCache
               ? Padding(
@@ -120,13 +122,22 @@ class _DiveListScreenState extends State<DiveListScreen> {
 /// Shared list body, so Garmin-loaded and FIT-imported dives render
 /// identically. Computes the shared depth scale the cards' meters use.
 class DiveList extends StatelessWidget {
-  const DiveList({super.key, required this.dives, this.diver, this.header});
+  const DiveList({
+    super.key,
+    required this.dives,
+    this.diver,
+    this.accountColor,
+    this.header,
+  });
 
   final List<Dive> dives;
 
   /// SSI member these dives belong to, passed down so the generated QR
   /// code can name them. Null for FIT imports, which carry no account.
   final SsiBuddyCode? diver;
+
+  /// Colour marking whose dives these are. Null for FIT imports.
+  final AccountColor? accountColor;
 
   /// Optional notice above the list, e.g. that these dives came from the
   /// cache. Scrolls with the list rather than sticking, so it doesn't eat
@@ -158,6 +169,7 @@ class DiveList extends StatelessWidget {
           dive: dives[index],
           maxDepthInList: maxDepth,
           diver: diver,
+          accountColor: accountColor,
         );
       },
     );
