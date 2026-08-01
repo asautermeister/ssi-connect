@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../models/dive_type.dart';
+import '../theme/app_theme.dart';
 
 /// Round badge showing what kind of dive this was: freediving fins, one
 /// cylinder, two cylinders, or a rebreather loop.
@@ -40,6 +41,47 @@ class DiveTypeIcon extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// The dive-type badge with the diver's running dive number set above it.
+///
+/// Number and badge belong together as one block on the left edge of a
+/// dive, so they are laid out here rather than assembled at each call
+/// site. The number is omitted when the source didn't report one, and the
+/// block then collapses to just the badge.
+class DiveTypeBadge extends StatelessWidget {
+  const DiveTypeBadge({
+    super.key,
+    required this.type,
+    this.diveNumber,
+    this.size = 40,
+  });
+
+  final DiveType type;
+  final int? diveNumber;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        if (diveNumber != null) ...[
+          Text(
+            '# $diveNumber',
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: theme.colorScheme.primary,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.xs),
+        ],
+        DiveTypeIcon(type: type, size: size),
+      ],
     );
   }
 }

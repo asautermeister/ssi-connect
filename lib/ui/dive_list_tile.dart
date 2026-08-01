@@ -41,7 +41,7 @@ class DiveListTile extends StatelessWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              DiveTypeIcon(type: dive.type),
+              DiveTypeBadge(type: dive.type, diveNumber: dive.diveNumber),
               const SizedBox(width: AppSpacing.md),
               Expanded(
                 child: Column(
@@ -57,9 +57,6 @@ class DiveListTile extends StatelessWidget {
                         '${Fmt.time(dive.dateTime)} Uhr',
                         if (dive.duration != null)
                           '${Fmt.minutes(dive.duration)} min',
-                        // Only shown when the source actually reported a
-                        // running number.
-                        if (dive.diveNumber != null) 'TG #${dive.diveNumber}',
                         if (dive.descentCount != null)
                           '${dive.descentCount}× abgetaucht',
                       ].join(' · '),

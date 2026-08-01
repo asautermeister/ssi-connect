@@ -83,7 +83,26 @@ void main() {
         ),
       );
 
-      expect(find.textContaining('TG #142'), findsOneWidget);
+      expect(find.text('# 142'), findsOneWidget);
+    });
+
+    testWidgets('places the number above the badge on the left edge', (
+      tester,
+    ) async {
+      await _pump(
+        tester,
+        DiveListTile(
+          dive: _dive(maxDepth: 20, diveNumber: 142),
+          maxDepthInList: 20,
+        ),
+      );
+
+      final number = tester.getRect(find.text('# 142'));
+      final badge = tester.getRect(find.byType(DiveTypeIcon));
+      final date = tester.getRect(find.text('Sa, 08.11.2025'));
+
+      expect(number.bottom, lessThanOrEqualTo(badge.top));
+      expect(badge.right, lessThanOrEqualTo(date.left));
     });
 
     testWidgets('omits the running number when the source has none', (
@@ -94,7 +113,7 @@ void main() {
         DiveListTile(dive: _dive(maxDepth: 20), maxDepthInList: 20),
       );
 
-      expect(find.textContaining('TG #'), findsNothing);
+      expect(find.textContaining('#'), findsNothing);
     });
 
     testWidgets('renders every dive type without error', (tester) async {

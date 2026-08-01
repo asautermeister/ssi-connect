@@ -38,8 +38,13 @@ class DiveDetailScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    DiveTypeIcon(type: dive.type, size: 34),
+                    DiveTypeBadge(
+                      type: dive.type,
+                      diveNumber: dive.diveNumber,
+                      size: 34,
+                    ),
                     const SizedBox(width: AppSpacing.md),
                     Expanded(
                       child: Column(
@@ -131,30 +136,22 @@ class DiveDetailScreen extends StatelessWidget {
                     ),
                   ],
                 ),
-                // Both only appear when the source reported them: Garmin's
-                // activity list carries no running dive number, and a
-                // descent count is only meaningful for freediving.
-                if (dive.diveNumber != null || dive.descentCount != null) ...[
+                // The running dive number is not repeated here - it sits
+                // beside the badge at the top of the screen. Only the
+                // descent count needs a tile, and only for the freediving
+                // sessions that have more than one.
+                if (dive.descentCount != null) ...[
                   const SizedBox(height: AppSpacing.xl),
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Expanded(
-                        child: dive.diveNumber != null
-                            ? StatTile(
-                                label: 'Tauchgang gesamt',
-                                value: '#${dive.diveNumber}',
-                              )
-                            : const SizedBox.shrink(),
+                        child: StatTile(
+                          label: 'Abtauchvorgänge',
+                          value: '${dive.descentCount}',
+                        ),
                       ),
-                      Expanded(
-                        child: dive.descentCount != null
-                            ? StatTile(
-                                label: 'Abtauchvorgänge',
-                                value: '${dive.descentCount}',
-                              )
-                            : const SizedBox.shrink(),
-                      ),
+                      const Expanded(child: SizedBox.shrink()),
                     ],
                   ),
                 ],
