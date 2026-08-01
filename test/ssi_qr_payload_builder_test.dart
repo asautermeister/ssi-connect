@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ssi_connect/models/dive.dart';
+import 'package:ssi_connect/models/dive_type.dart';
 import 'package:ssi_connect/ssi/ssi_buddy_code.dart';
 import 'package:ssi_connect/ssi/ssi_qr_payload_builder.dart';
 
@@ -8,6 +9,7 @@ Dive _dive({
   double? maxDepthMeters,
   Duration? duration,
   double? waterTemperatureCelsius,
+  DiveType type = DiveType.scuba,
 }) {
   return Dive(
     id: '1',
@@ -17,6 +19,7 @@ Dive _dive({
     waterTemperatureCelsius: waterTemperatureCelsius,
     duration: duration,
     locationName: null,
+    type: type,
   );
 }
 
@@ -37,47 +40,81 @@ void main() {
       );
     });
 
-    test(
-      'matches a real SSI-exported QR payload (values only, our field set)',
-      () {
-        // From an actual QR code exported by the SSI app for a real dive:
-        // dive;noid;dive_type:2;divetime:92.0;datetime:202511080856;depth_m:44.0;
-        // site:1074;var_watertype_id:5;var_divetype_id:24;user_master_id:...
+    test('reproduces a real recreational SSI export, field for field', () {
+      // Real QR export from the SSI app, recreational scuba:
+      // dive;noid;dive_type:0;divetime:54.0;datetime:202511071050;
+      // depth_m:28.0;site:303948;var_watertype_id:5;var_divetype_id:24;
+      // var_divetype_id:24;user_master_id:3902893;user_firstname:Andreas;
+      // user_lastname:Sautermeister;user_leader_id:
+      final payload = SsiQrPayloadBuilder.build(
+        _dive(
+          dateTime: DateTime(2025, 11, 7, 10, 50),
+          maxDepthMeters: 28.0,
+          duration: const Duration(minutes: 54),
+        ),
+        diver: const SsiBuddyCode(
+          memberId: '3902893',
+          firstName: 'Andreas',
+          lastName: 'Sautermeister',
+        ),
+      );
+
+      for (final field in const [
+        'dive_type:0',
+        'datetime:202511071050',
+        'divetime:54.0',
+        'depth_m:28.0',
+        'user_master_id:3902893',
+        'user_firstname:Andreas',
+        'user_lastname:Sautermeister',
+      ]) {
+        expect(payload, contains(field));
+      }
+    });
+
+    test('reproduces a real XR export, which differs only in dive_type', () {
+      // Same logbook, extended-range dive:
+      // dive;noid;dive_type:2;divetime:75.0;datetime:202511060853;
+      // depth_m:46.4;site:202305;... (same tail)
+      final payload = SsiQrPayloadBuilder.build(
+        _dive(
+          dateTime: DateTime(2025, 11, 6, 8, 53),
+          maxDepthMeters: 46.4,
+          duration: const Duration(minutes: 75),
+          type: DiveType.multiGas,
+        ),
+      );
+
+      expect(payload, contains('dive_type:2'));
+      expect(payload, contains('datetime:202511060853'));
+      expect(payload, contains('divetime:75.0'));
+      expect(payload, contains('depth_m:46.4'));
+    });
+
+    test('files multi-gas and rebreather dives as XR, the rest as normal', () {
+      int diveTypeOf(DiveType type) {
         final payload = SsiQrPayloadBuilder.build(
           _dive(
-            dateTime: DateTime(2025, 11, 8, 8, 56),
-            maxDepthMeters: 44.0,
-            duration: const Duration(minutes: 92),
+            maxDepthMeters: 20,
+            duration: const Duration(minutes: 40),
+            type: type,
           ),
         );
+        final match = RegExp(r'dive_type:(\d+)').firstMatch(payload);
+        return int.parse(match!.group(1)!);
+      }
 
-        expect(payload, contains('datetime:202511080856'));
-        expect(payload, contains('divetime:92.0'));
-        expect(payload, contains('depth_m:44.0'));
-      },
-    );
+      // A stage or deco cylinder is what makes a dive technical, and a
+      // closed-circuit rebreather is technical by the same measure.
+      expect(diveTypeOf(DiveType.multiGas), 2);
+      expect(diveTypeOf(DiveType.rebreather), 2);
 
-    test(
-      'matches a second real SSI-exported payload (normal recreational scuba dive)',
-      () {
-        // From a second real QR export, this time an ordinary scuba dive (not
-        // extended range), confirming dive_type:0 is the right default here:
-        // dive;noid;dive_type:0;divetime:54.0;datetime:202511071050;
-        // depth_m:28.0;site:303948;var_watertype_id:5;var_divetype_id:24;...
-        final payload = SsiQrPayloadBuilder.build(
-          _dive(
-            dateTime: DateTime(2025, 11, 7, 10, 50),
-            maxDepthMeters: 28.0,
-            duration: const Duration(minutes: 54),
-          ),
-        );
-
-        expect(
-          payload,
-          'dive;noid;dive_type:0;datetime:202511071050;divetime:54.0;depth_m:28.0',
-        );
-      },
-    );
+      expect(diveTypeOf(DiveType.scuba), 0);
+      expect(diveTypeOf(DiveType.singleGas), 0);
+      // No captured freedive export, so this stays at the value we have
+      // seen SSI accept rather than at an invented freediving code.
+      expect(diveTypeOf(DiveType.apnea), 0);
+    });
 
     test('keeps one decimal place for whole-number depth and duration', () {
       final payload = SsiQrPayloadBuilder.build(
