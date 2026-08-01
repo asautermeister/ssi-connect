@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 
 import '../models/dive.dart';
-import 'dive_list_tile.dart';
+import 'dive_list_screen.dart';
+import 'widgets/error_state.dart';
 
-/// Shows dives parsed from a manually imported FIT file - same list look as
-/// [DiveListScreen], but backed by a plain in-memory list instead of a
-/// live Garmin fetch.
+/// Dives parsed from a manually imported FIT file. Same list body as the
+/// Garmin-loaded view - only the source differs.
 class ImportedDiveListScreen extends StatelessWidget {
   const ImportedDiveListScreen({super.key, required this.dives});
 
@@ -16,12 +16,11 @@ class ImportedDiveListScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Importierte Tauchgänge')),
       body: dives.isEmpty
-          ? const Center(child: Text('Keine Tauchgänge gefunden.'))
-          : ListView.separated(
-              itemCount: dives.length,
-              separatorBuilder: (_, _) => const Divider(height: 1),
-              itemBuilder: (context, index) => DiveListTile(dive: dives[index]),
-            ),
+          ? const ErrorState(
+              icon: Icons.scuba_diving_outlined,
+              message: 'Keine Tauchgänge in der Datei gefunden.',
+            )
+          : DiveList(dives: dives),
     );
   }
 }

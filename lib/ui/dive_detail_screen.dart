@@ -1,8 +1,15 @@
 import 'package:flutter/material.dart';
 
 import '../models/dive.dart';
+import 'format.dart';
 import 'qr_screen.dart';
+import 'theme/app_theme.dart';
+import 'widgets/app_card.dart';
+import 'widgets/stat_tile.dart';
 
+/// One dive in full. Max depth leads as the hero number, the remaining
+/// measurements sit in a two-column grid of stat tiles below it, and the
+/// QR export is the single primary action.
 class DiveDetailScreen extends StatelessWidget {
   const DiveDetailScreen({super.key, required this.dive});
 
@@ -10,62 +17,114 @@ class DiveDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final palette = theme.extension<AppPalette>()!;
+
     return Scaffold(
-      appBar: AppBar(title: Text('Tauchgang ${dive.diveNumberOfDay}')),
+      appBar: AppBar(title: Text('${dive.diveNumberOfDay}. Tauchgang')),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.lg,
+          0,
+          AppSpacing.lg,
+          // Room for the floating action button.
+          96,
+        ),
         children: [
-          _row(context, 'Datum', _formatDateTime(dive.dateTime)),
-          _row(context, 'Tauchgang des Tages', '${dive.diveNumberOfDay}'),
-          _row(context, 'Max. Tiefe', _meters(dive.maxDepthMeters)),
-          _row(context, 'Ø Tiefe', _meters(dive.avgDepthMeters)),
-          _row(context, 'Dauer', _duration(dive.duration)),
-          _row(
-            context,
-            'Wassertemperatur',
-            _celsius(dive.waterTemperatureCelsius),
+          AppCard(
+            padding: const EdgeInsets.all(AppSpacing.xl),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '${Fmt.weekday(dive.dateTime)}, ${Fmt.dateTime(dive.dateTime)} Uhr',
+                  style: theme.textTheme.bodyMedium,
+                ),
+                const SizedBox(height: AppSpacing.lg),
+                StatTile(
+                  label: 'Max. Tiefe',
+                  value: Fmt.meters(dive.maxDepthMeters),
+                  unit: 'm',
+                  emphasis: StatEmphasis.hero,
+                ),
+                if (dive.locationName != null) ...[
+                  const SizedBox(height: AppSpacing.lg),
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.place_outlined,
+                        size: 16,
+                        color: palette.inkMuted,
+                      ),
+                      const SizedBox(width: AppSpacing.xs),
+                      Expanded(
+                        child: Text(
+                          dive.locationName!,
+                          style: theme.textTheme.bodyMedium,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ],
+            ),
           ),
-          _row(context, 'Ort', dive.locationName ?? '–'),
+          const SectionHeader(title: 'Werte'),
+          AppCard(
+            padding: const EdgeInsets.all(AppSpacing.xl),
+            child: Column(
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: StatTile(
+                        label: 'Dauer',
+                        value: Fmt.minutes(dive.duration),
+                        unit: 'min',
+                      ),
+                    ),
+                    Expanded(
+                      child: StatTile(
+                        label: 'Ø Tiefe',
+                        value: Fmt.meters(dive.avgDepthMeters),
+                        unit: 'm',
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.xl),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: StatTile(
+                        label: 'Wassertemp.',
+                        value: Fmt.celsius(dive.waterTemperatureCelsius),
+                        unit: '°C',
+                      ),
+                    ),
+                    Expanded(
+                      child: StatTile(
+                        label: 'Tauchgang',
+                        value: '${dive.diveNumberOfDay}',
+                        unit: 'des Tages',
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => Navigator.of(
           context,
         ).push(MaterialPageRoute(builder: (_) => QrScreen(dive: dive))),
-        icon: const Icon(Icons.qr_code),
-        label: const Text('QR-Code erzeugen'),
+        icon: const Icon(Icons.qr_code_2),
+        label: const Text('QR-Code für SSI'),
       ),
     );
-  }
-
-  Widget _row(BuildContext context, String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(label, style: Theme.of(context).textTheme.bodyLarge),
-          Text(value, style: Theme.of(context).textTheme.titleMedium),
-        ],
-      ),
-    );
-  }
-
-  String _meters(double? value) =>
-      value == null ? '–' : '${value.toStringAsFixed(1)} m';
-
-  String _celsius(double? value) =>
-      value == null ? '–' : '${value.toStringAsFixed(1)} °C';
-
-  String _duration(Duration? duration) {
-    if (duration == null) return '–';
-    final minutes = duration.inMinutes;
-    return '$minutes min';
-  }
-
-  String _formatDateTime(DateTime dateTime) {
-    String two(int n) => n.toString().padLeft(2, '0');
-    return '${two(dateTime.day)}.${two(dateTime.month)}.${dateTime.year} '
-        '${two(dateTime.hour)}:${two(dateTime.minute)}';
   }
 }
