@@ -3,66 +3,241 @@ import 'package:provider/provider.dart';
 
 import '../accounts/accounts_controller.dart';
 import '../accounts/models/garmin_account.dart';
+import '../dives/dive_loader.dart';
+import '../dives/recent_dives_controller.dart';
 import 'add_account_screen.dart';
 import 'debug_log_screen.dart';
 import 'dive_list_screen.dart';
 import 'fit_import_flow.dart';
+import 'format.dart';
+import 'qr_screen.dart';
+import 'ssi_buddies_screen.dart';
+import 'ssi_identity_screen.dart';
 import 'theme/app_theme.dart';
 import 'widgets/app_card.dart';
+import 'widgets/dive_type_icon.dart';
 
-/// Start screen: pick whose dives to browse, add another Garmin account, or
-/// import a FIT file when the Garmin login isn't available.
-class AccountsScreen extends StatelessWidget {
+/// Start screen. Leads with the dives themselves rather than with a list of
+/// names: the reason to open this app is to hand a dive to SSI, and from
+/// here that is one tap.
+///
+/// Below that the accounts, and below those the things that used to hide as
+/// icons in the app bar - a list nobody finds is a list nobody uses.
+class AccountsScreen extends StatefulWidget {
   const AccountsScreen({super.key});
 
   @override
+  State<AccountsScreen> createState() => _AccountsScreenState();
+}
+
+class _AccountsScreenState extends State<AccountsScreen> {
+  late final GarminDiveLoader _loader = GarminDiveLoader(
+    refreshSession: (account) =>
+        context.read<AccountsController>().ensureFreshSession(account),
+  );
+
+  /// Kicks off the fetch once the accounts are known. Called from build,
+  /// which is safe because [RecentDivesController.load] returns immediately
+  /// for a set of accounts it already has.
+  void _loadAfterBuild(List<GarminAccount> accounts, {bool force = false}) {
+    if (accounts.isEmpty) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      context.read<RecentDivesController>().load(
+        accounts: accounts,
+        fetch: _loader.load,
+        force: force,
+      );
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final controller = context.watch<AccountsController>();
+    final recentDives = context.watch<RecentDivesController>();
+    final accounts = controller.accounts;
+
+    if (controller.loaded) _loadAfterBuild(accounts);
+
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('SSI Connect'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.upload_file_outlined),
-            tooltip: 'FIT-Datei importieren',
-            onPressed: () => pickAndImportFitFile(context),
-          ),
-          IconButton(
-            icon: const Icon(Icons.bug_report_outlined),
-            tooltip: 'API-Protokoll',
-            onPressed: () => Navigator.of(
-              context,
-            ).push(MaterialPageRoute(builder: (_) => const DebugLogScreen())),
-          ),
-        ],
-      ),
-      body: Consumer<AccountsController>(
-        builder: (context, controller, _) {
-          if (!controller.loaded) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (controller.accounts.isEmpty) {
-            return const _EmptyAccounts();
-          }
-          return ListView.separated(
-            padding: const EdgeInsets.fromLTRB(
-              AppSpacing.lg,
-              AppSpacing.lg,
-              AppSpacing.lg,
-              96,
+      appBar: AppBar(title: const Text('SSI Connect')),
+      body: !controller.loaded
+          ? const Center(child: CircularProgressIndicator())
+          : RefreshIndicator(
+              onRefresh: () async => _loadAfterBuild(accounts, force: true),
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.lg,
+                  AppSpacing.lg,
+                  AppSpacing.lg,
+                  96,
+                ),
+                children: [
+                  if (accounts.isEmpty)
+                    const _EmptyAccounts()
+                  else ...[
+                    _RecentDives(accounts: accounts, controller: recentDives),
+                    const SectionHeader(title: 'Accounts'),
+                    for (final account in accounts) ...[
+                      _AccountCard(
+                        account: account,
+                        dives: recentDives.forAccount(account.id),
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                    ],
+                  ],
+                  const SectionHeader(title: 'Mehr'),
+                  const _QuickActions(),
+                ],
+              ),
             ),
-            itemCount: controller.accounts.length,
-            separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.md),
-            itemBuilder: (context, index) =>
-                _AccountCard(account: controller.accounts[index]),
-          );
-        },
-      ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => Navigator.of(
           context,
         ).push(MaterialPageRoute(builder: (_) => const AddAccountScreen())),
         icon: const Icon(Icons.person_add_alt),
         label: const Text('Account'),
+      ),
+    );
+  }
+}
+
+/// The newest dives across every account, most recent first. Tapping one
+/// goes straight to its QR code - the whole point of the app, so it should
+/// not take four taps to reach.
+class _RecentDives extends StatelessWidget {
+  const _RecentDives({required this.accounts, required this.controller});
+
+  final List<GarminAccount> accounts;
+  final RecentDivesController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final recent = controller.recent(accounts);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SectionHeader(title: 'Zuletzt getaucht'),
+        if (recent.isEmpty)
+          AppCard(
+            child: Row(
+              children: [
+                if (controller.isLoading) ...[
+                  const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                  const SizedBox(width: AppSpacing.md),
+                  Text(
+                    'Tauchgänge werden geladen …',
+                    style: theme.textTheme.bodyMedium,
+                  ),
+                ] else
+                  Expanded(
+                    child: Text(
+                      controller.failedCount > 0
+                          ? 'Tauchgänge konnten nicht geladen werden. '
+                                'Zum Erneut-Versuchen nach unten ziehen.'
+                          : 'Noch keine Tauchgänge geladen.',
+                      style: theme.textTheme.bodyMedium,
+                    ),
+                  ),
+              ],
+            ),
+          )
+        else ...[
+          for (final entry in recent) ...[
+            _RecentDiveCard(entry: entry),
+            const SizedBox(height: AppSpacing.md),
+          ],
+          // Named rather than silently missing: with several accounts on one
+          // tablet, one broken login is normal, and a short list would
+          // otherwise look complete.
+          if (controller.failedCount > 0)
+            Padding(
+              padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+              child: Text(
+                controller.failedCount == 1
+                    ? 'Ein Account konnte nicht geladen werden.'
+                    : '${controller.failedCount} Accounts konnten nicht '
+                          'geladen werden.',
+                style: theme.textTheme.bodySmall,
+              ),
+            ),
+        ],
+      ],
+    );
+  }
+}
+
+class _RecentDiveCard extends StatelessWidget {
+  const _RecentDiveCard({required this.entry});
+
+  final RecentDive entry;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final palette = theme.extension<AppPalette>()!;
+    final dive = entry.dive;
+
+    return AppCard(
+      onTap: () => Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) =>
+              QrScreen(dive: dive, diver: entry.account.ssiIdentity),
+        ),
+      ),
+      child: Row(
+        children: [
+          DiveTypeIcon(type: dive.type, size: 34),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '${Fmt.weekday(dive.dateTime)}, ${Fmt.date(dive.dateTime)}',
+                  style: theme.textTheme.titleMedium,
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  [
+                    entry.account.displayName,
+                    if (dive.duration != null)
+                      '${Fmt.minutes(dive.duration)} min',
+                  ].join(' · '),
+                  style: theme.textTheme.bodySmall,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
+            children: [
+              Text(
+                Fmt.meters(dive.maxDepthMeters),
+                style: theme.textTheme.displaySmall,
+              ),
+              const SizedBox(width: AppSpacing.xs),
+              Text(
+                'm',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: palette.inkMuted,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          // Says where the tap goes, so the card isn't a guess.
+          Icon(Icons.qr_code_2, size: 20, color: theme.colorScheme.primary),
+        ],
       ),
     );
   }
@@ -76,37 +251,37 @@ class _EmptyAccounts extends StatelessWidget {
     final theme = Theme.of(context);
     final palette = theme.extension<AppPalette>()!;
 
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.xl),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.scuba_diving, size: 44, color: palette.inkMuted),
-            const SizedBox(height: AppSpacing.lg),
-            Text(
-              'Noch kein Garmin-Account verbunden',
-              textAlign: TextAlign.center,
-              style: theme.textTheme.titleMedium,
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            Text(
-              'Verbinde einen Account, um Tauchgänge zu laden – '
-              'oder importiere oben rechts eine FIT-Datei.',
-              textAlign: TextAlign.center,
-              style: theme.textTheme.bodyMedium,
-            ),
-          ],
-        ),
+    return AppCard(
+      padding: const EdgeInsets.all(AppSpacing.xl),
+      child: Column(
+        children: [
+          Icon(Icons.scuba_diving, size: 44, color: palette.inkMuted),
+          const SizedBox(height: AppSpacing.lg),
+          Text(
+            'Noch kein Garmin-Account verbunden',
+            textAlign: TextAlign.center,
+            style: theme.textTheme.titleMedium,
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            'Verbinde einen Account, um Tauchgänge zu laden – oder importiere '
+            'unten eine FIT-Datei.',
+            textAlign: TextAlign.center,
+            style: theme.textTheme.bodyMedium,
+          ),
+        ],
       ),
     );
   }
 }
 
+enum _AccountAction { ssiIdentity, remove }
+
 class _AccountCard extends StatelessWidget {
-  const _AccountCard({required this.account});
+  const _AccountCard({required this.account, required this.dives});
 
   final GarminAccount account;
+  final AccountDives dives;
 
   @override
   Widget build(BuildContext context) {
@@ -140,18 +315,55 @@ class _AccountCard extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 2),
-                Text('Tauchgänge anzeigen', style: theme.textTheme.bodySmall),
+                Text(_diveSummary(dives), style: theme.textTheme.bodySmall),
+                const SizedBox(height: AppSpacing.xs),
+                if (account.hasSsiIdentity)
+                  Text(
+                    'SSI-Nr. ${account.ssiMemberId}',
+                    style: theme.textTheme.bodySmall,
+                  )
+                else
+                  // Without a number the exported dive lands under whoever
+                  // is logged into SSI, so this is worth fixing - and worth
+                  // being one tap away.
+                  _MissingSsiNumber(accountId: account.id),
               ],
             ),
           ),
-          IconButton(
+          PopupMenuButton<_AccountAction>(
             icon: const Icon(Icons.more_horiz),
-            tooltip: 'Account entfernen',
-            onPressed: () => _confirmRemove(context),
+            tooltip: 'Optionen',
+            onSelected: (action) => switch (action) {
+              _AccountAction.ssiIdentity => Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => SsiIdentityScreen(accountId: account.id),
+                ),
+              ),
+              _AccountAction.remove => _confirmRemove(context),
+            },
+            itemBuilder: (context) => const [
+              PopupMenuItem(
+                value: _AccountAction.ssiIdentity,
+                child: Text('SSI-Identität'),
+              ),
+              PopupMenuItem(
+                value: _AccountAction.remove,
+                child: Text('Account entfernen'),
+              ),
+            ],
           ),
         ],
       ),
     );
+  }
+
+  static String _diveSummary(AccountDives dives) {
+    if (dives.isLoading) return 'Tauchgänge werden geladen …';
+    if (dives.hasError) return 'Tauchgänge nicht erreichbar';
+    final latest = dives.latest;
+    if (latest == null) return 'Keine Tauchgänge gefunden';
+    return 'Zuletzt: ${Fmt.date(latest.dateTime)} · '
+        '${Fmt.meters(latest.maxDepthMeters)} m';
   }
 
   static String _initials(String name) {
@@ -187,5 +399,128 @@ class _AccountCard extends StatelessWidget {
     if (confirmed ?? false) {
       await controller.removeAccount(account.id);
     }
+  }
+}
+
+class _MissingSsiNumber extends StatelessWidget {
+  const _MissingSsiNumber({required this.accountId});
+
+  final String accountId;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return InkWell(
+      onTap: () => Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => SsiIdentityScreen(accountId: accountId),
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            Icons.badge_outlined,
+            size: 14,
+            color: theme.colorScheme.primary,
+          ),
+          const SizedBox(width: AppSpacing.xs),
+          Text(
+            'SSI-Nummer hinterlegen',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.primary,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// The three side entrances, as labelled cards instead of app-bar icons.
+class _QuickActions extends StatelessWidget {
+  const _QuickActions();
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        _ActionCard(
+          icon: Icons.group_outlined,
+          title: 'SSI-Buddies',
+          subtitle: 'Mittaucher speichern und beim Export auswählen',
+          onTap: () => Navigator.of(
+            context,
+          ).push(MaterialPageRoute(builder: (_) => const SsiBuddiesScreen())),
+        ),
+        const SizedBox(height: AppSpacing.md),
+        _ActionCard(
+          icon: Icons.upload_file_outlined,
+          title: 'FIT-Datei importieren',
+          subtitle: 'Falls der Garmin-Login gerade nicht funktioniert',
+          onTap: () => pickAndImportFitFile(context),
+        ),
+        const SizedBox(height: AppSpacing.md),
+        _ActionCard(
+          icon: Icons.bug_report_outlined,
+          title: 'API-Protokoll',
+          subtitle: 'Fehler nachsehen und SSI-Codes analysieren',
+          onTap: () => Navigator.of(
+            context,
+          ).push(MaterialPageRoute(builder: (_) => const DebugLogScreen())),
+        ),
+      ],
+    );
+  }
+}
+
+class _ActionCard extends StatelessWidget {
+  const _ActionCard({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final palette = theme.extension<AppPalette>()!;
+
+    return AppCard(
+      onTap: onTap,
+      child: Row(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: palette.accentContainer,
+              borderRadius: BorderRadius.circular(AppRadius.card),
+            ),
+            child: Icon(icon, size: 20, color: theme.colorScheme.primary),
+          ),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: theme.textTheme.titleMedium),
+                const SizedBox(height: 2),
+                Text(subtitle, style: theme.textTheme.bodySmall),
+              ],
+            ),
+          ),
+          Icon(Icons.chevron_right, color: palette.inkMuted),
+        ],
+      ),
+    );
   }
 }

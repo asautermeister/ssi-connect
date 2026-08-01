@@ -1,0 +1,644 @@
+<title>SSI Connect – UI-Vorschau</title>
+<style>
+  :root {
+    --canvas: #F1F3F2;
+    --surface: #FFFFFF;
+    --ink-1: #14201E;
+    --ink-2: #55625F;
+    --ink-3: #63706C;
+    --hairline: #E2E7E5;
+    --accent: #00696B;
+    --accent-container: #CDE9E6;
+    --meter-track: #E8EDEB;
+    --page-bg: #E7EBE9;
+    --shadow: 0 20px 44px -26px rgba(0, 40, 38, .5);
+  }
+  :root[data-theme="dark"] {
+    --canvas: #0E1513;
+    --surface: #16211E;
+    --ink-1: #E7EDE9;
+    --ink-2: #AFBEB9;
+    --ink-3: #8B9A95;
+    --hairline: #253531;
+    --accent: #5CDBD0;
+    --accent-container: #123935;
+    --meter-track: #1F2E2A;
+    --page-bg: #080D0C;
+    --shadow: 0 20px 50px -22px rgba(0,0,0,.75);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --canvas: #0E1513;
+      --surface: #16211E;
+      --ink-1: #E7EDE9;
+      --ink-2: #AFBEB9;
+      --ink-3: #8B9A95;
+      --hairline: #253531;
+      --accent: #5CDBD0;
+      --accent-container: #123935;
+      --meter-track: #1F2E2A;
+      --page-bg: #080D0C;
+      --shadow: 0 20px 50px -22px rgba(0,0,0,.75);
+    }
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--page-bg);
+    color: var(--ink-1);
+    font-family: Roboto, -apple-system, "Segoe UI", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 3.5rem 1.5rem 5rem; }
+
+  header.page { max-width: 46rem; margin-bottom: 2.5rem; }
+  .eyebrow {
+    display: inline-block; font-size: .72rem; font-weight: 600;
+    letter-spacing: .09em; text-transform: uppercase; color: var(--accent);
+    background: var(--accent-container); padding: .35rem .75rem;
+    border-radius: 999px; margin-bottom: 1.1rem;
+  }
+  h1 {
+    font-size: clamp(1.7rem, 3vw, 2.25rem); line-height: 1.15; margin: 0 0 .8rem;
+    font-weight: 300; letter-spacing: -.01em; text-wrap: balance;
+  }
+  header.page p { font-size: 1rem; line-height: 1.65; color: var(--ink-2); margin: 0 0 .6rem; }
+  .note {
+    font-size: .88rem; color: var(--ink-3); border-left: 3px solid var(--accent-container);
+    padding-left: .85rem; margin-top: 1.3rem; line-height: 1.6;
+  }
+  .new-flag {
+    display: inline-block; font-size: .62rem; font-weight: 700; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--surface); background: var(--accent);
+    border-radius: 999px; padding: .15rem .45rem; vertical-align: middle; margin-left: .4rem;
+  }
+  :root[data-theme="dark"] .new-flag { color: #00312F; }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) .new-flag { color: #00312F; }
+  }
+
+  h2.group {
+    font-weight: 300; font-size: 1.35rem; margin: 3rem 0 .3rem;
+    padding-top: 1.6rem; border-top: 1px solid var(--hairline);
+  }
+  h2.group:first-of-type { border-top: 0; padding-top: 0; margin-top: 2.6rem; }
+  .group-sub { color: var(--ink-2); font-size: .9rem; margin: 0 0 1.8rem; max-width: 44rem; line-height: 1.6; }
+
+  .gallery { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 2.6rem 1.8rem; }
+  figure.screen { margin: 0; display: flex; flex-direction: column; align-items: center; }
+  figcaption { margin-top: 1.1rem; text-align: center; max-width: 16rem; }
+  figcaption .name { display: block; font-weight: 600; font-size: .93rem; margin-bottom: .25rem; }
+  figcaption .desc { display: block; font-size: .8rem; line-height: 1.5; color: var(--ink-3); }
+
+  .device {
+    width: 100%; max-width: 268px; aspect-ratio: 9 / 17.4;
+    background: #0b1614; border-radius: 34px; padding: 9px; box-shadow: var(--shadow);
+  }
+  .screen-surface {
+    width: 100%; height: 100%; background: var(--canvas);
+    border-radius: 26px; overflow: hidden; display: flex; flex-direction: column; position: relative;
+  }
+  .statusbar {
+    height: 21px; flex: none; display: flex; align-items: center; justify-content: space-between;
+    padding: 0 13px; font-size: 8.5px; font-weight: 600; color: var(--ink-2);
+    font-variant-numeric: tabular-nums;
+  }
+  .appbar {
+    flex: none; padding: 5px 12px 12px; display: flex; align-items: center; gap: 9px;
+    font-size: 14px; font-weight: 600; color: var(--ink-1);
+  }
+  .appbar .spacer { margin-left: auto; display: flex; gap: 9px; color: var(--ink-2); font-size: 12px; }
+  .body-scroll { flex: 1; overflow: hidden; padding: 10px 11px; }
+
+  .card {
+    background: var(--surface); border: 1px solid var(--hairline);
+    border-radius: 10px; padding: 13px; margin-bottom: 9px;
+  }
+  .label {
+    font-size: 8px; font-weight: 600; letter-spacing: .06em;
+    text-transform: uppercase; color: var(--ink-3);
+  }
+  .hero { font-size: 30px; font-weight: 300; line-height: 1.02; font-variant-numeric: tabular-nums; }
+  .stat { font-size: 20px; font-weight: 300; line-height: 1.05; font-variant-numeric: tabular-nums; }
+  .unit { font-size: 9.5px; color: var(--ink-3); margin-left: 3px; }
+  .row { display: flex; align-items: flex-start; }
+  .baseline { display: flex; align-items: baseline; }
+  .title { font-size: 11.5px; font-weight: 600; }
+  .sub { font-size: 9.5px; color: var(--ink-3); margin-top: 2px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 3px; margin-top: 7px;
+    background: var(--accent-container); color: var(--accent);
+    border-radius: 999px; padding: 2.5px 7px;
+    font-size: 7.5px; font-weight: 600; letter-spacing: .05em;
+  }
+  .meter { height: 4px; border-radius: 4px; background: var(--meter-track); margin-top: 11px; overflow: hidden; }
+  .meter > i { display: block; height: 100%; background: var(--accent); border-radius: 4px; }
+  .section-head { font-size: 15px; font-weight: 300; margin: 13px 2px 8px; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 17px 10px; }
+  .avatar {
+    width: 32px; height: 32px; border-radius: 50%; flex: none;
+    background: var(--accent-container); color: var(--accent);
+    display: grid; place-items: center; font-size: 13px; font-weight: 600;
+  }
+  .fab {
+    position: absolute; right: 11px; bottom: 12px; background: var(--accent);
+    color: var(--surface); border-radius: 999px; padding: 8px 13px;
+    font-size: 10px; font-weight: 600; display: flex; align-items: center; gap: 5px;
+    box-shadow: 0 6px 14px -5px rgba(0,0,0,.45);
+  }
+  :root[data-theme="dark"] .fab { color: #00312F; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .fab { color: #00312F; } }
+
+  /* Dive-type badge: running number above the drawn glyph, both on the left edge. */
+  .badge-col { display: flex; flex-direction: column; align-items: center; gap: 4px; flex: none; width: 34px; }
+  .badge-num {
+    font-size: 8px; font-weight: 600; color: var(--ink-3);
+    font-variant-numeric: tabular-nums; letter-spacing: .02em;
+  }
+  .badge {
+    width: 30px; height: 30px; border-radius: 9px; background: var(--accent-container);
+    display: grid; place-items: center;
+  }
+  .badge svg { width: 18px; height: 18px; display: block; }
+  .badge svg * { stroke: var(--accent); fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+  .badge svg .solid { fill: var(--accent); stroke: none; }
+
+  /* Buddy picker */
+  .filter-row { display: flex; flex-wrap: wrap; gap: 5px; }
+  .filter {
+    border: 1px solid var(--hairline); border-radius: 999px; padding: 3.5px 9px;
+    font-size: 8.5px; font-weight: 500; color: var(--ink-1); background: var(--surface);
+  }
+  .filter.on { background: var(--accent-container); color: var(--accent); border-color: var(--accent-container); }
+  .filter.on::before { content: "✓ "; }
+  .hint-text { font-size: 8px; color: var(--ink-3); line-height: 1.55; margin-top: 9px; }
+  .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+  .kv { display: flex; gap: 7px; margin-bottom: 5px; align-items: flex-start; }
+  .kv .k { width: 74px; flex: none; font-size: 8px; color: var(--ink-3); }
+  .kv .v { font-size: 9px; color: var(--ink-1); word-break: break-all; }
+  .btn-outline {
+    display: inline-flex; align-items: center; gap: 4px; border: 1px solid var(--accent);
+    color: var(--accent); border-radius: 999px; padding: 5px 11px; font-size: 9px; font-weight: 600;
+  }
+  .btn-filled {
+    display: inline-flex; align-items: center; gap: 4px; background: var(--accent);
+    color: var(--surface); border-radius: 999px; padding: 6px 12px; font-size: 9px; font-weight: 600;
+  }
+  :root[data-theme="dark"] .btn-filled { color: #00312F; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .btn-filled { color: #00312F; } }
+
+  .qr-surface { background: #fff; height: 100%; display: flex; flex-direction: column; align-items: center; }
+  .qr-appbar { padding: 8px 12px 8px; font-size: 13px; font-weight: 600; color: #14201E; width: 100%; }
+  .qr-meta { font-size: 9.5px; color: #55625F; margin-bottom: 6px; }
+  .qr-hint { font-size: 8px; color: #63706C; text-align: center; padding: 6px 18px 8px; line-height: 1.5; }
+  .qr-scroll { width: 100%; padding: 0 11px 10px; overflow: hidden; }
+  /* The QR screen forces the light theme even in dark mode - it is a scan
+     target, and a dark QR code is unreliable for camera scanners. */
+  .qr-surface .card { background: #fff; border-color: #E2E7E5; }
+  .qr-surface .filter { background: #fff; border-color: #E2E7E5; color: #14201E; }
+  .qr-surface .filter.on { background: #CDE9E6; border-color: #CDE9E6; color: #00696B; }
+  .qr-surface .hint-text, .qr-surface .label { color: #63706C; }
+  .qr-surface .section-head, .qr-surface .title { color: #14201E; }
+  .qr-surface .sub { color: #63706C; }
+
+  footer.page { margin-top: 3rem; padding-top: 1.3rem; border-top: 1px solid var(--hairline); font-size: .8rem; color: var(--ink-3); line-height: 1.6; }
+  footer.page code { font-size: .95em; }
+</style>
+
+<div class="wrap">
+  <header class="page">
+    <span class="eyebrow">Design-Vorschau · nachgebaut, kein Screenshot</span>
+    <h1>SSI Connect – Stand nach den SSI-Buddies</h1>
+    <p>
+      Gegenüber der ersten Vorschau ist einiges dazugekommen: eine Startseite, die mit den
+      Tauchgängen beginnt statt mit einer Namensliste, die Tauchgangs-Nummer und das
+      Typ-Symbol an der linken Kante, die SSI-Mitgliedsnummer am Account, die Buddy-Auswahl
+      unter dem QR-Code samt eigener Buddy-Liste – und ein kleines Analyse-Werkzeug für
+      SSI-Codes.
+    </p>
+    <p class="note">
+      Die Buddy-Auswahl landet <strong>noch nicht</strong> im QR-Code: keiner der vorliegenden
+      SSI-Exporte enthielt einen Buddy, der Feldname ist also unbekannt. Der Screen sagt das
+      offen, statt so zu tun, als wäre es erledigt.
+    </p>
+  </header>
+
+  <h2 class="group">Startseite und Tauchgänge</h2>
+  <p class="group-sub">
+    Gleiche Struktur wie bisher – flache Karten auf hellem Untergrund, die Zahl führt,
+    die Beschriftung folgt. Die Startseite beginnt jetzt mit den Tauchgängen statt mit
+    einer Namensliste: von hier ist der QR-Code ein Tap entfernt.
+  </p>
+
+  <div class="gallery">
+    <!-- 1 Start -->
+    <figure class="screen">
+      <div class="device"><div class="screen-surface">
+        <div class="statusbar"><span>21:32</span><span>▾ ▮</span></div>
+        <div class="appbar">SSI Connect</div>
+        <div class="body-scroll" style="padding:2px 11px">
+          <div class="section-head" style="margin:2px 2px 7px">Zuletzt getaucht</div>
+          <div class="card" style="padding:10px">
+            <div class="row" style="align-items:center;gap:8px">
+              <span class="badge" style="width:26px;height:26px;border-radius:50%;background:var(--accent)">
+                <svg viewBox="0 0 24 24" style="width:15px;height:15px">
+                  <rect x="4.5" y="6" width="6" height="14" rx="3" style="stroke:var(--surface)"/>
+                  <rect x="13.5" y="6" width="6" height="14" rx="3" style="stroke:var(--surface)"/>
+                </svg>
+              </span>
+              <div style="flex:1">
+                <div class="title">Sa, 08.11.2025</div>
+                <div class="sub">Andreas · 92 min</div>
+              </div>
+              <div class="baseline"><span class="stat" style="font-size:17px">44,0</span><span class="unit">m</span></div>
+              <span style="color:var(--accent);font-size:13px">▦</span>
+            </div>
+          </div>
+          <div class="card" style="padding:10px">
+            <div class="row" style="align-items:center;gap:8px">
+              <span class="badge" style="width:26px;height:26px;border-radius:50%;background:var(--accent)">
+                <svg viewBox="0 0 24 24" style="width:15px;height:15px">
+                  <rect x="8.5" y="5.5" width="7" height="15" rx="3.5" style="stroke:var(--surface)"/>
+                </svg>
+              </span>
+              <div style="flex:1">
+                <div class="title">Fr, 07.11.2025</div>
+                <div class="sub">Andreas · 54 min</div>
+              </div>
+              <div class="baseline"><span class="stat" style="font-size:17px">28,0</span><span class="unit">m</span></div>
+              <span style="color:var(--accent);font-size:13px">▦</span>
+            </div>
+          </div>
+          <div class="card" style="padding:10px">
+            <div class="row" style="align-items:center;gap:8px">
+              <span class="badge" style="width:26px;height:26px;border-radius:50%;background:var(--accent)">
+                <svg viewBox="0 0 24 24" style="width:15px;height:15px">
+                  <path d="M12 4v8" style="stroke:var(--surface)"/>
+                  <path d="M12 12c-3.4 0-6.8 2.2-8 5.6 3.1 1.2 6 .3 8-2.2 2 2.5 4.9 3.4 8 2.2-1.2-3.4-4.6-5.6-8-5.6z" style="stroke:var(--surface)"/>
+                </svg>
+              </span>
+              <div style="flex:1">
+                <div class="title">Do, 06.11.2025</div>
+                <div class="sub">Marie · 38 min</div>
+              </div>
+              <div class="baseline"><span class="stat" style="font-size:17px">11,5</span><span class="unit">m</span></div>
+              <span style="color:var(--accent);font-size:13px">▦</span>
+            </div>
+          </div>
+
+          <div class="section-head" style="margin:11px 2px 7px">Accounts</div>
+          <div class="card" style="padding:10px"><div class="row" style="align-items:center;gap:8px">
+            <div class="avatar" style="width:28px;height:28px;font-size:12px">A</div>
+            <div style="flex:1">
+              <div class="title">Andreas</div>
+              <div class="sub">Zuletzt: 08.11.2025 · 44,0 m</div>
+              <div class="sub" style="color:var(--accent);font-weight:600">🎫 SSI-Nr. 3902893</div>
+            </div><span style="color:var(--ink-3)">⋯</span>
+          </div></div>
+          <div class="card" style="padding:10px"><div class="row" style="align-items:center;gap:8px">
+            <div class="avatar" style="width:28px;height:28px;font-size:12px">M</div>
+            <div style="flex:1">
+              <div class="title">Marie</div>
+              <div class="sub">Zuletzt: 06.11.2025 · 11,5 m</div>
+              <div class="sub" style="color:var(--accent);font-weight:600">🎫 SSI-Nummer hinterlegen</div>
+            </div><span style="color:var(--ink-3)">⋯</span>
+          </div></div>
+
+          <div class="section-head" style="margin:11px 2px 7px">Mehr</div>
+          <div class="card" style="padding:9px"><div class="row" style="align-items:center;gap:8px">
+            <span class="badge">👥</span>
+            <div style="flex:1">
+              <div class="title">SSI-Buddies</div>
+              <div class="sub">Mittaucher speichern und beim Export auswählen</div>
+            </div><span style="color:var(--ink-3)">›</span>
+          </div></div>
+          <div class="card" style="padding:9px"><div class="row" style="align-items:center;gap:8px">
+            <span class="badge">↥</span>
+            <div style="flex:1">
+              <div class="title">FIT-Datei importieren</div>
+              <div class="sub">Falls der Garmin-Login gerade nicht funktioniert</div>
+            </div><span style="color:var(--ink-3)">›</span>
+          </div></div>
+          <div class="card" style="padding:9px"><div class="row" style="align-items:center;gap:8px">
+            <span class="badge">⛭</span>
+            <div style="flex:1">
+              <div class="title">API-Protokoll</div>
+              <div class="sub">Fehler nachsehen und SSI-Codes analysieren</div>
+            </div><span style="color:var(--ink-3)">›</span>
+          </div></div>
+        </div>
+        <div class="fab">＋ Account</div>
+      </div></div>
+      <figcaption>
+        <span class="name">1 · Startseite</span>
+        <span class="desc">Die Tauchgänge führen: der jüngste aus allen Accounts zuoberst, ein Tap darauf öffnet direkt den QR-Code. Darunter die Accounts mit letztem Tauchgang, ganz unten die Wege, die vorher als Symbole in der Leiste versteckt waren.</span>
+      </figcaption>
+    </figure>
+
+    <!-- 2 Dive list -->
+    <figure class="screen">
+      <div class="device"><div class="screen-surface">
+        <div class="statusbar"><span>21:33</span><span>▾ ▮</span></div>
+        <div class="appbar">← Andreas <span class="spacer">⛭</span></div>
+        <div class="body-scroll">
+          <div class="card">
+            <div class="row" style="gap:9px">
+              <div class="badge-col">
+                <span class="badge-num"># 142</span>
+                <span class="badge">
+                  <!-- two cylinders: multi gas -->
+                  <svg viewBox="0 0 24 24">
+                    <rect x="4.5" y="6" width="6" height="14" rx="3"/>
+                    <path d="M7.5 6V4.2"/>
+                    <rect x="13.5" y="6" width="6" height="14" rx="3"/>
+                    <path d="M16.5 6V4.2"/>
+                  </svg>
+                </span>
+              </div>
+              <div style="flex:1">
+                <div class="title">Sa, 08.11.2025</div>
+                <div class="sub">08:56 Uhr · 92 min</div>
+                <span class="chip">1. TG · MULTIGAS</span>
+              </div>
+              <div style="text-align:right">
+                <div class="baseline" style="justify-content:flex-end">
+                  <span class="hero">44,0</span><span class="unit">m</span>
+                </div>
+                <div class="label">Max. Tiefe</div>
+              </div>
+            </div>
+            <div class="meter"><i style="width:100%"></i></div>
+          </div>
+          <div class="card">
+            <div class="row" style="gap:9px">
+              <div class="badge-col">
+                <span class="badge-num"># 141</span>
+                <span class="badge">
+                  <!-- one cylinder: single gas -->
+                  <svg viewBox="0 0 24 24">
+                    <rect x="8.5" y="5.5" width="7" height="15" rx="3.5"/>
+                    <path d="M12 5.5V3.6"/>
+                  </svg>
+                </span>
+              </div>
+              <div style="flex:1">
+                <div class="title">Fr, 07.11.2025</div>
+                <div class="sub">10:50 Uhr · 54 min</div>
+                <span class="chip">1. TG · GERÄTETAUCHEN</span>
+              </div>
+              <div style="text-align:right">
+                <div class="baseline" style="justify-content:flex-end">
+                  <span class="hero">28,0</span><span class="unit">m</span>
+                </div>
+                <div class="label">Max. Tiefe</div>
+              </div>
+            </div>
+            <div class="meter"><i style="width:64%"></i></div>
+          </div>
+          <div class="card">
+            <div class="row" style="gap:9px">
+              <div class="badge-col">
+                <span class="badge">
+                  <!-- monofin: apnea -->
+                  <svg viewBox="0 0 24 24">
+                    <path d="M12 4v8"/>
+                    <path d="M12 12c-3.4 0-6.8 2.2-8 5.6 3.1 1.2 6 .3 8-2.2 2 2.5 4.9 3.4 8 2.2-1.2-3.4-4.6-5.6-8-5.6z"/>
+                  </svg>
+                </span>
+              </div>
+              <div style="flex:1">
+                <div class="title">Do, 06.11.2025</div>
+                <div class="sub">14:12 Uhr · 38 min · 31× abgetaucht</div>
+                <span class="chip">2. TG · APNOE</span>
+              </div>
+              <div style="text-align:right">
+                <div class="baseline" style="justify-content:flex-end">
+                  <span class="hero">11,5</span><span class="unit">m</span>
+                </div>
+                <div class="label">Max. Tiefe</div>
+              </div>
+            </div>
+            <div class="meter"><i style="width:26%"></i></div>
+          </div>
+        </div>
+      </div></div>
+      <figcaption>
+        <span class="name">2 · Tauchgangs-Liste</span>
+        <span class="desc">Links Nummer über Typ-Symbol; der Typ steht zusätzlich im Chip, damit die Zeichnung nie allein die Bedeutung trägt. Ohne Nummer (Apnoe) bleibt die Zeile leer statt zu raten.</span>
+      </figcaption>
+    </figure>
+
+    <!-- 3 Detail -->
+    <figure class="screen">
+      <div class="device"><div class="screen-surface">
+        <div class="statusbar"><span>21:34</span><span>▾ ▮</span></div>
+        <div class="appbar">← 1. Tauchgang</div>
+        <div class="body-scroll">
+          <div class="card" style="padding:15px">
+            <div class="row" style="gap:9px;margin-bottom:12px">
+              <div class="badge-col">
+                <span class="badge-num"># 142</span>
+                <span class="badge">
+                  <svg viewBox="0 0 24 24">
+                    <rect x="4.5" y="6" width="6" height="14" rx="3"/>
+                    <path d="M7.5 6V4.2"/>
+                    <rect x="13.5" y="6" width="6" height="14" rx="3"/>
+                    <path d="M16.5 6V4.2"/>
+                  </svg>
+                </span>
+              </div>
+              <div style="flex:1">
+                <div class="title">Multigas</div>
+                <div class="sub">Sa, 08.11.2025, 08:56 Uhr</div>
+              </div>
+            </div>
+            <div class="label">Max. Tiefe</div>
+            <div class="baseline" style="margin-top:5px">
+              <span class="hero" style="font-size:34px">44,0</span><span class="unit">m</span>
+            </div>
+          </div>
+          <div class="section-head">Werte</div>
+          <div class="card" style="padding:15px">
+            <div class="grid2">
+              <div><div class="label">Dauer</div><div class="baseline"><span class="stat">92</span><span class="unit">min</span></div></div>
+              <div><div class="label">Ø Tiefe</div><div class="baseline"><span class="stat">31,2</span><span class="unit">m</span></div></div>
+              <div><div class="label">Wassertemp.</div><div class="baseline"><span class="stat">24,0</span><span class="unit">°C</span></div></div>
+              <div><div class="label">Tauchgang</div><div class="baseline"><span class="stat">1</span><span class="unit">des Tages</span></div></div>
+            </div>
+          </div>
+        </div>
+        <div class="fab">▦ QR-Code für SSI</div>
+      </div></div>
+      <figcaption>
+        <span class="name">3 · Detail</span>
+        <span class="desc">Nummer und Symbol auch hier links oben; die laufende Nummer steht deshalb nicht noch einmal als Kachel im Raster.</span>
+      </figcaption>
+    </figure>
+  </div>
+
+  <h2 class="group">Neu: Buddies <span class="new-flag">neu</span></h2>
+  <p class="group-sub">
+    Die QR-Seite kennt jetzt alle Personen, zu denen das Gerät eine SSI-Nummer hat – die
+    SSI-Identitäten der Garmin-Accounts und die eigens gespeicherten Buddies. Wer den
+    Tauchgang selbst geloggt hat, fällt aus der Auswahl heraus.
+  </p>
+
+  <div class="gallery">
+    <!-- 4 QR + buddies -->
+    <figure class="screen">
+      <div class="device"><div class="screen-surface">
+        <div class="qr-surface">
+          <div class="qr-appbar">← Mit SSI-App scannen</div>
+          <div class="qr-meta">08.11.2025 · 44,0 m · 92 min</div>
+          <div style="width:100%;display:grid;place-items:center">
+            <canvas id="qr" width="168" height="168" style="width:52%;aspect-ratio:1"></canvas>
+          </div>
+          <div class="qr-hint">In der SSI-App einen Tauchgang hinzufügen und „QR-Code scannen" wählen.</div>
+          <div class="qr-scroll">
+            <div class="section-head" style="margin:2px 2px 6px">Buddies</div>
+            <div class="card" style="padding:10px">
+              <div class="filter-row">
+                <span class="filter on">Marie</span>
+                <span class="filter">Cem Yilmaz</span>
+                <span class="filter on">SSI-Nr. 123456</span>
+              </div>
+              <div class="hint-text">
+                Hinweis: Buddies stehen noch nicht im QR-Code – wie SSI sie im Import benennt,
+                ist noch nicht bekannt. Bis dahin dient die Auswahl als Merkzettel.
+              </div>
+            </div>
+            <div class="card" style="padding:10px">
+              <div class="label">In der SSI-App eintragen</div>
+              <div class="sub" style="color:#14201E;margin-top:4px">Marie · SSI-Nr. 4711</div>
+              <div class="sub" style="color:#14201E">SSI-Nr. 123456</div>
+            </div>
+          </div>
+        </div>
+      </div></div>
+      <figcaption>
+        <span class="name">4 · QR-Code mit Buddy-Auswahl</span>
+        <span class="desc">Immer hell mit Ruhezone. Darunter die Buddies – angekreuzte werden mit Nummer aufgelistet, solange sie nicht in den Code wandern können.</span>
+      </figcaption>
+    </figure>
+
+    <!-- 5 Buddy list -->
+    <figure class="screen">
+      <div class="device"><div class="screen-surface">
+        <div class="statusbar"><span>21:36</span><span>▾ ▮</span></div>
+        <div class="appbar">← SSI-Buddies</div>
+        <div class="body-scroll">
+          <div class="card"><div class="row" style="align-items:center;gap:9px">
+            <div class="avatar">👤</div>
+            <div style="flex:1">
+              <div class="title">Cem Yilmaz</div>
+              <div class="sub">SSI-Nr. 99 · cem@example.com</div>
+            </div><span style="color:var(--ink-3)">⋯</span>
+          </div></div>
+          <div class="card"><div class="row" style="align-items:center;gap:9px">
+            <div class="avatar">👤</div>
+            <div style="flex:1">
+              <div class="title">SSI-Nr. 123456</div>
+            </div><span style="color:var(--ink-3)">⋯</span>
+          </div></div>
+        </div>
+        <div class="fab">▣ Buddy scannen</div>
+      </div></div>
+      <figcaption>
+        <span class="name">5 · SSI-Buddies</span>
+        <span class="desc">Eigene Liste für Mittaucher ohne Garmin-Account. Wer keinen Namen im Code hat, wird über seine Nummer benannt – nichts wird erfunden.</span>
+      </figcaption>
+    </figure>
+
+    <!-- 6 Scanner -->
+    <figure class="screen">
+      <div class="device"><div class="screen-surface" style="background:#0b1110">
+        <div class="statusbar" style="color:#8B9A95"><span>21:36</span><span>▾ ▮</span></div>
+        <div class="appbar" style="color:#fff">← SSI-QR-Code scannen <span class="spacer" style="color:#cfd8d5">⚡ ⟳</span></div>
+        <div style="flex:1;position:relative;display:grid;place-items:center">
+          <div style="width:58%;aspect-ratio:1;border-radius:14px;
+                      border:2px solid rgba(255,255,255,.5);
+                      background:repeating-linear-gradient(135deg,#141d1b 0 8px,#101817 8px 16px)"></div>
+          <div style="position:absolute;left:12px;right:12px;bottom:14px;background:rgba(0,0,0,.65);
+                      border-radius:10px;padding:9px;color:#fff;font-size:8px;text-align:center;line-height:1.5">
+            In der SSI-App „Dein QR-Code" öffnen und die Kamera darauf richten.
+          </div>
+        </div>
+      </div></div>
+      <figcaption>
+        <span class="name">6 · Buddy scannen</span>
+        <span class="desc">Codes, die nichts Passendes enthalten, werden still ignoriert – bei einem Kamerastrom wäre jede Einzelmeldung eine Flut.</span>
+      </figcaption>
+    </figure>
+  </div>
+
+  <h2 class="group">Neu: SSI-Code analysieren <span class="new-flag">neu</span></h2>
+  <p class="group-sub">
+    Das Werkzeug, mit dem sich die offenen Felder klären lassen, ohne zu raten: einen echten
+    SSI-Export scannen, in dem der gesuchte Wert schon eingetragen ist, und den Feldnamen
+    direkt ablesen. Dieselbe Methode hat vorher die Tiefeneinheit (Zentimeter) und die
+    Temperaturfelder aufgedeckt. Zu finden im API-Protokoll.
+  </p>
+
+  <div class="gallery">
+    <figure class="screen">
+      <div class="device"><div class="screen-surface">
+        <div class="statusbar"><span>21:38</span><span>▾ ▮</span></div>
+        <div class="appbar">← SSI-Code analysieren <span class="spacer">⧉</span></div>
+        <div class="body-scroll">
+          <div class="sub" style="color:var(--ink-2);line-height:1.55;margin:0 2px 10px">
+            Zeigt an, welche Felder ein echter SSI-Code enthält – etwa die Buddy-Angabe:
+            in der SSI-App einen Tauchgang mit Buddy exportieren und hier scannen.
+          </div>
+          <span class="btn-filled">▣ QR-Code scannen</span>
+          <div class="section-head">Felder</div>
+          <div class="card" style="padding:11px">
+            <div class="kv"><span class="k mono">Typ</span><span class="v">dive · noid</span></div>
+            <div class="kv"><span class="k mono">dive_type</span><span class="v">2</span></div>
+            <div class="kv"><span class="k mono">datetime</span><span class="v">202511080856</span></div>
+            <div class="kv"><span class="k mono">depth_m</span><span class="v">44.0</span></div>
+            <div class="kv"><span class="k mono">site</span><span class="v">1074</span></div>
+            <div class="kv"><span class="k mono">user_leader_id</span><span class="v" style="color:var(--ink-3)">(leer)</span></div>
+          </div>
+          <div class="section-head">Rohdaten</div>
+          <div class="card mono" style="padding:11px;font-size:7.5px;line-height:1.6;color:var(--ink-2)">
+            dive;noid;dive_type:2;divetime:92.0;datetime:202511080856;depth_m:44.0;site:1074;…
+          </div>
+        </div>
+      </div></div>
+      <figcaption>
+        <span class="name">7 · SSI-Code analysieren</span>
+        <span class="desc">Felder im Klartext, Rohdaten zum Kopieren. Auch leere Felder werden gezeigt – gerade die sind beim Diagnostizieren interessant.</span>
+      </figcaption>
+    </figure>
+  </div>
+
+  <footer class="page">
+    Handgebautes HTML-Mockup des Flutter-Codes, kein <code>flutter run</code>-Screenshot –
+    Abstände und Schriftschnitte weichen leicht ab. Die Seite folgt der Hell-/Dunkel-Einstellung
+    des Systems; der QR-Screen bleibt bewusst in beiden Fällen hell.
+  </footer>
+</div>
+
+<script>
+  (function () {
+    const c = document.getElementById('qr');
+    if (!c) return;
+    const ctx = c.getContext('2d');
+    const n = 21, cell = c.width / n;
+    const rand = s => { const x = Math.sin(s) * 10000; return x - Math.floor(x); };
+    ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, c.width, c.height);
+    ctx.fillStyle = '#14201E';
+    for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) {
+      const finder = (x < 7 && y < 7) || (x > n - 8 && y < 7) || (x < 7 && y > n - 8);
+      if (finder) continue;
+      if (rand(x * 92.3 + y * 17.7 + 4) > 0.52) ctx.fillRect(x * cell, y * cell, cell * .92, cell * .92);
+    }
+    const finder = (ox, oy) => {
+      ctx.fillStyle = '#14201E'; ctx.fillRect(ox * cell, oy * cell, cell * 7, cell * 7);
+      ctx.fillStyle = '#fff'; ctx.fillRect((ox + 1) * cell, (oy + 1) * cell, cell * 5, cell * 5);
+      ctx.fillStyle = '#14201E'; ctx.fillRect((ox + 2) * cell, (oy + 2) * cell, cell * 3, cell * 3);
+    };
+    finder(0, 0); finder(n - 7, 0); finder(0, n - 7);
+  })();
+</script>

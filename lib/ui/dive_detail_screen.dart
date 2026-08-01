@@ -1,19 +1,22 @@
 import 'package:flutter/material.dart';
 
 import '../models/dive.dart';
+import '../ssi/ssi_buddy_code.dart';
 import 'format.dart';
 import 'qr_screen.dart';
 import 'theme/app_theme.dart';
 import 'widgets/app_card.dart';
+import 'widgets/dive_type_icon.dart';
 import 'widgets/stat_tile.dart';
 
 /// One dive in full. Max depth leads as the hero number, the remaining
 /// measurements sit in a two-column grid of stat tiles below it, and the
 /// QR export is the single primary action.
 class DiveDetailScreen extends StatelessWidget {
-  const DiveDetailScreen({super.key, required this.dive});
+  const DiveDetailScreen({super.key, required this.dive, this.diver});
 
   final Dive dive;
+  final SsiBuddyCode? diver;
 
   @override
   Widget build(BuildContext context) {
@@ -36,9 +39,31 @@ class DiveDetailScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  '${Fmt.weekday(dive.dateTime)}, ${Fmt.dateTime(dive.dateTime)} Uhr',
-                  style: theme.textTheme.bodyMedium,
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    DiveTypeBadge(
+                      type: dive.type,
+                      diveNumber: dive.diveNumber,
+                      size: 34,
+                    ),
+                    const SizedBox(width: AppSpacing.md),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            dive.type.label,
+                            style: theme.textTheme.titleMedium,
+                          ),
+                          Text(
+                            '${Fmt.weekday(dive.dateTime)}, ${Fmt.dateTime(dive.dateTime)} Uhr',
+                            style: theme.textTheme.bodySmall,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: AppSpacing.lg),
                 StatTile(
@@ -113,15 +138,36 @@ class DiveDetailScreen extends StatelessWidget {
                     ),
                   ],
                 ),
+                // The running dive number is not repeated here - it sits
+                // beside the badge at the top of the screen. Only the
+                // descent count needs a tile, and only for the freediving
+                // sessions that have more than one.
+                if (dive.descentCount != null) ...[
+                  const SizedBox(height: AppSpacing.xl),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: StatTile(
+                          label: 'Abtauchvorgänge',
+                          value: '${dive.descentCount}',
+                        ),
+                      ),
+                      const Expanded(child: SizedBox.shrink()),
+                    ],
+                  ),
+                ],
               ],
             ),
           ),
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => Navigator.of(
-          context,
-        ).push(MaterialPageRoute(builder: (_) => QrScreen(dive: dive))),
+        onPressed: () => Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => QrScreen(dive: dive, diver: diver),
+          ),
+        ),
         icon: const Icon(Icons.qr_code_2),
         label: const Text('QR-Code für SSI'),
       ),

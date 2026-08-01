@@ -5,6 +5,7 @@ import 'package:uuid/uuid.dart';
 
 import '../garmin/garmin_auth_client.dart';
 import '../garmin/models/garmin_session.dart';
+import '../ssi/ssi_buddy_code.dart';
 import 'account_repository.dart';
 import 'models/garmin_account.dart';
 
@@ -99,17 +100,30 @@ class AccountsController extends ChangeNotifier {
     return refreshed;
   }
 
-  Future<void> updateBuddyInfo(
-    String accountId, {
-    String? ssiBuddyId,
-    String? ssiBuddyName,
-  }) async {
+  /// Stores the SSI identity read from a scanned member QR code.
+  Future<void> setSsiIdentity(String accountId, SsiBuddyCode code) async {
+    await _updateAccount(
+      accountId,
+      (account) => account.copyWith(
+        ssiMemberId: code.memberId,
+        ssiFirstName: code.firstName,
+        ssiLastName: code.lastName,
+        ssiEmail: code.email,
+      ),
+    );
+  }
+
+  Future<void> clearSsiIdentity(String accountId) async {
+    await _updateAccount(accountId, (account) => account.withoutSsiIdentity());
+  }
+
+  Future<void> _updateAccount(
+    String accountId,
+    GarminAccount Function(GarminAccount) change,
+  ) async {
     final index = _accounts.indexWhere((a) => a.id == accountId);
     if (index == -1) return;
-    final updated = _accounts[index].copyWith(
-      ssiBuddyId: ssiBuddyId,
-      ssiBuddyName: ssiBuddyName,
-    );
+    final updated = change(_accounts[index]);
     _accounts = [..._accounts]..[index] = updated;
     await _repository.save(updated);
     notifyListeners();

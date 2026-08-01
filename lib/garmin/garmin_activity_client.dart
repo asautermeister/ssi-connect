@@ -6,17 +6,16 @@ import 'garmin_auth_exceptions.dart';
 import 'models/garmin_activity.dart';
 import 'models/garmin_session.dart';
 
-/// Activity types Garmin uses for the various dive computer modes
-/// (`activity_types.properties`, key without the `activity_type_` prefix).
-/// Not all of these are necessarily accepted by the search endpoint - an
-/// unknown key makes it answer 400 - so [GarminActivityClient] queries them
-/// individually and tolerates rejections rather than failing outright.
-const garminDiveActivityTypes = [
-  'diving',
-  'apnea_diving',
-  'apnea_hunting',
-  'ccr_diving',
-];
+/// The activity types to query for.
+///
+/// Only the parent type. The search endpoint rejects sub-types outright -
+/// asking for `apnea_diving` answers 400 with "Activity type cannot be an
+/// activity sub type" - and it is unnecessary anyway: every dive sub-type
+/// (apnea_diving, ccr_diving, single/multi gas, ...) hangs off `diving` as
+/// its parent and comes back in that one query. Each result still carries
+/// its own sub-type in `activityType.typeKey`, which is what drives the
+/// badge in the list.
+const garminDiveActivityTypes = ['diving'];
 
 /// Reads the (already authenticated) Garmin Connect activity list/detail
 /// endpoints. Field names in the returned [GarminActivity] objects are
@@ -67,11 +66,12 @@ class GarminActivityClient {
 
       final list = response.data;
       if (list is List) {
-        results.addAll(
-          list.whereType<Map>().map(
-            (e) => GarminActivity(e.cast<String, dynamic>()),
-          ),
-        );
+        final activities = list
+            .whereType<Map>()
+            .map((e) => GarminActivity(e.cast<String, dynamic>()))
+            .toList();
+        results.addAll(activities);
+        _logMeasurementProbe(activityType, activities);
       }
     }
 
@@ -146,6 +146,35 @@ class GarminActivityClient {
         details: ApiLog.instance.enabled ? _describe(e) : null,
       );
     }
+  }
+
+  /// Writes the depth/temperature fields of the first activity of a type
+  /// into the API log.
+  ///
+  /// The list response is tens of thousands of characters, so the log's
+  /// truncation hides exactly the fields whose names and units we still
+  /// need to confirm. This pulls just those out, one line per activity
+  /// type, so a misread value can be traced to a specific key.
+  void _logMeasurementProbe(String activityType, List<GarminActivity> items) {
+    if (!ApiLog.instance.enabled || items.isEmpty) return;
+    final sample = items.first;
+    final fields = sample.probeMeasurementFields();
+    ApiLog.instance.add(
+      ApiLogEntry(
+        timestamp: DateTime.now(),
+        method: 'PROBE',
+        url: 'Messfelder · $activityType',
+        statusCode: 200,
+        responseBody: [
+          'startTimeLocal=${sample.raw['startTimeLocal']}',
+          'gelesene max. Tiefe=${sample.maxDepthMeters}',
+          if (fields.isEmpty)
+            'Keine Felder mit "depth"/"temperature" gefunden'
+          else
+            ...fields.entries.map((e) => '${e.key}=${e.value}'),
+        ].join('\n'),
+      ),
+    );
   }
 
   /// Raw request/response summary, shown in the UI only while API logging

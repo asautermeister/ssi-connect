@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 
 import '../models/dive.dart';
+import '../ssi/ssi_buddy_code.dart';
 import 'dive_detail_screen.dart';
 import 'format.dart';
 import 'theme/app_theme.dart';
 import 'widgets/app_card.dart';
+import 'widgets/dive_type_icon.dart';
 import 'widgets/stat_tile.dart';
 
 /// One dive in a list, as a card: date and dive-of-day on the left, max
@@ -15,9 +17,11 @@ class DiveListTile extends StatelessWidget {
     super.key,
     required this.dive,
     required this.maxDepthInList,
+    this.diver,
   });
 
   final Dive dive;
+  final SsiBuddyCode? diver;
 
   /// Deepest dive currently listed, so the bars share one scale. Pass 0 to
   /// hide the bar entirely.
@@ -31,15 +35,19 @@ class DiveListTile extends StatelessWidget {
     final showMeter = maxDepthInList > 0 && depth != null;
 
     return AppCard(
-      onTap: () => Navigator.of(
-        context,
-      ).push(MaterialPageRoute(builder: (_) => DiveDetailScreen(dive: dive))),
+      onTap: () => Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => DiveDetailScreen(dive: dive, diver: diver),
+        ),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              DiveTypeBadge(type: dive.type, diveNumber: dive.diveNumber),
+              const SizedBox(width: AppSpacing.md),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -50,14 +58,20 @@ class DiveListTile extends StatelessWidget {
                     ),
                     const SizedBox(height: AppSpacing.xs),
                     Text(
-                      '${Fmt.time(dive.dateTime)} Uhr'
-                      '${dive.duration != null ? ' · ${Fmt.minutes(dive.duration)} min' : ''}',
+                      [
+                        '${Fmt.time(dive.dateTime)} Uhr',
+                        if (dive.duration != null)
+                          '${Fmt.minutes(dive.duration)} min',
+                        if (dive.descentCount != null)
+                          '${dive.descentCount}× abgetaucht',
+                      ].join(' · '),
                       style: theme.textTheme.bodySmall,
                     ),
                     const SizedBox(height: AppSpacing.sm),
+                    // The dive type is spelled out here as well, so the
+                    // badge never has to be decoded from its shape.
                     AppChip(
-                      label: '${dive.diveNumberOfDay}. TG DES TAGES',
-                      icon: Icons.scuba_diving,
+                      label: '${dive.diveNumberOfDay}. TG · ${dive.type.label}',
                     ),
                   ],
                 ),

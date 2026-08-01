@@ -3,9 +3,10 @@ import 'package:provider/provider.dart';
 
 import '../accounts/accounts_controller.dart';
 import '../accounts/models/garmin_account.dart';
-import '../garmin/garmin_activity_client.dart';
+import '../dives/dive_loader.dart';
 import '../garmin/garmin_auth_exceptions.dart';
 import '../models/dive.dart';
+import '../ssi/ssi_buddy_code.dart';
 import 'debug_log_screen.dart';
 import 'dive_list_tile.dart';
 import 'fit_import_flow.dart';
@@ -22,42 +23,16 @@ class DiveListScreen extends StatefulWidget {
 }
 
 class _DiveListScreenState extends State<DiveListScreen> {
-  final _activityClient = GarminActivityClient();
+  late final GarminDiveLoader _loader = GarminDiveLoader(
+    refreshSession: (account) =>
+        context.read<AccountsController>().ensureFreshSession(account),
+  );
 
-  late Future<List<Dive>> _divesFuture;
-
-  @override
-  void initState() {
-    super.initState();
-    _divesFuture = _loadDives();
-  }
-
-  Future<List<Dive>> _loadDives({bool forceRefreshSession = false}) async {
-    final controller = context.read<AccountsController>();
-    var session = widget.account.session;
-    if (forceRefreshSession) {
-      session = await controller.ensureFreshSession(widget.account);
-    }
-
-    try {
-      final activities = await _activityClient.getDiveActivities(session);
-      final dives = activities
-          .map(Dive.fromGarminActivity)
-          .whereType<Dive>()
-          .toList();
-      return assignDiveNumbersOfDay(dives);
-    } on GarminAuthException catch (e) {
-      if (e.type == GarminAuthErrorType.invalidCredentials &&
-          !forceRefreshSession) {
-        return _loadDives(forceRefreshSession: true);
-      }
-      rethrow;
-    }
-  }
+  late Future<List<Dive>> _divesFuture = _loader.load(widget.account);
 
   void _retry() {
     setState(() {
-      _divesFuture = _loadDives();
+      _divesFuture = _loader.load(widget.account);
     });
   }
 
@@ -103,7 +78,7 @@ class _DiveListScreenState extends State<DiveListScreen> {
           }
           return RefreshIndicator(
             onRefresh: () async => _retry(),
-            child: DiveList(dives: dives),
+            child: DiveList(dives: dives, diver: widget.account.ssiIdentity),
           );
         },
       ),
@@ -114,9 +89,13 @@ class _DiveListScreenState extends State<DiveListScreen> {
 /// Shared list body, so Garmin-loaded and FIT-imported dives render
 /// identically. Computes the shared depth scale the cards' meters use.
 class DiveList extends StatelessWidget {
-  const DiveList({super.key, required this.dives});
+  const DiveList({super.key, required this.dives, this.diver});
 
   final List<Dive> dives;
+
+  /// SSI member these dives belong to, passed down so the generated QR
+  /// code can name them. Null for FIT imports, which carry no account.
+  final SsiBuddyCode? diver;
 
   @override
   Widget build(BuildContext context) {
@@ -133,8 +112,11 @@ class DiveList extends StatelessWidget {
       ),
       itemCount: dives.length,
       separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.md),
-      itemBuilder: (context, index) =>
-          DiveListTile(dive: dives[index], maxDepthInList: maxDepth),
+      itemBuilder: (context, index) => DiveListTile(
+        dive: dives[index],
+        maxDepthInList: maxDepth,
+        diver: diver,
+      ),
     );
   }
 }
