@@ -9,6 +9,8 @@ import '../models/dive.dart';
 import 'debug_log_screen.dart';
 import 'dive_list_tile.dart';
 import 'fit_import_flow.dart';
+import 'theme/app_theme.dart';
+import 'widgets/error_state.dart';
 
 class DiveListScreen extends StatefulWidget {
   const DiveListScreen({super.key, required this.account});
@@ -62,7 +64,18 @@ class _DiveListScreenState extends State<DiveListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(widget.account.displayName)),
+      appBar: AppBar(
+        title: Text(widget.account.displayName),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.bug_report_outlined),
+            tooltip: 'API-Protokoll',
+            onPressed: () => Navigator.of(
+              context,
+            ).push(MaterialPageRoute(builder: (_) => const DebugLogScreen())),
+          ),
+        ],
+      ),
       body: FutureBuilder<List<Dive>>(
         future: _divesFuture,
         builder: (context, snapshot) {
@@ -71,66 +84,57 @@ class _DiveListScreenState extends State<DiveListScreen> {
           }
           if (snapshot.hasError) {
             final error = snapshot.error;
-            final message = error is GarminAuthException
-                ? error.message
-                : 'Tauchgänge konnten nicht geladen werden.';
-            final details = error is GarminAuthException ? error.details : null;
-            return Center(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(message, textAlign: TextAlign.center),
-                    if (details != null) ...[
-                      const SizedBox(height: 12),
-                      SelectableText(
-                        details,
-                        style: const TextStyle(
-                          fontSize: 11,
-                          fontFamily: 'monospace',
-                        ),
-                      ),
-                    ],
-                    const SizedBox(height: 16),
-                    FilledButton(
-                      onPressed: _retry,
-                      child: const Text('Erneut versuchen'),
-                    ),
-                    const SizedBox(height: 8),
-                    OutlinedButton(
-                      onPressed: () => pickAndImportFitFile(context),
-                      child: const Text('Stattdessen FIT-Datei importieren'),
-                    ),
-                    const SizedBox(height: 8),
-                    TextButton.icon(
-                      icon: const Icon(Icons.bug_report_outlined),
-                      label: const Text('API-Protokoll öffnen'),
-                      onPressed: () => Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => const DebugLogScreen(),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+            return ErrorState(
+              message: error is GarminAuthException
+                  ? error.message
+                  : 'Tauchgänge konnten nicht geladen werden.',
+              details: error is GarminAuthException ? error.details : null,
+              onRetry: _retry,
+              secondaryLabel: 'Stattdessen FIT-Datei importieren',
+              onSecondary: () => pickAndImportFitFile(context),
             );
           }
-          final dives = snapshot.data ?? const [];
+          final dives = snapshot.data ?? const <Dive>[];
           if (dives.isEmpty) {
-            return const Center(child: Text('Keine Tauchgänge gefunden.'));
+            return const ErrorState(
+              icon: Icons.scuba_diving_outlined,
+              message: 'Keine Tauchgänge gefunden.',
+            );
           }
           return RefreshIndicator(
             onRefresh: () async => _retry(),
-            child: ListView.separated(
-              itemCount: dives.length,
-              separatorBuilder: (_, _) => const Divider(height: 1),
-              itemBuilder: (context, index) => DiveListTile(dive: dives[index]),
-            ),
+            child: DiveList(dives: dives),
           );
         },
       ),
+    );
+  }
+}
+
+/// Shared list body, so Garmin-loaded and FIT-imported dives render
+/// identically. Computes the shared depth scale the cards' meters use.
+class DiveList extends StatelessWidget {
+  const DiveList({super.key, required this.dives});
+
+  final List<Dive> dives;
+
+  @override
+  Widget build(BuildContext context) {
+    final maxDepth = dives
+        .map((d) => d.maxDepthMeters ?? 0)
+        .fold<double>(0, (a, b) => a > b ? a : b);
+
+    return ListView.separated(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        AppSpacing.lg,
+        AppSpacing.lg,
+        AppSpacing.xxl,
+      ),
+      itemCount: dives.length,
+      separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.md),
+      itemBuilder: (context, index) =>
+          DiveListTile(dive: dives[index], maxDepthInList: maxDepth),
     );
   }
 }

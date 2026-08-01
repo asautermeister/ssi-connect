@@ -2,34 +2,98 @@ import 'package:flutter/material.dart';
 
 import '../models/dive.dart';
 import 'dive_detail_screen.dart';
+import 'format.dart';
+import 'theme/app_theme.dart';
+import 'widgets/app_card.dart';
+import 'widgets/stat_tile.dart';
 
-/// One row in a dive list (fetched from Garmin or FIT-imported) - shared so
-/// both list screens render dives identically.
+/// One dive in a list, as a card: date and dive-of-day on the left, max
+/// depth as the hero number on the right, and a magnitude bar underneath
+/// putting this dive against the deepest one on screen.
 class DiveListTile extends StatelessWidget {
-  const DiveListTile({super.key, required this.dive});
+  const DiveListTile({
+    super.key,
+    required this.dive,
+    required this.maxDepthInList,
+  });
 
   final Dive dive;
 
+  /// Deepest dive currently listed, so the bars share one scale. Pass 0 to
+  /// hide the bar entirely.
+  final double maxDepthInList;
+
   @override
   Widget build(BuildContext context) {
-    return ListTile(
-      title: Text(_formatDate(dive.dateTime)),
-      subtitle: Text('Tauchgang ${dive.diveNumberOfDay} des Tages'),
-      trailing: Text(
-        dive.maxDepthMeters != null
-            ? '${dive.maxDepthMeters!.toStringAsFixed(1)} m'
-            : '–',
-        style: Theme.of(context).textTheme.titleMedium,
-      ),
+    final theme = Theme.of(context);
+    final palette = theme.extension<AppPalette>()!;
+    final depth = dive.maxDepthMeters;
+    final showMeter = maxDepthInList > 0 && depth != null;
+
+    return AppCard(
       onTap: () => Navigator.of(
         context,
       ).push(MaterialPageRoute(builder: (_) => DiveDetailScreen(dive: dive))),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '${Fmt.weekday(dive.dateTime)}, ${Fmt.date(dive.dateTime)}',
+                      style: theme.textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: AppSpacing.xs),
+                    Text(
+                      '${Fmt.time(dive.dateTime)} Uhr'
+                      '${dive.duration != null ? ' · ${Fmt.minutes(dive.duration)} min' : ''}',
+                      style: theme.textTheme.bodySmall,
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    AppChip(
+                      label: '${dive.diveNumberOfDay}. TG DES TAGES',
+                      icon: Icons.scuba_diving,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: AppSpacing.md),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.baseline,
+                    textBaseline: TextBaseline.alphabetic,
+                    children: [
+                      Text(
+                        Fmt.meters(depth),
+                        style: theme.textTheme.displayMedium,
+                      ),
+                      const SizedBox(width: AppSpacing.xs),
+                      Text(
+                        'm',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: palette.inkMuted,
+                        ),
+                      ),
+                    ],
+                  ),
+                  Text('MAX. TIEFE', style: theme.textTheme.labelSmall),
+                ],
+              ),
+            ],
+          ),
+          if (showMeter) ...[
+            const SizedBox(height: AppSpacing.lg),
+            DepthMeter(value: depth, max: maxDepthInList),
+          ],
+        ],
+      ),
     );
-  }
-
-  String _formatDate(DateTime dateTime) {
-    String two(int n) => n.toString().padLeft(2, '0');
-    return '${two(dateTime.day)}.${two(dateTime.month)}.${dateTime.year} '
-        '${two(dateTime.hour)}:${two(dateTime.minute)}';
   }
 }

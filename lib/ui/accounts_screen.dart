@@ -7,9 +7,11 @@ import 'add_account_screen.dart';
 import 'debug_log_screen.dart';
 import 'dive_list_screen.dart';
 import 'fit_import_flow.dart';
+import 'theme/app_theme.dart';
+import 'widgets/app_card.dart';
 
-/// Start screen: pick which family member's Garmin account to browse dives
-/// for, add a new one, or import dives from a manually exported FIT file.
+/// Start screen: pick whose dives to browse, add another Garmin account, or
+/// import a FIT file when the Garmin login isn't available.
 class AccountsScreen extends StatelessWidget {
   const AccountsScreen({super.key});
 
@@ -20,8 +22,8 @@ class AccountsScreen extends StatelessWidget {
         title: const Text('SSI Connect'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.upload_file),
-            tooltip: 'Tauchgänge aus FIT-Datei importieren',
+            icon: const Icon(Icons.upload_file_outlined),
+            tooltip: 'FIT-Datei importieren',
             onPressed: () => pickAndImportFitFile(context),
           ),
           IconButton(
@@ -39,34 +41,19 @@ class AccountsScreen extends StatelessWidget {
             return const Center(child: CircularProgressIndicator());
           }
           if (controller.accounts.isEmpty) {
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      'Noch kein Garmin-Account hinzugefügt.',
-                      textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.bodyLarge,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Alternativ oben rechts eine FIT-Datei importieren.',
-                      textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
-                  ],
-                ),
-              ),
-            );
+            return const _EmptyAccounts();
           }
-          return ListView.builder(
+          return ListView.separated(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.lg,
+              AppSpacing.lg,
+              AppSpacing.lg,
+              96,
+            ),
             itemCount: controller.accounts.length,
-            itemBuilder: (context, index) {
-              final account = controller.accounts[index];
-              return _AccountTile(account: account);
-            },
+            separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.md),
+            itemBuilder: (context, index) =>
+                _AccountCard(account: controller.accounts[index]),
           );
         },
       ),
@@ -74,33 +61,131 @@ class AccountsScreen extends StatelessWidget {
         onPressed: () => Navigator.of(
           context,
         ).push(MaterialPageRoute(builder: (_) => const AddAccountScreen())),
-        icon: const Icon(Icons.add),
-        label: const Text('Account hinzufügen'),
+        icon: const Icon(Icons.person_add_alt),
+        label: const Text('Account'),
       ),
     );
   }
 }
 
-class _AccountTile extends StatelessWidget {
-  const _AccountTile({required this.account});
+class _EmptyAccounts extends StatelessWidget {
+  const _EmptyAccounts();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final palette = theme.extension<AppPalette>()!;
+
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.xl),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.scuba_diving, size: 44, color: palette.inkMuted),
+            const SizedBox(height: AppSpacing.lg),
+            Text(
+              'Noch kein Garmin-Account verbunden',
+              textAlign: TextAlign.center,
+              style: theme.textTheme.titleMedium,
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            Text(
+              'Verbinde einen Account, um Tauchgänge zu laden – '
+              'oder importiere oben rechts eine FIT-Datei.',
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodyMedium,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _AccountCard extends StatelessWidget {
+  const _AccountCard({required this.account});
 
   final GarminAccount account;
 
   @override
   Widget build(BuildContext context) {
-    return ListTile(
-      leading: const CircleAvatar(child: Icon(Icons.person)),
-      title: Text(account.displayName),
-      subtitle: Text(account.email),
-      trailing: IconButton(
-        icon: const Icon(Icons.delete_outline),
-        tooltip: 'Account entfernen',
-        onPressed: () =>
-            context.read<AccountsController>().removeAccount(account.id),
-      ),
+    final theme = Theme.of(context);
+    final palette = theme.extension<AppPalette>()!;
+
+    return AppCard(
       onTap: () => Navigator.of(context).push(
         MaterialPageRoute(builder: (_) => DiveListScreen(account: account)),
       ),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 20,
+            backgroundColor: palette.accentContainer,
+            child: Text(
+              _initials(account.displayName),
+              style: theme.textTheme.titleMedium?.copyWith(
+                color: theme.colorScheme.primary,
+              ),
+            ),
+          ),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  account.displayName,
+                  style: theme.textTheme.titleMedium,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 2),
+                Text('Tauchgänge anzeigen', style: theme.textTheme.bodySmall),
+              ],
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.more_horiz),
+            tooltip: 'Account entfernen',
+            onPressed: () => _confirmRemove(context),
+          ),
+        ],
+      ),
     );
+  }
+
+  static String _initials(String name) {
+    final trimmed = name.trim();
+    if (trimmed.isEmpty) return '?';
+    return trimmed.characters.first.toUpperCase();
+  }
+
+  /// Removing an account drops its stored tokens, which means a full
+  /// re-login with a fresh MFA code - worth a confirmation step.
+  Future<void> _confirmRemove(BuildContext context) async {
+    final controller = context.read<AccountsController>();
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Account entfernen?'),
+        content: Text(
+          '${account.displayName} wird von diesem Gerät entfernt. '
+          'Für einen erneuten Zugriff ist ein neuer Login nötig.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Abbrechen'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Entfernen'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed ?? false) {
+      await controller.removeAccount(account.id);
+    }
   }
 }
