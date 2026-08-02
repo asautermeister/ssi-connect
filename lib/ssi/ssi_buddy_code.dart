@@ -1,19 +1,26 @@
 /// A diver's identity as encoded in the QR code the SSI app shows under
 /// "Dein QR-Code".
 ///
-/// Observed payload, from a real SSI app screen:
+/// Observed payloads, from real SSI app screens:
 /// `buddy;3902893;firstName:Andreas;lastName:Sautermeister;email:a@b.de`
+/// `buddy;3154225;firstName:...;lastName:...;email:...;leaderNr:110890`
 ///
 /// So: the literal marker `buddy`, then the member id, then `key:value`
 /// pairs - all semicolon-separated, same shape as the dive payload SSI
 /// scans on import. That member id is the same number that appears as
 /// `user_master_id` in an SSI-exported dive QR code.
+///
+/// The second example is a divemaster's code: professionals carry an
+/// extra `leaderNr`. Whether that number or the member id is what belongs
+/// in a dive's `user_leader_id` is still open - see
+/// [SsiQrPayloadBuilder].
 class SsiBuddyCode {
   const SsiBuddyCode({
     required this.memberId,
     this.firstName,
     this.lastName,
     this.email,
+    this.leaderNumber,
   });
 
   /// SSI member number. The one field that must be present.
@@ -21,6 +28,15 @@ class SsiBuddyCode {
   final String? firstName;
   final String? lastName;
   final String? email;
+
+  /// A professional's leader number, present only on the codes of
+  /// divemasters and instructors. Kept even though nothing consumes it
+  /// yet: dropping a field on the way through would mean this app hands
+  /// out a poorer code than it was given.
+  final String? leaderNumber;
+
+  /// True when the scanned code identifies an SSI professional.
+  bool get isProfessional => leaderNumber != null;
 
   /// "First Last", or null when neither name was in the code.
   String? get fullName {
@@ -40,6 +56,10 @@ class SsiBuddyCode {
   /// same digits.
   String? get memberIdLine => fullName == null ? null : 'SSI-Nr. $memberId';
 
+  /// The leader number as a secondary line, or null for a code without one.
+  String? get leaderNumberLine =>
+      leaderNumber == null ? null : 'Leiter-Nr. $leaderNumber';
+
   /// The payload as SSI writes it, so this member can be shown as a QR
   /// code for someone else's app to scan.
   ///
@@ -51,6 +71,7 @@ class SsiBuddyCode {
       if (firstName != null) 'firstName:$firstName',
       if (lastName != null) 'lastName:$lastName',
       if (email != null) 'email:$email',
+      if (leaderNumber != null) 'leaderNr:$leaderNumber',
     ];
     return ['buddy', memberId, ...fields].join(';');
   }
@@ -60,6 +81,7 @@ class SsiBuddyCode {
     if (firstName != null) 'firstName': firstName,
     if (lastName != null) 'lastName': lastName,
     if (email != null) 'email': email,
+    if (leaderNumber != null) 'leaderNumber': leaderNumber,
   };
 
   factory SsiBuddyCode.fromJson(Map<String, dynamic> json) => SsiBuddyCode(
@@ -67,6 +89,7 @@ class SsiBuddyCode {
     firstName: json['firstName'] as String?,
     lastName: json['lastName'] as String?,
     email: json['email'] as String?,
+    leaderNumber: json['leaderNumber'] as String?,
   );
 
   /// Two codes are the same person when the member number matches - that
@@ -110,6 +133,7 @@ class SsiBuddyCode {
       firstName: valueOf('firstname'),
       lastName: valueOf('lastname'),
       email: valueOf('email'),
+      leaderNumber: valueOf('leadernr'),
     );
   }
 }

@@ -62,6 +62,26 @@ void main() {
       expect(SsiBuddyCode.tryParse('buddy;firstName:Ada'), isNull);
     });
 
+    test('reads the leader number from a professional\'s code', () {
+      // Real code from an SSI divemaster: same shape as any other member,
+      // plus one field.
+      final code = SsiBuddyCode.tryParse(
+        'buddy;3154225;firstName:Thomas;lastName:Burger;'
+        'email:burgerthomas2507@gmail.com;leaderNr:110890',
+      );
+
+      expect(code!.memberId, '3154225');
+      expect(code.leaderNumber, '110890');
+      expect(code.isProfessional, isTrue);
+    });
+
+    test('an ordinary member has no leader number', () {
+      final code = SsiBuddyCode.tryParse('buddy;3902893;firstName:Andreas');
+
+      expect(code!.leaderNumber, isNull);
+      expect(code.isProfessional, isFalse);
+    });
+
     test('treats empty field values as absent', () {
       final code = SsiBuddyCode.tryParse('buddy;9;firstName:;email:');
 
@@ -92,6 +112,7 @@ void main() {
         SsiBuddyCode(memberId: '2', lastName: 'Lovelace'),
         SsiBuddyCode(memberId: '3', email: 'a:b@example.com'),
         SsiBuddyCode(memberId: '4'),
+        SsiBuddyCode(memberId: '5', firstName: 'Cy', leaderNumber: '110890'),
       ]) {
         final parsed = SsiBuddyCode.tryParse(code.toPayload());
 
@@ -100,7 +121,18 @@ void main() {
         expect(parsed.firstName, code.firstName);
         expect(parsed.lastName, code.lastName);
         expect(parsed.email, code.email);
+        expect(parsed.leaderNumber, code.leaderNumber);
       }
+    });
+
+    test('hands a divemaster on exactly as scanned', () {
+      // Showing a scanned code again must not quietly drop a field - the
+      // next device would then store a poorer copy than we were given.
+      const original =
+          'buddy;3154225;firstName:Thomas;lastName:Burger;'
+          'email:burgerthomas2507@gmail.com;leaderNr:110890';
+
+      expect(SsiBuddyCode.tryParse(original)!.toPayload(), original);
     });
 
     test('leaves absent fields out instead of writing them empty', () {
@@ -125,6 +157,17 @@ void main() {
       expect(restored.firstName, original.firstName);
       expect(restored.lastName, original.lastName);
       expect(restored.email, original.email);
+    });
+
+    test('keeps the leader number across a JSON round trip', () {
+      final restored = SsiBuddyCode.fromJson(
+        const SsiBuddyCode(
+          memberId: '3154225',
+          leaderNumber: '110890',
+        ).toJson(),
+      );
+
+      expect(restored.leaderNumber, '110890');
     });
 
     test('survives a JSON round trip with only the member number', () {
