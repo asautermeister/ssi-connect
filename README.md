@@ -67,7 +67,8 @@ deshalb ist die App als Tablet-/Zweitgerät-App gedacht und nicht als Handy-App 
 
 ## Entwicklung
 
-Setup-Anleitung (Windows/VS Code) und Build-Befehle: siehe [`SETUP.md`](SETUP.md).
+Setup-Anleitung (Windows, macOS, Linux; Editor frei wählbar) und Build-Befehle:
+siehe [`SETUP.md`](SETUP.md).
 Fertige Builds veröffentlichen: siehe [`RELEASING.md`](RELEASING.md).
 
 ```
