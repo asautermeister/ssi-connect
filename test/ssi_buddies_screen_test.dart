@@ -8,6 +8,9 @@ import 'package:ssi_connect/garmin/models/garmin_session.dart';
 import 'package:ssi_connect/ssi/ssi_buddies_controller.dart';
 import 'package:ssi_connect/ssi/ssi_buddy_code.dart';
 import 'package:ssi_connect/ssi/ssi_buddy_repository.dart';
+import 'package:ssi_connect/ssi/ssi_center_code.dart';
+import 'package:ssi_connect/ssi/ssi_center_repository.dart';
+import 'package:ssi_connect/ssi/ssi_centers_controller.dart';
 import 'package:ssi_connect/ui/qr_display_screen.dart';
 import 'package:ssi_connect/ui/ssi_buddies_screen.dart';
 import 'package:ssi_connect/ui/theme/app_theme.dart';
@@ -51,10 +54,23 @@ class _InMemoryBuddies extends SsiBuddyRepository {
   Future<void> saveAll(List<SsiBuddyCode> buddies) async => stored = buddies;
 }
 
+class _InMemoryCenters extends SsiCenterRepository {
+  _InMemoryCenters(this.stored);
+
+  List<SsiCenterCode> stored;
+
+  @override
+  Future<List<SsiCenterCode>> loadAll() async => stored;
+
+  @override
+  Future<void> saveAll(List<SsiCenterCode> centers) async => stored = centers;
+}
+
 Future<SsiBuddiesController> _pump(
   WidgetTester tester,
   List<SsiBuddyCode> buddies, {
   List<GarminAccount> accounts = const [],
+  List<SsiCenterCode> centers = const [],
 }) async {
   tester.view.physicalSize = const Size(1000, 1800);
   tester.view.devicePixelRatio = 1.0;
@@ -63,16 +79,21 @@ Future<SsiBuddiesController> _pump(
   final controller = SsiBuddiesController(
     repository: _InMemoryBuddies(buddies),
   );
+  final centersController = SsiCentersController(
+    repository: _InMemoryCenters(centers),
+  );
   final accountsController = AccountsController(
     repository: _InMemoryAccounts(accounts),
   );
   await controller.loadFromStorage();
+  await centersController.loadFromStorage();
   await accountsController.loadFromStorage();
 
   await tester.pumpWidget(
     MultiProvider(
       providers: [
         ChangeNotifierProvider.value(value: controller),
+        ChangeNotifierProvider.value(value: centersController),
         ChangeNotifierProvider.value(value: accountsController),
       ],
       child: MaterialApp(
@@ -190,7 +211,7 @@ void main() {
       expect(find.text('Zusätzlich gespeichert'), findsNothing);
     });
 
-    testWidgets('the empty state waits until both lists are empty', (
+    testWidgets('the empty state waits until every list is empty', (
       tester,
     ) async {
       await _pump(
@@ -200,7 +221,79 @@ void main() {
       );
       expect(find.text('Noch keine Buddies gespeichert'), findsNothing);
 
+      // A saved base alone is enough to have something to show.
+      await _pump(
+        tester,
+        const [],
+        centers: const [SsiCenterCode(centerId: '718019', name: 'Nero-Sport')],
+      );
+      expect(find.text('Noch keine Buddies gespeichert'), findsNothing);
+
       await _pump(tester, const [], accounts: [_account('Jonas')]);
+      expect(find.text('Noch keine Buddies gespeichert'), findsOneWidget);
+    });
+
+    testWidgets('dive centres get their own section', (tester) async {
+      await _pump(
+        tester,
+        [const SsiBuddyCode(memberId: '99', firstName: 'Cem')],
+        centers: const [
+          SsiCenterCode(
+            centerId: '718019',
+            name: 'Nero-Sport Diving Center, Zakynthos',
+          ),
+        ],
+      );
+
+      expect(find.text('Tauchbasen'), findsOneWidget);
+      expect(find.text('Nero-Sport Diving Center, Zakynthos'), findsOneWidget);
+      expect(find.text('Basis-Nr. 718019'), findsOneWidget);
+      // The buddy keeps its own section rather than being folded in.
+      expect(find.text('Cem'), findsOneWidget);
+    });
+
+    testWidgets('tapping a centre shows its code for someone else to scan', (
+      tester,
+    ) async {
+      await _pump(
+        tester,
+        const [],
+        centers: const [
+          SsiCenterCode(
+            centerId: '718019',
+            name: 'Nero-Sport Diving Center, Zakynthos',
+          ),
+        ],
+      );
+
+      await tester.tap(find.text('Nero-Sport Diving Center, Zakynthos'));
+      await tester.pumpAndSettle();
+
+      final screen = tester.widget<QrDisplayScreen>(
+        find.byType(QrDisplayScreen),
+      );
+      // Byte for byte what SSI itself shows, comma in the name included.
+      expect(
+        screen.payload,
+        'center;718019;name:Nero-Sport Diving Center, Zakynthos',
+      );
+    });
+
+    testWidgets('a centre can be removed from its options menu', (
+      tester,
+    ) async {
+      await _pump(
+        tester,
+        const [],
+        centers: const [SsiCenterCode(centerId: '718019', name: 'Nero-Sport')],
+      );
+
+      await tester.tap(find.byIcon(Icons.more_horiz));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Entfernen'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Nero-Sport'), findsNothing);
       expect(find.text('Noch keine Buddies gespeichert'), findsOneWidget);
     });
 

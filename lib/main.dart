@@ -5,6 +5,7 @@ import 'accounts/accounts_controller.dart';
 import 'dives/dive_loader.dart';
 import 'dives/recent_dives_controller.dart';
 import 'ssi/ssi_buddies_controller.dart';
+import 'ssi/ssi_centers_controller.dart';
 import 'ui/accounts_screen.dart';
 import 'ui/developer_mode.dart';
 import 'ui/theme/app_theme.dart';
@@ -25,6 +26,9 @@ class SsiConnectApp extends StatelessWidget {
         ),
         ChangeNotifierProvider(
           create: (_) => SsiBuddiesController()..loadFromStorage(),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => SsiCentersController()..loadFromStorage(),
         ),
         ChangeNotifierProvider(create: (_) => RecentDivesController()),
         // Session-only: the diagnostic tools stay hidden until someone

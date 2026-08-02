@@ -223,7 +223,7 @@
 <div class="wrap">
   <header class="page">
     <span class="eyebrow">Design-Vorschau · nachgebaut, kein Screenshot</span>
-    <h1>SSI Connect – Stand nach den SSI-Buddies</h1>
+    <h1>SSI Connect – Stand nach „SSI Buddy"</h1>
     <p>
       Gegenüber der ersten Vorschau ist einiges dazugekommen: eine Startseite, die mit den
       Tauchgängen beginnt statt mit einer Namensliste, die Tauchgangs-Nummer und das
@@ -333,8 +333,8 @@
           <div class="card" style="padding:9px"><div class="row" style="align-items:center;gap:8px">
             <span class="badge">👥</span>
             <div style="flex:1">
-              <div class="title">SSI-Buddies</div>
-              <div class="sub">Mittaucher speichern und beim Export auswählen</div>
+              <div class="title">SSI Buddy</div>
+              <div class="sub">Mittaucher und Basen speichern und teilen</div>
             </div><span style="color:var(--ink-3)">›</span>
           </div></div>
           <div class="card" style="padding:9px"><div class="row" style="align-items:center;gap:8px">
@@ -501,11 +501,13 @@
     </figure>
   </div>
 
-  <h2 class="group">Neu: Buddies <span class="new-flag">neu</span></h2>
+  <h2 class="group">Neu: Buddies und Basen <span class="new-flag">neu</span></h2>
   <p class="group-sub">
     Buddies reisen nicht mit einem Tauchgang mit – SSIs Import-Format hat kein Feld dafür.
     Sie haben stattdessen eine eigene Liste, aus der sich jeder Eintrag wieder als QR-Code
-    zeigen lässt, damit ein anderes Gerät ihn scannen kann.
+    zeigen lässt, damit ein anderes Gerät ihn scannen kann. Tauchbasen sind eine dritte
+    Code-Art mit eigenem Abschnitt: sie tragen einen Namen und eine Basis-Nummer statt
+    Mitglied und Mailadresse.
   </p>
 
   <div class="gallery">
@@ -531,7 +533,7 @@
     <figure class="screen">
       <div class="device"><div class="screen-surface">
         <div class="statusbar"><span>21:36</span><span>▾ ▮</span></div>
-        <div class="appbar">← SSI-Buddies</div>
+        <div class="appbar">← SSI Buddy</div>
         <div class="body-scroll" style="padding:2px 11px">
           <div class="section-head" style="margin:2px 2px 7px">Aus den Accounts</div>
           <div class="card edge-blue" data-edge style="padding:10px"><div class="row" style="align-items:center;gap:8px">
@@ -553,15 +555,24 @@
           <div class="card"><div class="row" style="align-items:center;gap:9px">
             <div class="avatar">👤</div>
             <div style="flex:1">
-              <div class="title">SSI-Nr. 123456</div>
+              <div class="title">Thomas Burger</div>
+              <div class="sub">SSI-Nr. 3154225 · Leiter-Nr. 110890</div>
+            </div><span style="color:var(--ink-3)">⋯</span>
+          </div></div>
+          <div class="section-head" style="margin:11px 2px 7px">Tauchbasen</div>
+          <div class="card"><div class="row" style="align-items:center;gap:9px">
+            <div class="avatar">🏪</div>
+            <div style="flex:1">
+              <div class="title">Nero-Sport Diving Center, Zakynthos</div>
+              <div class="sub">Basis-Nr. 718019</div>
             </div><span style="color:var(--ink-3)">⋯</span>
           </div></div>
         </div>
-        <div class="fab">▣ Buddy scannen</div>
+        <div class="fab">▣ Code scannen</div>
       </div></div>
       <figcaption>
-        <span class="name">5 · SSI-Buddies</span>
-        <span class="desc">Alle, zu denen das Gerät eine SSI-Nummer kennt: oben die Accounts mit hinterlegter Nummer, darunter die eigens gescannten Buddies. Ein Tippen zeigt den Eintrag wieder als QR-Code, damit ein anderes Gerät ihn einlesen kann. Account-Zeilen haben kein Menü – ihre Nummer gehört zum Account.</span>
+        <span class="name">5 · SSI Buddy</span>
+        <span class="desc">Alle SSI-Codes, die das Gerät kennt: oben die Accounts mit hinterlegter Nummer, darunter die eigens gescannten Buddies, zuletzt die Tauchbasen. Ein Tippen zeigt den Eintrag wieder als QR-Code, damit ein anderes Gerät ihn einlesen kann. Account-Zeilen haben kein Menü – ihre Nummer gehört zum Account. Der Scanner erkennt selbst, ob ein Buddy- oder ein Basis-Code vor der Kamera ist.</span>
       </figcaption>
     </figure>
 
