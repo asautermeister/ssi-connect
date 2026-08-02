@@ -228,7 +228,7 @@ class _BuddyCard extends StatelessWidget {
     // repeat it here when the title is an actual name.
     final subtitle = [
       buddy.memberIdLine,
-      buddy.leaderNumberLine,
+      buddy.professionalNumberLine,
       buddy.email,
     ].whereType<String>().join(' · ');
 

@@ -26,7 +26,7 @@ Kamera der SSI-App scannt.
 - **QR-Code-Export** im Format, das der SSI-QR-Scanner beim Anlegen eines Tauchgangs erwartet –
   inklusive der SSI-Mitgliedsnummer, wenn für den Account eine hinterlegt ist
 - **SSI Buddy**: eine Liste aller SSI-Codes, die das Gerät kennt – die Accounts mit hinterlegter
-  Nummer, zusätzlich gescannte Mittaucher (bei Profis inklusive Leiter-Nummer) und unter
+  Nummer, zusätzlich gescannte Mittaucher (bei Profis inklusive SSI Professional Nr.) und unter
   „Tauchbasen" die Basen selbst. Jeder Eintrag lässt sich wieder als QR-Code anzeigen, damit ein
   anderes Gerät ihn einlesen kann; der Scanner erkennt selbst, ob ein Buddy- oder ein
   Basis-Code vor der Kamera ist

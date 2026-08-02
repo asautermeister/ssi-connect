@@ -209,5 +209,18 @@ void main() {
         'SSI-Nr. 42',
       );
     });
+
+    test('labels a professional with SSI\'s own term', () {
+      // "SSI Professional" is what SSI calls the rank; the wire key
+      // `leaderNr` is not what a diver sees printed on their card.
+      expect(
+        const SsiBuddyCode(
+          memberId: '3154225',
+          leaderNumber: '110890',
+        ).professionalNumberLine,
+        'SSI Professional Nr. 110890',
+      );
+      expect(const SsiBuddyCode(memberId: '42').professionalNumberLine, isNull);
+    });
   });
 }

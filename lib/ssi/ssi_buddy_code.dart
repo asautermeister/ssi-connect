@@ -29,10 +29,13 @@ class SsiBuddyCode {
   final String? lastName;
   final String? email;
 
-  /// A professional's leader number, present only on the codes of
-  /// divemasters and instructors. Kept even though nothing consumes it
-  /// yet: dropping a field on the way through would mean this app hands
-  /// out a poorer code than it was given.
+  /// The number SSI gives a professional - divemasters and instructors -
+  /// which ordinary members' codes don't carry. Kept even though nothing
+  /// consumes it yet: dropping a field on the way through would mean this
+  /// app hands out a poorer code than it was given.
+  ///
+  /// Named after SSI's own wire key `leaderNr` so the parser reads
+  /// straight; on screen it is the official term, "SSI Professional Nr.".
   final String? leaderNumber;
 
   /// True when the scanned code identifies an SSI professional.
@@ -56,9 +59,10 @@ class SsiBuddyCode {
   /// same digits.
   String? get memberIdLine => fullName == null ? null : 'SSI-Nr. $memberId';
 
-  /// The leader number as a secondary line, or null for a code without one.
-  String? get leaderNumberLine =>
-      leaderNumber == null ? null : 'Leiter-Nr. $leaderNumber';
+  /// The professional number as a secondary line, or null for a code
+  /// without one.
+  String? get professionalNumberLine =>
+      leaderNumber == null ? null : 'SSI Professional Nr. $leaderNumber';
 
   /// The payload as SSI writes it, so this member can be shown as a QR
   /// code for someone else's app to scan.
