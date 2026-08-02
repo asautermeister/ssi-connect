@@ -47,6 +47,11 @@ class SsiConnectApp extends StatelessWidget {
       ],
       child: MaterialApp(
         title: 'SSI Connect',
+        // Flutters schräges DEBUG-Band oben rechts. Es erscheint ohnehin
+        // nur in Debug-Builds, aber getestet wird hier auf echten Geräten
+        // mit echten Tauchgängen - da ist es kein Hinweis mehr, sondern
+        // steht dem QR-Code und der Tauchgangsliste im Weg.
+        debugShowCheckedModeBanner: false,
         theme: AppTheme.light(),
         darkTheme: AppTheme.dark(),
         home: const AccountsScreen(),
