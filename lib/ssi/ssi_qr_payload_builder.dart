@@ -57,7 +57,13 @@ import 'ssi_buddy_code.dart';
 ///   river, quarry or indoor, but not to one of them.
 /// - `airtemp_c` - Garmin's `maxTemperature` is plausibly the air reading,
 ///   but that is a guess, and a wrong air temperature is worse than none.
-/// - `user_leader_id` - empty in every captured export.
+/// - `user_leader_id` - empty in every captured export, so its content is
+///   unknown. A divemaster's buddy code carries both a member id
+///   (`3154225`) and a `leaderNr` (`110890`), and the field name argues
+///   for either: "user id of the leader" reads like the former, "leader
+///   number" like the latter. One SSI export of a dive that has a guide
+///   recorded would show which - and the app has no way to pick a guide
+///   yet anyway.
 ///
 /// An omitted field simply isn't imported; a wrongly guessed one would be
 /// silently wrong in the user's logbook, which is the worse failure.

@@ -245,7 +245,7 @@ void main() {
       await _pump(tester, accounts: [_account('Andreas')]);
 
       for (final label in const [
-        'SSI-Buddies',
+        'SSI Buddy',
         'FIT-Datei importieren',
         'Info',
       ]) {

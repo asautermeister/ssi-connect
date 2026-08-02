@@ -666,8 +666,8 @@ class _QuickActions extends StatelessWidget {
       children: [
         _ActionCard(
           icon: Icons.group_outlined,
-          title: 'SSI-Buddies',
-          subtitle: 'Mittaucher speichern und beim Export auswählen',
+          title: 'SSI Buddy',
+          subtitle: 'Mittaucher und Basen speichern und teilen',
           onTap: () => Navigator.of(
             context,
           ).push(MaterialPageRoute(builder: (_) => const SsiBuddiesScreen())),

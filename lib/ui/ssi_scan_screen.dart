@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
 import '../ssi/ssi_buddy_code.dart';
+import '../ssi/ssi_center_code.dart';
 import 'theme/app_theme.dart';
 
 /// Camera view that pops with the first scanned code [parse] accepts.
@@ -94,6 +95,9 @@ class _QrScanScreenState<T extends Object> extends State<QrScanScreen<T>> {
 
 /// Reads the member QR code the SSI app shows under "Dein QR-Code". Pops
 /// with the parsed [SsiBuddyCode], or null if the user backed out.
+///
+/// Members only: this is what the account screen uses to learn who its
+/// owner is, and a dive centre is not an answer to that question.
 class SsiScanScreen extends StatelessWidget {
   const SsiScanScreen({super.key});
 
@@ -105,6 +109,28 @@ class SsiScanScreen extends StatelessWidget {
       hint:
           'In der SSI-App „Dein QR-Code" öffnen und die Kamera darauf '
           'richten.',
+    );
+  }
+}
+
+/// Reads either kind of SSI code and pops with whatever it turned out to
+/// be: a member ([SsiBuddyCode]) or a dive centre ([SsiCenterCode]).
+///
+/// One scanner for both, because the two look identical to the person
+/// holding the camera - the marker inside decides. Asking beforehand which
+/// kind is about to be scanned would only be a question the code itself
+/// already answers.
+class SsiCodeScanScreen extends StatelessWidget {
+  const SsiCodeScanScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return QrScanScreen<Object>(
+      parse: (raw) => SsiBuddyCode.tryParse(raw) ?? SsiCenterCode.tryParse(raw),
+      title: 'SSI-QR-Code scannen',
+      hint:
+          'Den QR-Code eines Buddys („Dein QR-Code" in der SSI-App) oder '
+          'einer Tauchbasis in die Kamera halten.',
     );
   }
 }
