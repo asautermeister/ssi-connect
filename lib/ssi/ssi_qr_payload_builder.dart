@@ -98,23 +98,38 @@ class SsiQrPayloadBuilder {
   /// inventing something. A training dive has to be corrected in SSI.
   static const _diveSubTypeFunDive = 24;
 
+  /// Why [dive] cannot be turned into a payload, phrased for the user, or
+  /// null when it can.
+  ///
+  /// The same question [build] answers by throwing, asked without having to
+  /// catch anything - a list offering several dives for export needs to
+  /// know which ones it may offer, before the user picks one. Both go
+  /// through this method so the two can never disagree about what counts
+  /// as exportable.
+  static String? unexportableReason(Dive dive) {
+    if (dive.maxDepthMeters == null) {
+      return 'Tauchgang hat keine maximale Tiefe - QR-Code nicht möglich.';
+    }
+    if (dive.duration == null) {
+      return 'Tauchgang hat keine Dauer - QR-Code nicht möglich.';
+    }
+    return null;
+  }
+
   /// [diver] attributes the dive to an SSI member. Optional: without it
   /// the payload is exactly what it was before, and SSI attributes the
   /// scanned dive to whoever is logged in.
   ///
   /// Throws [ArgumentError] if [dive] is missing a field the payload can't
-  /// be built without (max depth or duration).
+  /// be built without - see [unexportableReason].
   static String build(Dive dive, {SsiBuddyCode? diver}) {
-    final maxDepth = dive.maxDepthMeters;
-    final duration = dive.duration;
-    if (maxDepth == null) {
-      throw ArgumentError(
-        'Tauchgang hat keine maximale Tiefe - QR-Code nicht möglich.',
-      );
-    }
-    if (duration == null) {
-      throw ArgumentError('Tauchgang hat keine Dauer - QR-Code nicht möglich.');
-    }
+    final reason = unexportableReason(dive);
+    if (reason != null) throw ArgumentError(reason);
+
+    // Non-null past the check above; `build` and `unexportableReason` ask
+    // about exactly these two.
+    final maxDepth = dive.maxDepthMeters!;
+    final duration = dive.duration!;
 
     final fields = <String>[
       'dive_type:${_diveTypeFor(dive.type)}',
