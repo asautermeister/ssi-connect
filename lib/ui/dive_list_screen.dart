@@ -10,6 +10,7 @@ import '../models/dive.dart';
 import '../ssi/ssi_buddy_code.dart';
 import 'debug_log_screen.dart';
 import 'developer_mode.dart';
+import 'dive_export_selection_screen.dart';
 import 'dive_list_tile.dart';
 import 'fit_import_flow.dart';
 import 'theme/app_theme.dart';
@@ -59,6 +60,22 @@ class _DiveListScreenState extends State<DiveListScreen> {
       appBar: AppBar(
         title: Text(widget.account.displayName),
         actions: [
+          // Hidden while there is nothing to pick from - an empty
+          // selection list would only be able to say "keine Tauchgänge",
+          // which the screen behind it already says.
+          if (load.dives.isNotEmpty)
+            IconButton(
+              icon: const Icon(Icons.checklist_rtl),
+              tooltip: 'Mehrere exportieren',
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => DiveExportSelectionScreen(
+                    dives: load.dives,
+                    diver: widget.account.ssiIdentity,
+                  ),
+                ),
+              ),
+            ),
           // Only once the diagnostic tools have been unlocked in the info
           // screen - otherwise this is a bug icon on a screen about diving.
           if (context.watch<DeveloperMode>().enabled)

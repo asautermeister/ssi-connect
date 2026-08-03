@@ -18,13 +18,17 @@ Kamera der SSI-App scannt.
 
 - **Mehrere Garmin-Accounts** (z.B. für die ganze Familie), Login inkl. Zwei-Faktor-Code
 - **Startseite mit den jüngsten Tauchgängen** über alle Accounts hinweg – ein Tippen darauf
-  öffnet direkt den QR-Code
+  öffnet direkt den QR-Code. Über „Alle anzeigen" die vollständige gemeinsame Liste, die sich
+  auf Knopfdruck seitenweise weiter in die Vergangenheit lädt
 - **Farbe je Account**, als Balken am linken Rand der Tauchgänge – auf einem Familien-Tablet
   ist so auf einen Blick klar, wessen Tauchgang das ist (der Name steht zusätzlich dabei)
 - **Tauchgangs-Liste** pro Account: Datum, max. Tiefe, Tauchgangs-Nummer des Tages
 - **Detailansicht** mit allen geladenen Werten (Tiefe, Dauer, Wassertemperatur, ...)
 - **QR-Code-Export** im Format, das der SSI-QR-Scanner beim Anlegen eines Tauchgangs erwartet –
   inklusive der SSI-Mitgliedsnummer, wenn für den Account eine hinterlegt ist
+- **Tauchtag am Stück übertragen**: mehrere Tauchgänge auswählen (ein Tippen wählt einen ganzen
+  Tauchtag) und als Folge von QR-Codes durchblättern. Das Handy mit der SSI-App bleibt liegen –
+  scannen, „Weiter", scannen
 - **SSI Buddy**: eine Liste aller SSI-Codes, die das Gerät kennt – die Accounts mit hinterlegter
   Nummer, zusätzlich gescannte Mittaucher (bei Profis inklusive SSI Professional Nr.) und unter
   „Tauchbasen" die Basen selbst. Jeder Eintrag lässt sich wieder als QR-Code anzeigen, damit ein
@@ -67,7 +71,8 @@ deshalb ist die App als Tablet-/Zweitgerät-App gedacht und nicht als Handy-App 
 
 ## Entwicklung
 
-Setup-Anleitung (Windows/VS Code) und Build-Befehle: siehe [`SETUP.md`](SETUP.md).
+Setup-Anleitung (Windows, macOS, Linux; Editor frei wählbar) und Build-Befehle:
+siehe [`SETUP.md`](SETUP.md).
 Fertige Builds veröffentlichen: siehe [`RELEASING.md`](RELEASING.md).
 
 ```

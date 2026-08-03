@@ -66,9 +66,33 @@ class RecentDivesController extends ChangeNotifier {
   final DiveCacheRepository _cache;
   final _byAccountId = <String, AccountDives>{};
 
+  /// How many pages have been fetched per account, so the next "load more"
+  /// knows where to continue.
+  final _pagesLoaded = <String, int>{};
+
+  /// Accounts whose last page came back short - there is nothing older to
+  /// ask for, and asking again would just be an empty round trip.
+  final _exhausted = <String>{};
+
+  bool _isLoadingMore = false;
+  Object? _loadMoreError;
+
   /// Which set of accounts the current data belongs to, so the screen can
   /// ask on every build without re-fetching.
   String? _loadedFor;
+
+  bool get isLoadingMore => _isLoadingMore;
+
+  /// Why the last "load more" failed, or null. Kept separate from the
+  /// per-account errors: those mean "nothing on screen", this one means
+  /// "what is on screen is fine, there just isn't more of it yet".
+  Object? get loadMoreError => _loadMoreError;
+
+  /// True while at least one account might still have older dives. False
+  /// once every account has answered with a short page.
+  bool get hasMore =>
+      _byAccountId.keys.any((id) => !_exhausted.contains(id)) &&
+      _byAccountId.isNotEmpty;
 
   bool get isLoading => _byAccountId.values.any((load) => load.isLoading);
 
@@ -105,8 +129,8 @@ class RecentDivesController extends ChangeNotifier {
   AccountDives forAccount(String accountId) =>
       _byAccountId[accountId] ?? const AccountDives();
 
-  /// The newest dives across all accounts, most recent first.
-  List<RecentDive> recent(List<GarminAccount> accounts, {int limit = 5}) {
+  /// Every loaded dive across all accounts, most recent first.
+  List<RecentDive> merged(List<GarminAccount> accounts) {
     final merged = <RecentDive>[];
     for (final account in accounts) {
       for (final dive in forAccount(account.id).dives) {
@@ -114,8 +138,12 @@ class RecentDivesController extends ChangeNotifier {
       }
     }
     merged.sort((a, b) => b.dive.dateTime.compareTo(a.dive.dateTime));
-    return merged.take(limit).toList();
+    return merged;
   }
+
+  /// The newest [limit] dives across all accounts, for the start screen.
+  List<RecentDive> recent(List<GarminAccount> accounts, {int limit = 5}) =>
+      merged(accounts).take(limit).toList();
 
   /// Loads every account's dives in parallel. Does nothing if the same set
   /// of accounts has already been loaded, unless [force] is set - the start
@@ -128,6 +156,12 @@ class RecentDivesController extends ChangeNotifier {
     final signature = accounts.map((a) => a.id).join(',');
     if (!force && signature == _loadedFor) return;
     _loadedFor = signature;
+
+    // This re-fetches the first page, so anything paged in beyond it is
+    // gone and the paging state starts over.
+    _pagesLoaded.clear();
+    _exhausted.clear();
+    _loadMoreError = null;
 
     _byAccountId.removeWhere((id, _) => !accounts.any((a) => a.id == id));
     for (final account in accounts) {
@@ -152,13 +186,15 @@ class RecentDivesController extends ChangeNotifier {
     await _seedFromCache(account.id);
 
     try {
-      final dives = await fetch(account);
+      final dives = await fetch(account, start: 0);
       final sorted = [...dives]
         ..sort((a, b) => b.dateTime.compareTo(a.dateTime));
       _byAccountId[account.id] = AccountDives(
         dives: sorted,
         fetchedAt: DateTime.now(),
       );
+      _pagesLoaded[account.id] = 1;
+      if (dives.length < divePageSize) _exhausted.add(account.id);
       await _cache.save(account.id, sorted);
     } catch (e) {
       // Failing does not throw away what we have. Cached dives with a
@@ -172,6 +208,71 @@ class RecentDivesController extends ChangeNotifier {
       );
     }
     notifyListeners();
+  }
+
+  /// Fetches one more page per account and appends it to what is already
+  /// loaded. Accounts that have already run out are skipped.
+  ///
+  /// Does not touch the cache: it keeps the newest
+  /// [DiveCacheRepository.maxDivesPerAccount] dives, which is exactly what
+  /// the first page already produced, so writing paged-in dives there would
+  /// only rewrite the same entries. Older dives stay for this session.
+  Future<void> loadMore({
+    required List<GarminAccount> accounts,
+    required DiveFetcher fetch,
+  }) async {
+    if (_isLoadingMore) return;
+    final pending = [
+      for (final account in accounts)
+        if (!_exhausted.contains(account.id) &&
+            _byAccountId.containsKey(account.id))
+          account,
+    ];
+    if (pending.isEmpty) return;
+
+    _isLoadingMore = true;
+    _loadMoreError = null;
+    notifyListeners();
+
+    await Future.wait([
+      for (final account in pending) _loadNextPage(account, fetch),
+    ]);
+
+    _isLoadingMore = false;
+    notifyListeners();
+  }
+
+  Future<void> _loadNextPage(GarminAccount account, DiveFetcher fetch) async {
+    final pagesLoaded = _pagesLoaded[account.id] ?? 1;
+    try {
+      final fetched = await fetch(account, start: pagesLoaded * divePageSize);
+      _pagesLoaded[account.id] = pagesLoaded + 1;
+      // Short page means the end. Checked before merging, since a page full
+      // of dives we already had is still a full page.
+      if (fetched.length < divePageSize) _exhausted.add(account.id);
+      if (fetched.isEmpty) return;
+
+      final known = forAccount(account.id);
+      // By id, so a dive that appears in two pages - the list shifts if
+      // something is logged while paging - lands once.
+      final byId = {
+        for (final dive in known.dives) dive.id: dive,
+        for (final dive in fetched) dive.id: dive,
+      };
+      final all = byId.values.toList()
+        ..sort((a, b) => b.dateTime.compareTo(a.dateTime));
+
+      _byAccountId[account.id] = AccountDives(
+        // Re-numbered across the whole set: a dive day split across a page
+        // boundary would otherwise be numbered from 1 twice.
+        dives: assignDiveNumbersOfDay(all),
+        fetchedAt: known.fetchedAt,
+        isFromCache: known.isFromCache,
+      );
+    } catch (e) {
+      // What is on screen stays; only the attempt to extend it failed.
+      _loadMoreError = e;
+    }
   }
 
   /// Publishes the cached dives right away, so something is on screen while
@@ -197,6 +298,8 @@ class RecentDivesController extends ChangeNotifier {
   /// the account is removed, and from the "clear cache" action.
   Future<void> forget(String accountId) async {
     _byAccountId.remove(accountId);
+    _pagesLoaded.remove(accountId);
+    _exhausted.remove(accountId);
     // Force the next load to actually run rather than short-circuit on an
     // unchanged account list.
     _loadedFor = null;

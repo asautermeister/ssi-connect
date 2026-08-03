@@ -107,7 +107,7 @@ Future<void> _pump(
   await accountsController.loadFromStorage();
   await buddies.loadFromStorage();
 
-  Future<List<Dive>> fetch(GarminAccount account) async {
+  Future<List<Dive>> fetch(GarminAccount account, {int start = 0}) async {
     if (offline) {
       throw GarminAuthException(
         GarminAuthErrorType.offline,

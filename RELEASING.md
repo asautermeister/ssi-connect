@@ -114,6 +114,6 @@ signieren; mit einer kostenlosen Apple-ID läuft die Installation nach sieben
 Tagen ab und muss erneuert werden.
 
 Für ein, zwei eigene Geräte ist der Weg aus [`SETUP.md`](SETUP.md),
-Abschnitt 3b, meist einfacher: einmal mit Xcode direkt auf das Gerät bauen.
+Abschnitt 5, meist einfacher: einmal mit Xcode direkt auf das Gerät bauen.
 Die `.ipa` lohnt sich vor allem, wenn jemand ohne Mac das Gerät bestücken
 soll.

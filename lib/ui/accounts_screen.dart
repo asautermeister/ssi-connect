@@ -7,16 +7,16 @@ import '../accounts/models/garmin_account.dart';
 import '../dives/dive_loader.dart';
 import '../dives/recent_dives_controller.dart';
 import 'add_account_screen.dart';
+import 'all_dives_screen.dart';
 import 'dive_list_screen.dart';
 import 'fit_import_flow.dart';
 import 'format.dart';
 import 'info_screen.dart';
-import 'qr_screen.dart';
+import 'recent_dive_card.dart';
 import 'ssi_buddies_screen.dart';
 import 'ssi_identity_screen.dart';
 import 'theme/app_theme.dart';
 import 'widgets/app_card.dart';
-import 'widgets/dive_type_icon.dart';
 import 'widgets/offline_banner.dart';
 
 /// Start screen. Leads with the dives themselves rather than with a list of
@@ -125,7 +125,20 @@ class _RecentDives extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const SectionHeader(title: 'Zuletzt getaucht'),
+        Row(
+          children: [
+            const Expanded(child: SectionHeader(title: 'Zuletzt getaucht')),
+            // Only once there is something to look at - the full list would
+            // otherwise just repeat the empty state below it.
+            if (recent.isNotEmpty)
+              TextButton(
+                onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const AllDivesScreen()),
+                ),
+                child: const Text('Alle anzeigen'),
+              ),
+          ],
+        ),
         if (recent.isEmpty)
           AppCard(
             child: Row(
@@ -156,7 +169,7 @@ class _RecentDives extends StatelessWidget {
           )
         else ...[
           for (final entry in recent) ...[
-            _RecentDiveCard(entry: entry),
+            RecentDiveCard(entry: entry),
             const SizedBox(height: AppSpacing.md),
           ],
           // Named rather than silently missing: with several accounts on one
@@ -175,77 +188,6 @@ class _RecentDives extends StatelessWidget {
             ),
         ],
       ],
-    );
-  }
-}
-
-class _RecentDiveCard extends StatelessWidget {
-  const _RecentDiveCard({required this.entry});
-
-  final RecentDive entry;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final palette = theme.extension<AppPalette>()!;
-    final dive = entry.dive;
-
-    return AppCard(
-      edgeColor: entry.account.color?.of(context),
-      onTap: () => Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (_) =>
-              QrScreen(dive: dive, diver: entry.account.ssiIdentity),
-        ),
-      ),
-      child: Row(
-        children: [
-          DiveTypeIcon(type: dive.type, size: 34),
-          const SizedBox(width: AppSpacing.md),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '${Fmt.weekday(dive.dateTime)}, ${Fmt.date(dive.dateTime)}',
-                  style: theme.textTheme.titleMedium,
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  [
-                    entry.account.displayName,
-                    if (dive.duration != null)
-                      '${Fmt.minutes(dive.duration)} min',
-                  ].join(' · '),
-                  style: theme.textTheme.bodySmall,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: AppSpacing.sm),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.baseline,
-            textBaseline: TextBaseline.alphabetic,
-            children: [
-              Text(
-                Fmt.meters(dive.maxDepthMeters),
-                style: theme.textTheme.displaySmall,
-              ),
-              const SizedBox(width: AppSpacing.xs),
-              Text(
-                'm',
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: palette.inkMuted,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(width: AppSpacing.sm),
-          // Says where the tap goes, so the card isn't a guess.
-          Icon(Icons.qr_code_2, size: 20, color: theme.colorScheme.primary),
-        ],
-      ),
     );
   }
 }
