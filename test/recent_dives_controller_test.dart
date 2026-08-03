@@ -55,7 +55,7 @@ void main() {
 
       await controller.load(
         accounts: [andreas, marie],
-        fetch: (account) async => account.id == 'andreas'
+        fetch: (account, {start = 0}) async => account.id == 'andreas'
             ? [
                 _dive('a1', DateTime(2025, 11, 8, 8)),
                 _dive('a2', DateTime(2025, 11, 1, 8)),
@@ -76,7 +76,7 @@ void main() {
 
       await controller.load(
         accounts: [account],
-        fetch: (_) async => [
+        fetch: (_, {start = 0}) async => [
           for (var day = 1; day <= 9; day++)
             _dive('d$day', DateTime(2025, 11, day)),
         ],
@@ -92,7 +92,7 @@ void main() {
 
       await controller.load(
         accounts: [broken, working],
-        fetch: (account) async {
+        fetch: (account, {start = 0}) async {
           if (account.id == 'broken') throw StateError('login abgelaufen');
           return [_dive('w1', DateTime(2025, 11, 8))];
         },
@@ -113,7 +113,7 @@ void main() {
       await controller.load(
         accounts: [account],
         // Deliberately out of order: the source is not sorted for us.
-        fetch: (_) async => [
+        fetch: (_, {start = 0}) async => [
           _dive('old', DateTime(2025, 10, 1)),
           _dive('new', DateTime(2025, 11, 8)),
         ],
@@ -127,7 +127,7 @@ void main() {
       final controller = _controller();
       var fetches = 0;
 
-      Future<List<Dive>> fetch(GarminAccount _) async {
+      Future<List<Dive>> fetch(GarminAccount _, {int start = 0}) async {
         fetches++;
         return [_dive('d', DateTime(2025, 11, 8))];
       }
@@ -144,7 +144,7 @@ void main() {
       final controller = _controller();
       var fetches = 0;
 
-      Future<List<Dive>> fetch(GarminAccount _) async {
+      Future<List<Dive>> fetch(GarminAccount _, {int start = 0}) async {
         fetches++;
         return [_dive('d', DateTime(2025, 11, 8))];
       }
@@ -161,7 +161,7 @@ void main() {
       final controller = _controller();
       final asked = <String>[];
 
-      Future<List<Dive>> fetch(GarminAccount account) async {
+      Future<List<Dive>> fetch(GarminAccount account, {int start = 0}) async {
         asked.add(account.id);
         return const [];
       }
@@ -179,11 +179,11 @@ void main() {
 
       await controller.load(
         accounts: [first, second],
-        fetch: (_) async => [_dive('d', DateTime(2025, 11, 8))],
+        fetch: (_, {start = 0}) async => [_dive('d', DateTime(2025, 11, 8))],
       );
       await controller.load(
         accounts: [first],
-        fetch: (_) async => [_dive('d', DateTime(2025, 11, 8))],
+        fetch: (_, {start = 0}) async => [_dive('d', DateTime(2025, 11, 8))],
       );
 
       expect(controller.forAccount('b').dives, isEmpty);
@@ -206,7 +206,7 @@ void main() {
 
       await _controller(cache).load(
         accounts: [account],
-        fetch: (_) async => [_dive('d1', DateTime(2025, 11, 8))],
+        fetch: (_, {start = 0}) async => [_dive('d1', DateTime(2025, 11, 8))],
       );
 
       expect(cache.stored['a']?.dives.single.id, 'd1');
@@ -222,7 +222,7 @@ void main() {
 
       await controller.load(
         accounts: [_account('a')],
-        fetch: (_) async => throw GarminAuthException(
+        fetch: (_, {start = 0}) async => throw GarminAuthException(
           GarminAuthErrorType.offline,
           'Keine Internetverbindung.',
         ),
@@ -247,7 +247,9 @@ void main() {
 
       await controller.load(
         accounts: [_account('a')],
-        fetch: (_) async => [_dive('fresh', DateTime(2025, 11, 8))],
+        fetch: (_, {start = 0}) async => [
+          _dive('fresh', DateTime(2025, 11, 8)),
+        ],
       );
 
       final load = controller.forAccount('a');
@@ -261,7 +263,7 @@ void main() {
 
       await controller.load(
         accounts: [_account('a'), _account('b')],
-        fetch: (account) async {
+        fetch: (account, {start = 0}) async {
           throw GarminAuthException(
             account.id == 'a'
                 ? GarminAuthErrorType.offline
@@ -283,7 +285,7 @@ void main() {
 
       await controller.load(
         accounts: [_account('a'), _account('b')],
-        fetch: (_) async =>
+        fetch: (_, {start = 0}) async =>
             throw GarminAuthException(GarminAuthErrorType.offline, 'x'),
       );
 
@@ -296,7 +298,7 @@ void main() {
       final controller = _controller(cache);
       await controller.load(
         accounts: [account],
-        fetch: (_) async => [_dive('d1', DateTime(2025, 11, 8))],
+        fetch: (_, {start = 0}) async => [_dive('d1', DateTime(2025, 11, 8))],
       );
 
       await controller.forget('a');
@@ -310,7 +312,7 @@ void main() {
       final controller = _controller();
       var fetches = 0;
 
-      Future<List<Dive>> fetch(GarminAccount _) async {
+      Future<List<Dive>> fetch(GarminAccount _, {int start = 0}) async {
         fetches++;
         return [_dive('d', DateTime(2025, 11, 8))];
       }

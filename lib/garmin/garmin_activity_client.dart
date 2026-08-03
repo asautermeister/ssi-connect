@@ -37,9 +37,16 @@ class GarminActivityClient {
   /// the whole fetch down, since the other types may well return dives. So
   /// per-type failures are collected and only rethrown if *every* type
   /// failed.
+  ///
+  /// [start] skips that many activities *per type*, which is how the
+  /// endpoint counts - not that many across the merged result. With one
+  /// dive type in play, as on an ordinary logbook, the two are the same;
+  /// with several, a page can come back shorter than [limit] without
+  /// meaning the end has been reached.
   Future<List<GarminActivity>> getDiveActivities(
     GarminSession session, {
     int limit = 50,
+    int start = 0,
   }) async {
     final results = <GarminActivity>[];
     final failures = <String, GarminAuthException>{};
@@ -53,7 +60,7 @@ class GarminActivityClient {
           queryParameters: {
             'activityType': activityType,
             'limit': limit,
-            'start': 0,
+            'start': start,
           },
         );
       } on GarminAuthException catch (e) {

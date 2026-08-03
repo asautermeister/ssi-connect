@@ -4,10 +4,20 @@ import '../garmin/garmin_auth_exceptions.dart';
 import '../garmin/models/garmin_session.dart';
 import '../models/dive.dart';
 
+/// How many dives one request asks for. Also the step between pages, so
+/// the caller can compute the next [DiveFetcher] offset without knowing
+/// what the Garmin client does with it.
+const divePageSize = 50;
+
 /// Fetches the dives of one account. The single seam both the start screen
 /// and the dive list load through, so they can't drift apart in how they
 /// handle an expired session.
-typedef DiveFetcher = Future<List<Dive>> Function(GarminAccount account);
+///
+/// [start] skips that many dives, newest first: 0 is the first page,
+/// [divePageSize] the second. A page shorter than [divePageSize] means
+/// there is nothing older left.
+typedef DiveFetcher =
+    Future<List<Dive>> Function(GarminAccount account, {int start});
 
 /// Loads dives from Garmin, refreshing the stored session once if the
 /// access token has expired.
@@ -26,6 +36,7 @@ class GarminDiveLoader {
 
   Future<List<Dive>> load(
     GarminAccount account, {
+    int start = 0,
     bool forceRefreshSession = false,
   }) async {
     var session = account.session;
@@ -34,7 +45,11 @@ class GarminDiveLoader {
     }
 
     try {
-      final activities = await _client.getDiveActivities(session);
+      final activities = await _client.getDiveActivities(
+        session,
+        limit: divePageSize,
+        start: start,
+      );
       final dives = activities
           .map(Dive.fromGarminActivity)
           .whereType<Dive>()
@@ -45,7 +60,7 @@ class GarminDiveLoader {
       // only once - retrying a wrong password would just lock the account.
       if (e.type == GarminAuthErrorType.invalidCredentials &&
           !forceRefreshSession) {
-        return load(account, forceRefreshSession: true);
+        return load(account, start: start, forceRefreshSession: true);
       }
       rethrow;
     }
