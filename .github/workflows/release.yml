@@ -19,7 +19,7 @@ permissions:
   contents: write
 
 env:
-  FLUTTER_VERSION: '3.44.7'
+  FLUTTER_VERSION: '3.44.8'
 
 jobs:
   # Erst prüfen, dann bauen: eine Version mit roten Tests soll gar nicht
