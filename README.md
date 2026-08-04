@@ -26,10 +26,12 @@ Kamera der SSI-App scannt.
 - **Detailansicht** mit allen geladenen Werten (Tiefe, Dauer, Wassertemperatur, ...)
 - **QR-Code-Export** im Format, das der SSI-QR-Scanner beim Anlegen eines Tauchgangs erwartet –
   inklusive der SSI-Mitgliedsnummer, wenn für den Account eine hinterlegt ist
-- **Tauchplätze**: einmal pro Platz die SSI-Platznummer zuordnen (eintippen oder die Adresse der
-  Platzseite einfügen), danach erkennt die App den Platz an der Position des Tauchgangs wieder
-  und schlägt ihn vor. Bestätigt landet er als `site:` im QR-Code – vorgeschlagen wird immer,
-  gesetzt nie von allein
+- **Tauchplätze aus dem SSI-Logbuch**: einmal mit dem SSI-Konto verbinden, und jeder Platz, an
+  dem man laut SSI schon getaucht ist, landet mit Nummer, Name und Position auf dem Gerät.
+  Danach erkennt die App den Platz an der Position des Tauchgangs wieder und schlägt ihn vor;
+  bestätigt landet er als `site:` im QR-Code. Liegen mehrere Plätze im Umkreis, werden alle
+  angeboten – vorgeschlagen wird immer, gesetzt nie von allein. Ein Platz lässt sich weiterhin
+  von Hand zuordnen (Nummer eintippen oder die Adresse der Platzseite einfügen)
 - **Tauchtag am Stück übertragen**: mehrere Tauchgänge auswählen (ein Tippen wählt einen ganzen
   Tauchtag) und als Folge von QR-Codes durchblättern. Das Handy mit der SSI-App bleibt liegen –
   scannen, „Weiter", scannen
@@ -71,8 +73,15 @@ deshalb ist die App als Tablet-/Zweitgerät-App gedacht und nicht als Handy-App 
   werden. Wetter, Einstieg, Strömung und Sicht zeichnet ein Tauchcomputer nicht auf und werden
   deshalb nie befüllt.
 - **Der Tauchplatz lässt sich nicht aus den Koordinaten ableiten.** SSIs Platznummern stammen aus
-  einer eigenen Datenbank ohne offene Abfrage. Die Zuordnung passiert deshalb einmal von Hand;
-  danach greift der Umkreis-Vorschlag.
+  einer eigenen Datenbank ohne offene Abfrage. Die App holt sie deshalb aus dem eigenen
+  SSI-Logbuch – über dieselbe inoffizielle Schnittstelle, die auch die SSI-App nutzt
+  (`api.divessi.com/app/a21.php`). Das deckt jeden Platz ab, an dem man schon war. Ein neuer
+  Platz ist zwangsläufig noch nicht dabei: den ordnet man einmal in der SSI-App zu, danach
+  kennt ihn der nächste Abgleich. SSIs Web-Suche (`rest.divessi.com`) wäre die vollständigere
+  Quelle, wurde aber geprüft und verworfen – sie steht hinter einer WAF, ihr API-Key hängt an
+  einer Browser-Session, und sie antwortet mit HTML statt mit Daten.
+- Vom SSI-Konto wird **nur der Sitzungs-Token** gespeichert, nie das Passwort. Läuft der Token ab,
+  fragt die App erneut nach der Anmeldung.
 - **Buddies lassen sich nicht mit einem Tauchgang übertragen.** SSIs Import-Format hat kein
   Feld dafür – die Auswahl unter dem QR-Code wurde deshalb wieder entfernt, statt sie
   funktionsfähig aussehen zu lassen. Die Buddy-Liste bleibt und kann jeden Eintrag als

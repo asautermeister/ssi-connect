@@ -5,6 +5,7 @@ import '../l10n/app_strings.dart';
 import '../l10n/app_strings_de.dart';
 import '../l10n/app_strings_en.dart';
 import '../settings/settings_controller.dart';
+import 'ssi_account_section.dart';
 import 'theme/app_theme.dart';
 import 'widgets/app_card.dart';
 
@@ -83,6 +84,7 @@ class SettingsScreen extends StatelessWidget {
               ],
             ),
           ),
+          const SsiAccountSection(),
         ],
       ),
     );

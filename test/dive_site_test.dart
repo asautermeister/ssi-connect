@@ -161,6 +161,77 @@ void main() {
       expect(suggestion?.siteId, '1');
     });
 
+    test('offers every site in reach, nearest first', () async {
+      // The case an SSI import makes normal: several sites along the same
+      // stretch of coast, all within the match radius. Picking the closest
+      // one silently would file the dive at the wrong place often enough
+      // to matter, and SSI never says that it happened.
+      const near = DiveSite(
+        siteId: '1',
+        name: 'Nah',
+        latitude: 37.7871,
+        longitude: 20.8991,
+      );
+      const middle = DiveSite(
+        siteId: '2',
+        name: 'Mitte',
+        latitude: 37.7890,
+        longitude: 20.9000,
+      );
+      const outside = DiveSite(
+        siteId: '3',
+        name: 'Weit weg',
+        latitude: 37.8500,
+        longitude: 20.9500,
+      );
+      final controller = DiveSitesController(
+        repository: _InMemoryRepository([outside, middle, near]),
+      );
+      await controller.loadFromStorage();
+
+      final matches = controller.suggestionsFor(
+        _dive(lat: 37.7870, lon: 20.8990),
+      );
+
+      expect(matches.map((m) => m.site.siteId), ['1', '2']);
+      expect(
+        matches.first.distanceMetres,
+        lessThan(matches.last.distanceMetres),
+      );
+    });
+
+    test('ranks the whole list when the picker asks, radius or not', () async {
+      // The picker shows everything - but ordered, so the place you were
+      // is at the top and choosing it is a confirmation, not a search.
+      const far = DiveSite(
+        siteId: '3',
+        name: 'Weit weg',
+        latitude: 37.8500,
+        longitude: 20.9500,
+      );
+      final controller = DiveSitesController(
+        repository: _InMemoryRepository([far, _zakynthos]),
+      );
+      await controller.loadFromStorage();
+
+      final ranked = controller.rankedByDistanceFrom(
+        _dive(lat: 37.7870, lon: 20.8990),
+      );
+
+      expect(ranked.map((m) => m.site.siteId), ['214234', '3']);
+    });
+
+    test('without a position the picker still lists everything', () async {
+      final controller = DiveSitesController(
+        repository: _InMemoryRepository([_zakynthos]),
+      );
+      await controller.loadFromStorage();
+
+      expect(controller.rankedByDistanceFrom(_dive()), hasLength(1));
+      // But nothing is suggested - there is nothing to measure against.
+      expect(controller.suggestionsFor(_dive()), isEmpty);
+    });
+
     test('re-matching a site corrects it instead of duplicating', () async {
       final repository = _InMemoryRepository([_zakynthos]);
       final controller = DiveSitesController(repository: repository);

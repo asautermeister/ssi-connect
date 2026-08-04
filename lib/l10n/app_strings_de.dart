@@ -230,7 +230,20 @@ class AppStringsDe extends AppStrings {
   @override
   String get useSuggestion => 'Übernehmen';
   @override
-  String siteNearby(String name, int metres) => '$name · $metres m entfernt';
+  String siteNearby(String name, int metres) =>
+      '$name · ${distance(metres)} entfernt';
+  @override
+  String moreSitesNearby(int count) => count == 1
+      ? '1 weiterer Platz in der Nähe'
+      : '$count weitere in der Nähe';
+  @override
+  String get searchDiveSite => 'Tauchplatz suchen';
+  @override
+  String get noSiteMatches => 'Kein passender Tauchplatz';
+  @override
+  String distance(int metres) => metres < 1000
+      ? '$metres m'
+      : '${(metres / 1000).toStringAsFixed(1).replaceAll('.', ',')} km';
   @override
   String get noPositionNoSite =>
       'Ohne Position lässt sich dieser Tauchgang keinem Platz automatisch '
@@ -239,6 +252,45 @@ class AppStringsDe extends AppStrings {
   String get siteIdUnreadable =>
       'Darin steckt keine Nummer. Erwartet wird eine Platznummer oder eine '
       'Adresse, die auf eine endet.';
+
+  @override
+  String get ssiAccount => 'SSI-Konto';
+  @override
+  String get ssiAccountHint =>
+      'Mit dem SSI-Konto verbinden, um die Tauchplätze aus deinem Logbuch zu '
+      'übernehmen. Danach erkennt die App sie an der Position wieder.';
+  @override
+  String get ssiSignIn => 'Anmelden';
+  @override
+  String get ssiSignOut => 'Abmelden';
+  @override
+  String get ssiEmail => 'E-Mail';
+  @override
+  String get ssiPassword => 'Passwort';
+  @override
+  String get ssiPasswordNotStored =>
+      'Das Passwort wird nur für die Anmeldung benutzt und nicht gespeichert – '
+      'auf dem Gerät bleibt nur der Sitzungs-Token, verschlüsselt.';
+  @override
+  String get ssiSyncSites => 'Tauchplätze abgleichen';
+  @override
+  String ssiConnectedAs(String email) => 'Verbunden als $email';
+  @override
+  String ssiSitesImported(int added, int total) => added == 1
+      ? '1 neuer Tauchplatz übernommen (von $total im Logbuch)'
+      : '$added neue Tauchplätze übernommen (von $total im Logbuch)';
+  @override
+  String ssiSitesUpToDate(int total) =>
+      'Alles aktuell – $total Tauchplätze im Logbuch, keine neuen.';
+  @override
+  String get ssiSyncExplanation =>
+      'Holt jeden Tauchplatz, an dem du laut SSI schon getaucht bist – mit '
+      'Nummer, Name und Position. Bereits vorhandene Plätze bleiben, wie sie '
+      'sind.';
+  @override
+  String get ssiUnofficialNote =>
+      'Nutzt dieselbe inoffizielle Schnittstelle wie die SSI-App. Sollte sie '
+      'sich ändern, bleibt die Eingabe von Hand.';
 
   @override
   String get selectDives => 'Tauchgänge auswählen';

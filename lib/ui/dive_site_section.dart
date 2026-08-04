@@ -12,12 +12,15 @@ import 'widgets/app_card.dart';
 ///
 /// The site is the one field of the SSI payload that cannot be derived -
 /// Garmin has coordinates, SSI wants its own site number, and there is no
-/// open lookup between the two. So it is matched once by hand, and
-/// recognised by position afterwards.
+/// open lookup between the two. The numbers come from the user's own SSI
+/// logbook, or are entered by hand; the position is what recognises the
+/// place afterwards.
 ///
-/// A suggestion is always shown as a suggestion. Applying it silently
-/// would be the one mistake worth avoiding here: SSI never says that a
-/// dive was filed at the wrong place.
+/// A suggestion is always shown as a suggestion, and when several sites are
+/// in reach they are all offered. Applying the nearest one silently would
+/// be the one mistake worth avoiding here: dive sites sit close together on
+/// the same stretch of coast, and SSI never says that a dive was filed at
+/// the wrong place.
 class DiveSiteSection extends StatelessWidget {
   const DiveSiteSection({
     super.key,
@@ -39,7 +42,9 @@ class DiveSiteSection extends StatelessWidget {
     final palette = theme.extension<AppPalette>()!;
     final sites = context.watch<DiveSitesController>();
     final selected = this.selected;
-    final suggestion = selected == null ? sites.suggestionFor(dive) : null;
+    final suggestions = selected == null
+        ? sites.suggestionsFor(dive)
+        : const <DiveSiteMatch>[];
 
     return AppCard(
       child: Column(
@@ -72,27 +77,36 @@ class DiveSiteSection extends StatelessWidget {
 
           // Offered rather than applied - the user confirms which place
           // this was.
-          if (suggestion != null) ...[
+          if (suggestions.isNotEmpty) ...[
             const SizedBox(height: AppSpacing.md),
             Row(
               children: [
                 Expanded(
                   child: Text(
                     s.siteNearby(
-                      suggestion.name,
-                      suggestion
-                          .distanceMetresTo(dive.latitude!, dive.longitude!)
-                          .round(),
+                      suggestions.first.site.name,
+                      suggestions.first.distanceMetres.round(),
                     ),
                     style: theme.textTheme.bodySmall,
                   ),
                 ),
                 TextButton(
-                  onPressed: () => onChanged(suggestion),
+                  onPressed: () => onChanged(suggestions.first.site),
                   child: Text(s.useSuggestion),
                 ),
               ],
             ),
+            // The nearest is not automatically the right one. When others
+            // are in reach, say so instead of hiding them behind a button
+            // labelled as if there were nothing to choose from.
+            if (suggestions.length > 1)
+              Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton(
+                  onPressed: () => _assign(context, dive, sites, onChanged),
+                  child: Text(s.moreSitesNearby(suggestions.length - 1)),
+                ),
+              ),
           ],
 
           const SizedBox(height: AppSpacing.md),
@@ -146,16 +160,51 @@ Future<void> _assign(
   onChanged(chosen);
 }
 
-class _SitePickerDialog extends StatelessWidget {
+class _SitePickerDialog extends StatefulWidget {
   const _SitePickerDialog({required this.dive, required this.sites});
 
   final Dive dive;
   final DiveSitesController sites;
 
   @override
+  State<_SitePickerDialog> createState() => _SitePickerDialogState();
+}
+
+class _SitePickerDialogState extends State<_SitePickerDialog> {
+  /// Above this many known sites, scrolling stops being a way to find
+  /// anything and the search field earns its space. An SSI import pushes
+  /// most logbooks past it; a hand-built list of five stays uncluttered.
+  static const _searchThreshold = 8;
+
+  final _query = TextEditingController();
+
+  @override
+  void dispose() {
+    _query.dispose();
+    super.dispose();
+  }
+
+  /// Ranked by distance from the dive, so the place you were is at the top
+  /// and picking it is a confirmation rather than a search.
+  List<DiveSiteMatch> get _visible {
+    final ranked = widget.sites.rankedByDistanceFrom(widget.dive);
+    final query = _query.text.trim().toLowerCase();
+    if (query.isEmpty) return ranked;
+    return [
+      for (final match in ranked)
+        if (match.site.name.toLowerCase().contains(query) ||
+            match.site.siteId.contains(query))
+          match,
+    ];
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final s = AppStrings.of(context);
-    final known = sites.sites;
+    final dive = widget.dive;
+    final known = widget.sites.sites;
+    final visible = _visible;
 
     return AlertDialog(
       title: Text(s.diveSite),
@@ -165,22 +214,45 @@ class _SitePickerDialog extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            if (known.length > _searchThreshold) ...[
+              TextField(
+                controller: _query,
+                decoration: InputDecoration(
+                  labelText: s.searchDiveSite,
+                  prefixIcon: const Icon(Icons.search, size: 18),
+                  isDense: true,
+                ),
+                onChanged: (_) => setState(() {}),
+              ),
+              const SizedBox(height: AppSpacing.sm),
+            ],
+
             // Known sites first: after a week in one place this is the
             // whole interaction.
-            if (known.isNotEmpty)
+            if (visible.isNotEmpty)
               Flexible(
                 child: ListView(
                   shrinkWrap: true,
                   children: [
-                    for (final site in known)
+                    for (final match in visible)
                       ListTile(
                         dense: true,
-                        title: Text(site.name),
-                        subtitle: Text('site:${site.siteId}'),
-                        onTap: () => Navigator.of(context).pop(site),
+                        title: Text(match.site.name),
+                        subtitle: Text(
+                          dive.hasPosition
+                              ? 'site:${match.site.siteId} · '
+                                    '${s.distance(match.distanceMetres.round())}'
+                              : 'site:${match.site.siteId}',
+                        ),
+                        onTap: () => Navigator.of(context).pop(match.site),
                       ),
                   ],
                 ),
+              )
+            else if (known.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+                child: Text(s.noSiteMatches, style: theme.textTheme.bodySmall),
               ),
             const Divider(),
             TextButton.icon(

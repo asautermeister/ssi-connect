@@ -5,6 +5,12 @@ import 'package:ssi_connect/l10n/app_strings.dart';
 import 'package:provider/provider.dart';
 import 'package:ssi_connect/settings/settings_controller.dart';
 import 'package:ssi_connect/settings/settings_repository.dart';
+import 'package:ssi_connect/ssi/dive_site.dart';
+import 'package:ssi_connect/ssi/dive_site_repository.dart';
+import 'package:ssi_connect/ssi/dive_sites_controller.dart';
+import 'package:ssi_connect/ssi/ssi_account_controller.dart';
+import 'package:ssi_connect/ssi/ssi_account_repository.dart';
+import 'package:ssi_connect/ssi/ssi_session.dart';
 import 'package:ssi_connect/ui/settings_screen.dart';
 import 'package:ssi_connect/ui/theme/app_theme.dart';
 
@@ -28,6 +34,29 @@ class _InMemoryRepository extends SettingsRepository {
   Future<void> saveLocale(Locale? locale) async => storedLocale = locale;
 }
 
+/// The settings screen now also carries the SSI section, so the pump needs
+/// those two controllers. Both get in-memory repositories: a real one calls
+/// the keystore plugin, which has no platform under a widget test and hangs
+/// the test rather than failing it.
+class _NoSsiAccount extends SsiAccountRepository {
+  @override
+  Future<SsiSession?> load() async => null;
+
+  @override
+  Future<void> save(SsiSession session) async {}
+
+  @override
+  Future<void> clear() async {}
+}
+
+class _NoDiveSites extends DiveSiteRepository {
+  @override
+  Future<List<DiveSite>> loadAll() async => const [];
+
+  @override
+  Future<void> saveAll(List<DiveSite> sites) async {}
+}
+
 Future<SettingsController> _pump(
   WidgetTester tester, {
   ThemeMode? stored,
@@ -43,8 +72,16 @@ Future<SettingsController> _pump(
   await controller.loadFromStorage();
 
   await tester.pumpWidget(
-    ChangeNotifierProvider.value(
-      value: controller,
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider.value(value: controller),
+        ChangeNotifierProvider(
+          create: (_) => SsiAccountController(repository: _NoSsiAccount()),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => DiveSitesController(repository: _NoDiveSites()),
+        ),
+      ],
       child: MaterialApp(
         locale: const Locale('de'),
         localizationsDelegates: const [

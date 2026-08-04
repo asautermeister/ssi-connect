@@ -151,8 +151,31 @@ abstract class AppStrings {
   String get siteSuggestion;
   String get useSuggestion;
   String siteNearby(String name, int metres);
+  String moreSitesNearby(int count);
+  String get searchDiveSite;
+  String get noSiteMatches;
+
+  /// A distance in metres, rendered the way the language writes it -
+  /// metres up close, kilometres once that stops being readable.
+  String distance(int metres);
   String get noPositionNoSite;
   String get siteIdUnreadable;
+
+  // ----------------------------------------------------------- SSI account
+
+  String get ssiAccount;
+  String get ssiAccountHint;
+  String get ssiSignIn;
+  String get ssiSignOut;
+  String get ssiEmail;
+  String get ssiPassword;
+  String get ssiPasswordNotStored;
+  String get ssiSyncSites;
+  String ssiConnectedAs(String email);
+  String ssiSitesImported(int added, int total);
+  String ssiSitesUpToDate(int total);
+  String get ssiSyncExplanation;
+  String get ssiUnofficialNote;
 
   // ------------------------------------------------------- batch and export
 

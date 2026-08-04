@@ -4,6 +4,9 @@ import '../models/dive.dart';
 import 'dive_site.dart';
 import 'dive_site_repository.dart';
 
+/// A known site together with how far it is from the dive being looked at.
+typedef DiveSiteMatch = ({DiveSite site, double distanceMetres});
+
 /// The dive sites this device knows an SSI number for, and the matching of
 /// a dive to one of them.
 class DiveSitesController extends ChangeNotifier {
@@ -13,9 +16,11 @@ class DiveSitesController extends ChangeNotifier {
   /// How close a dive has to be to count as "at this site".
   ///
   /// 800 m is wide enough for a boat that drops you at one end of a reef
-  /// and picks you up at the other, and narrow enough that two sites along
-  /// the same shore stay apart. When two are within reach the nearer one
-  /// wins, so the radius only decides whether there is a suggestion at all.
+  /// and picks you up at the other. It is not narrow enough to leave only
+  /// one candidate: in a place like Gozo several sites sit along the same
+  /// stretch of coast, and importing a whole logbook makes that the normal
+  /// case rather than the exception. So the radius decides who gets
+  /// *offered*, and the user decides which one it was.
   static const matchRadiusMetres = 800.0;
 
   final DiveSiteRepository _repository;
@@ -47,6 +52,28 @@ class DiveSitesController extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Adds every site whose number this device does not know yet, in one
+  /// write. Returns how many were actually new.
+  ///
+  /// Existing entries are left untouched rather than refreshed: the user
+  /// may have renamed one, and a position that came from one of their own
+  /// dives points at the entry they actually use, which is a better match
+  /// target than a site's registered centre.
+  Future<int> addAllNew(Iterable<DiveSite> sites) async {
+    final known = {for (final site in _sites) site.siteId};
+    final added = <DiveSite>[];
+    for (final site in sites) {
+      // `known` also guards against duplicates inside the incoming list.
+      if (known.add(site.siteId)) added.add(site);
+    }
+    if (added.isEmpty) return 0;
+
+    _sites = _sorted([..._sites, ...added]);
+    await _repository.saveAll(_sites);
+    notifyListeners();
+    return added.length;
+  }
+
   Future<void> remove(String siteId) async {
     _sites = _sites.where((s) => s.siteId != siteId).toList();
     await _repository.saveAll(_sites);
@@ -60,25 +87,55 @@ class DiveSitesController extends ChangeNotifier {
     return null;
   }
 
-  /// The nearest known site within [matchRadiusMetres] of [dive], or null.
+  /// Every known site within [matchRadiusMetres] of [dive], nearest first.
   ///
-  /// Only ever a suggestion: the caller shows it and the user confirms.
+  /// Only ever suggestions: the caller shows them and the user confirms.
   /// A silently applied site number would be the one kind of mistake this
   /// app has avoided everywhere else - SSI gives no feedback that a dive
-  /// was filed at the wrong place.
-  DiveSite? suggestionFor(Dive dive) {
-    if (!dive.hasPosition) return null;
+  /// was filed at the wrong place. That matters more since sites arrive by
+  /// the hundred from an SSI import: "the closest one" stopped being a
+  /// safe guess the moment two of them could be 300 m apart.
+  List<DiveSiteMatch> suggestionsFor(Dive dive) {
+    if (!dive.hasPosition) return const [];
 
-    DiveSite? best;
-    var bestDistance = matchRadiusMetres;
+    final matches = <DiveSiteMatch>[];
     for (final site in _sites) {
       final distance = site.distanceMetresTo(dive.latitude!, dive.longitude!);
-      if (distance <= bestDistance) {
-        best = site;
-        bestDistance = distance;
+      if (distance <= matchRadiusMetres) {
+        matches.add((site: site, distanceMetres: distance));
       }
     }
-    return best;
+    matches.sort((a, b) => a.distanceMetres.compareTo(b.distanceMetres));
+    return matches;
+  }
+
+  /// The nearest known site within [matchRadiusMetres] of [dive], or null.
+  DiveSite? suggestionFor(Dive dive) {
+    final matches = suggestionsFor(dive);
+    return matches.isEmpty ? null : matches.first.site;
+  }
+
+  /// All known sites ranked by distance from [dive] - no radius limit.
+  ///
+  /// What the picker shows once the list is long enough that alphabetical
+  /// order stops being useful. Sites without a reachable dive position keep
+  /// their alphabetical order instead.
+  List<DiveSiteMatch> rankedByDistanceFrom(Dive dive) {
+    if (!dive.hasPosition) {
+      return [for (final site in _sites) (site: site, distanceMetres: 0)];
+    }
+    final ranked = [
+      for (final site in _sites)
+        (
+          site: site,
+          distanceMetres: site.distanceMetresTo(
+            dive.latitude!,
+            dive.longitude!,
+          ),
+        ),
+    ];
+    ranked.sort((a, b) => a.distanceMetres.compareTo(b.distanceMetres));
+    return ranked;
   }
 
   /// Alphabetical, so the list doesn't reshuffle as sites are added.

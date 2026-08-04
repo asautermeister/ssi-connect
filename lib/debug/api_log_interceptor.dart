@@ -15,8 +15,14 @@ class ApiLogInterceptor extends Interceptor {
   const ApiLogInterceptor();
 
   /// Keys whose values are secrets, matched case-insensitively.
+  ///
+  /// `p` and `token` are SSI's names for the account password and the
+  /// session token in its app API - short, but exactly as sensitive as
+  /// Garmin's spelled-out ones.
   static const _secretKeys = {
     'password',
+    'p',
+    'token',
     'access_token',
     'refresh_token',
     'id_token',
@@ -30,6 +36,11 @@ class ApiLogInterceptor extends Interceptor {
     'csrf',
     '_csrf',
   };
+
+  /// Below this length a key is only matched as a whole map key, never
+  /// inside free text. Scrubbing `p` textually would redact the value of
+  /// anything ending in "p" - `"temp":26` among them.
+  static const _minTextScrubKeyLength = 3;
 
   static const _maxBodyChars = 1200;
 
@@ -103,6 +114,7 @@ class ApiLogInterceptor extends Interceptor {
   String _sanitizeString(String value) {
     var result = value;
     for (final key in _secretKeys) {
+      if (key.length < _minTextScrubKeyLength) continue;
       result = result.replaceAllMapped(
         RegExp('($key"?\\s*[:=]\\s*"?)[^",&}\\s]+', caseSensitive: false),
         (match) => '${match.group(1)}***',

@@ -8,6 +8,7 @@ import 'l10n/app_strings.dart';
 import 'dives/recent_dives_controller.dart';
 import 'settings/settings_controller.dart';
 import 'ssi/dive_sites_controller.dart';
+import 'ssi/ssi_account_controller.dart';
 import 'ssi/ssi_buddies_controller.dart';
 import 'ssi/ssi_centers_controller.dart';
 import 'ui/accounts_screen.dart';
@@ -39,6 +40,9 @@ class SsiConnectApp extends StatelessWidget {
         ),
         ChangeNotifierProvider(
           create: (_) => DiveSitesController()..loadFromStorage(),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => SsiAccountController()..loadFromStorage(),
         ),
         ChangeNotifierProvider(create: (_) => RecentDivesController()),
         // Session-only: the diagnostic tools stay hidden until someone

@@ -226,7 +226,18 @@ class AppStringsEn extends AppStrings {
   @override
   String get useSuggestion => 'Use it';
   @override
-  String siteNearby(String name, int metres) => '$name · $metres m away';
+  String siteNearby(String name, int metres) =>
+      '$name · ${distance(metres)} away';
+  @override
+  String moreSitesNearby(int count) =>
+      count == 1 ? '1 more site nearby' : '$count more nearby';
+  @override
+  String get searchDiveSite => 'Search dive site';
+  @override
+  String get noSiteMatches => 'No matching dive site';
+  @override
+  String distance(int metres) =>
+      metres < 1000 ? '$metres m' : '${(metres / 1000).toStringAsFixed(1)} km';
   @override
   String get noPositionNoSite =>
       'Without a position this dive cannot be matched to a site '
@@ -235,6 +246,44 @@ class AppStringsEn extends AppStrings {
   String get siteIdUnreadable =>
       'No number in there. A site number is expected, or an address ending '
       'in one.';
+
+  @override
+  String get ssiAccount => 'SSI account';
+  @override
+  String get ssiAccountHint =>
+      'Connect your SSI account to bring in the dive sites from your logbook. '
+      'After that the app recognises them by position.';
+  @override
+  String get ssiSignIn => 'Sign in';
+  @override
+  String get ssiSignOut => 'Sign out';
+  @override
+  String get ssiEmail => 'Email';
+  @override
+  String get ssiPassword => 'Password';
+  @override
+  String get ssiPasswordNotStored =>
+      'The password is only used to sign in and is not stored – all that stays '
+      'on the device is the session token, encrypted.';
+  @override
+  String get ssiSyncSites => 'Sync dive sites';
+  @override
+  String ssiConnectedAs(String email) => 'Connected as $email';
+  @override
+  String ssiSitesImported(int added, int total) => added == 1
+      ? '1 new dive site added (of $total in the logbook)'
+      : '$added new dive sites added (of $total in the logbook)';
+  @override
+  String ssiSitesUpToDate(int total) =>
+      'Up to date – $total dive sites in the logbook, none new.';
+  @override
+  String get ssiSyncExplanation =>
+      'Fetches every dive site SSI has you logged at – number, name and '
+      'position. Sites you already have are left as they are.';
+  @override
+  String get ssiUnofficialNote =>
+      'Uses the same unofficial interface as the SSI app. Should it change, '
+      'entering sites by hand remains.';
 
   @override
   String get selectDives => 'Select dives';

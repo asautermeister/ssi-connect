@@ -46,6 +46,30 @@ void main() {
       expect(text, contains('diver'));
     });
 
+    test("removes SSI's short names for the password and the token", () {
+      // SSI's app API calls them `p` and `token`. Short, and exactly as
+      // sensitive as Garmin's spelled-out ones.
+      final text = redact({
+        'l': 'diver@example.com',
+        'p': 'sehr-geheim',
+        'what': 'authenticate',
+      });
+
+      expect(text, isNot(contains('sehr-geheim')));
+      expect(text, contains('diver@example.com'));
+      expect(redact({'token': 'abc123'}), isNot(contains('abc123')));
+    });
+
+    test('a one-letter key does not redact half the response', () {
+      // Scrubbing `p` textually would hit anything ending in "p" followed
+      // by a colon - `"temp":26` among them, which would quietly gut the
+      // dive data the log exists to show.
+      final text = redact('{"temp":26,"depth_m":12.8,"bow":"salt"}');
+
+      expect(text, contains('26'));
+      expect(text, contains('12.8'));
+    });
+
     test('redacts nested values', () {
       final text = redact({
         'responseStatus': {'type': 'SUCCESSFUL'},
