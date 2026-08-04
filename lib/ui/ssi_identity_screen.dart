@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import '../l10n/app_strings.dart';
 import 'package:provider/provider.dart';
 
 import '../accounts/accounts_controller.dart';
@@ -21,15 +23,16 @@ class SsiIdentityScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = AppStrings.of(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('SSI-Identität')),
+      appBar: AppBar(title: Text(s.ssiIdentity)),
       body: Consumer<AccountsController>(
         builder: (context, controller, _) {
           final account = controller.accounts
               .where((a) => a.id == accountId)
               .firstOrNull;
           if (account == null) {
-            return const Center(child: Text('Account nicht gefunden.'));
+            return Center(child: Text(s.accountNotFound));
           }
           return _Body(account: account);
         },
@@ -45,6 +48,7 @@ class _Body extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = AppStrings.of(context);
     final theme = Theme.of(context);
 
     return ListView(
@@ -73,23 +77,20 @@ class _Body extends StatelessWidget {
                 if (account.ssiEmail != null)
                   Text(account.ssiEmail!, style: theme.textTheme.bodySmall),
               ] else
-                Text(
-                  'Noch keine SSI-Nummer hinterlegt.',
-                  style: theme.textTheme.bodyLarge,
-                ),
+                Text(s.noSsiNumberYet, style: theme.textTheme.bodyLarge),
             ],
           ),
         ),
-        const SectionHeader(title: 'Hinterlegen'),
+        SectionHeader(title: s.storeIt),
         FilledButton.icon(
           icon: const Icon(Icons.qr_code_scanner),
-          label: const Text('SSI-QR-Code scannen'),
+          label: Text(s.scanSsiQr),
           onPressed: () => _scan(context),
         ),
         const SizedBox(height: AppSpacing.md),
         OutlinedButton.icon(
           icon: const Icon(Icons.keyboard_alt_outlined),
-          label: const Text('Nummer von Hand eintragen'),
+          label: Text(s.enterNumberByHand),
           onPressed: () => _enterManually(context),
         ),
         if (account.hasSsiIdentity) ...[
@@ -97,15 +98,11 @@ class _Body extends StatelessWidget {
           TextButton(
             onPressed: () =>
                 context.read<AccountsController>().clearSsiIdentity(account.id),
-            child: const Text('SSI-Nummer entfernen'),
+            child: Text(s.removeSsiNumber),
           ),
         ],
         const SizedBox(height: AppSpacing.xl),
-        Text(
-          'Die Nummer steht in der SSI-App unter „Dein QR-Code". Sie wird '
-          'nur auf diesem Gerät gespeichert.',
-          style: theme.textTheme.bodySmall,
-        ),
+        Text(s.ssiNumberWhereToFind, style: theme.textTheme.bodySmall),
       ],
     );
   }
@@ -119,7 +116,9 @@ class _Body extends StatelessWidget {
     await controller.setSsiIdentity(account.id, code);
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('SSI-Nummer ${code.memberId} gespeichert')),
+      SnackBar(
+        content: Text(AppStrings.of(context).ssiNumberStored(code.memberId)),
+      ),
     );
   }
 
@@ -165,23 +164,24 @@ class _ManualEntryDialogState extends State<_ManualEntryDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final s = AppStrings.of(context);
     return AlertDialog(
-      title: const Text('SSI-Mitgliedsnummer'),
+      title: Text(s.ssiMemberNumber),
       content: TextField(
         controller: _controller,
         autofocus: true,
         keyboardType: TextInputType.number,
-        decoration: const InputDecoration(labelText: 'Nummer'),
+        decoration: InputDecoration(labelText: s.number),
         onSubmitted: (value) => Navigator.of(context).pop(value),
       ),
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Abbrechen'),
+          child: Text(s.cancel),
         ),
         TextButton(
           onPressed: () => Navigator.of(context).pop(_controller.text),
-          child: const Text('Speichern'),
+          child: Text(s.save),
         ),
       ],
     );

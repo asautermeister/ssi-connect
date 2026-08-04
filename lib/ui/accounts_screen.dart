@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import '../l10n/app_strings.dart';
 import 'package:provider/provider.dart';
 
 import '../accounts/accounts_controller.dart';
@@ -54,11 +56,12 @@ class _AccountsScreenState extends State<AccountsScreen> {
     final controller = context.watch<AccountsController>();
     final recentDives = context.watch<RecentDivesController>();
     final accounts = controller.accounts;
+    final s = AppStrings.of(context);
 
     if (controller.loaded) _loadAfterBuild(accounts);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('SSI Connect')),
+      appBar: AppBar(title: Text(s.appName)),
       body: !controller.loaded
           ? const Center(child: CircularProgressIndicator())
           : RefreshIndicator(
@@ -84,7 +87,7 @@ class _AccountsScreenState extends State<AccountsScreen> {
                         ),
                       ),
                     _RecentDives(accounts: accounts, controller: recentDives),
-                    const SectionHeader(title: 'Accounts'),
+                    SectionHeader(title: s.accountsSection),
                     for (final account in accounts) ...[
                       _AccountCard(
                         account: account,
@@ -93,7 +96,7 @@ class _AccountsScreenState extends State<AccountsScreen> {
                       const SizedBox(height: AppSpacing.md),
                     ],
                   ],
-                  const SectionHeader(title: 'Mehr'),
+                  SectionHeader(title: s.moreSection),
                   const _QuickActions(),
                 ],
               ),
@@ -103,7 +106,7 @@ class _AccountsScreenState extends State<AccountsScreen> {
           context,
         ).push(MaterialPageRoute(builder: (_) => const AddAccountScreen())),
         icon: const Icon(Icons.person_add_alt),
-        label: const Text('Account'),
+        label: Text(s.addAccount),
       ),
     );
   }
@@ -121,6 +124,7 @@ class _RecentDives extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final s = AppStrings.of(context);
     final recent = controller.recent(accounts);
 
     return Column(
@@ -128,7 +132,7 @@ class _RecentDives extends StatelessWidget {
       children: [
         Row(
           children: [
-            const Expanded(child: SectionHeader(title: 'Zuletzt getaucht')),
+            Expanded(child: SectionHeader(title: s.recentDives)),
             // Only once there is something to look at - the full list would
             // otherwise just repeat the empty state below it.
             if (recent.isNotEmpty)
@@ -136,7 +140,7 @@ class _RecentDives extends StatelessWidget {
                 onPressed: () => Navigator.of(context).push(
                   MaterialPageRoute(builder: (_) => const AllDivesScreen()),
                 ),
-                child: const Text('Alle anzeigen'),
+                child: Text(s.showAll),
               ),
           ],
         ),
@@ -151,17 +155,13 @@ class _RecentDives extends StatelessWidget {
                     child: CircularProgressIndicator(strokeWidth: 2),
                   ),
                   const SizedBox(width: AppSpacing.md),
-                  Text(
-                    'Tauchgänge werden geladen …',
-                    style: theme.textTheme.bodyMedium,
-                  ),
+                  Text(s.divesLoading, style: theme.textTheme.bodyMedium),
                 ] else
                   Expanded(
                     child: Text(
                       controller.failedCount > 0
-                          ? 'Tauchgänge konnten nicht geladen werden. '
-                                'Zum Erneut-Versuchen nach unten ziehen.'
-                          : 'Noch keine Tauchgänge geladen.',
+                          ? s.divesLoadFailedPullToRetry
+                          : s.noDivesLoadedYet,
                       style: theme.textTheme.bodyMedium,
                     ),
                   ),
@@ -181,9 +181,8 @@ class _RecentDives extends StatelessWidget {
               padding: const EdgeInsets.only(bottom: AppSpacing.sm),
               child: Text(
                 controller.failedCount == 1
-                    ? 'Ein Account konnte nicht geladen werden.'
-                    : '${controller.failedCount} Accounts konnten nicht '
-                          'geladen werden.',
+                    ? s.oneAccountFailed
+                    : s.accountsFailed(controller.failedCount),
                 style: theme.textTheme.bodySmall,
               ),
             ),
@@ -199,6 +198,7 @@ class _EmptyAccounts extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final s = AppStrings.of(context);
     final palette = theme.extension<AppPalette>()!;
 
     return AppCard(
@@ -208,14 +208,13 @@ class _EmptyAccounts extends StatelessWidget {
           Icon(Icons.scuba_diving, size: 44, color: palette.inkMuted),
           const SizedBox(height: AppSpacing.lg),
           Text(
-            'Noch kein Garmin-Account verbunden',
+            s.noAccountYetTitle,
             textAlign: TextAlign.center,
             style: theme.textTheme.titleMedium,
           ),
           const SizedBox(height: AppSpacing.sm),
           Text(
-            'Verbinde einen Account, um Tauchgänge zu laden – oder importiere '
-            'unten eine FIT-Datei.',
+            s.noAccountYetBody,
             textAlign: TextAlign.center,
             style: theme.textTheme.bodyMedium,
           ),
@@ -236,6 +235,7 @@ class _AccountCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final s = AppStrings.of(context);
     final palette = theme.extension<AppPalette>()!;
 
     final color = account.color?.of(context);
@@ -271,11 +271,11 @@ class _AccountCard extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 2),
-                Text(_diveSummary(dives), style: theme.textTheme.bodySmall),
+                Text(_diveSummary(dives, s), style: theme.textTheme.bodySmall),
                 const SizedBox(height: AppSpacing.xs),
                 if (account.hasSsiIdentity)
                   Text(
-                    'SSI-Nr. ${account.ssiMemberId}',
+                    s.ssiNumber(account.ssiMemberId!),
                     style: theme.textTheme.bodySmall,
                   )
                 else
@@ -288,7 +288,7 @@ class _AccountCard extends StatelessWidget {
           ),
           PopupMenuButton<_AccountAction>(
             icon: const Icon(Icons.more_horiz),
-            tooltip: 'Optionen',
+            tooltip: s.options,
             onSelected: (action) => switch (action) {
               _AccountAction.rename => _rename(context),
               _AccountAction.color => _pickColor(context),
@@ -300,26 +300,26 @@ class _AccountCard extends StatelessWidget {
               _AccountAction.clearCache => _clearCache(context),
               _AccountAction.remove => _confirmRemove(context),
             },
-            itemBuilder: (context) => const [
+            itemBuilder: (context) => [
               PopupMenuItem(
                 value: _AccountAction.rename,
-                child: Text('Namen ändern'),
+                child: Text(s.renameAccount),
               ),
               PopupMenuItem(
                 value: _AccountAction.color,
-                child: Text('Farbe wählen'),
+                child: Text(s.chooseColour),
               ),
               PopupMenuItem(
                 value: _AccountAction.ssiIdentity,
-                child: Text('SSI-Identität'),
+                child: Text(s.ssiIdentity),
               ),
               PopupMenuItem(
                 value: _AccountAction.clearCache,
-                child: Text('Gespeicherte Tauchgänge löschen'),
+                child: Text(s.deleteStoredDives),
               ),
               PopupMenuItem(
                 value: _AccountAction.remove,
-                child: Text('Account entfernen'),
+                child: Text(s.removeAccount),
               ),
             ],
           ),
@@ -328,13 +328,15 @@ class _AccountCard extends StatelessWidget {
     );
   }
 
-  static String _diveSummary(AccountDives dives) {
-    if (dives.isLoading) return 'Tauchgänge werden geladen …';
-    if (dives.hasError) return 'Tauchgänge nicht erreichbar';
+  static String _diveSummary(AccountDives dives, AppStrings s) {
+    if (dives.isLoading) return s.divesLoading;
+    if (dives.hasError) return s.divesUnreachable;
     final latest = dives.latest;
-    if (latest == null) return 'Keine Tauchgänge gefunden';
-    return 'Zuletzt: ${Fmt.date(latest.dateTime)} · '
-        '${Fmt.meters(latest.maxDepthMeters)} m';
+    if (latest == null) return s.noDivesFound;
+    return s.lastDive(
+      Fmt.date(latest.dateTime),
+      Fmt.meters(latest.maxDepthMeters),
+    );
   }
 
   static String _initials(String name) {
@@ -348,10 +350,10 @@ class _AccountCard extends StatelessWidget {
   /// account.
   Future<void> _clearCache(BuildContext context) async {
     final messenger = ScaffoldMessenger.of(context);
+    // Read before the await - afterwards the context may be gone.
+    final message = AppStrings.of(context).storedDivesDeleted;
     await context.read<RecentDivesController>().forget(account.id);
-    messenger.showSnackBar(
-      const SnackBar(content: Text('Gespeicherte Tauchgänge gelöscht')),
-    );
+    messenger.showSnackBar(SnackBar(content: Text(message)));
   }
 
   Future<void> _pickColor(BuildContext context) async {
@@ -381,24 +383,23 @@ class _AccountCard extends StatelessWidget {
     final dives = context.read<RecentDivesController>();
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Account entfernen?'),
-        content: Text(
-          '${account.displayName} wird mitsamt den gespeicherten '
-          'Tauchgängen von diesem Gerät entfernt. Für einen erneuten '
-          'Zugriff ist ein neuer Login nötig.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('Abbrechen'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: const Text('Entfernen'),
-          ),
-        ],
-      ),
+      builder: (dialogContext) {
+        final s = AppStrings.of(dialogContext);
+        return AlertDialog(
+          title: Text(s.removeAccountQuestion),
+          content: Text(s.removeAccountBody(account.displayName)),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: Text(s.cancel),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: Text(s.remove),
+            ),
+          ],
+        );
+      },
     );
     if (confirmed ?? false) {
       await controller.removeAccount(account.id);
@@ -426,17 +427,15 @@ class _ColorDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final s = AppStrings.of(context);
 
     return AlertDialog(
-      title: const Text('Farbe'),
+      title: Text(s.colour),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Markiert die Tauchgänge dieser Person am linken Rand.',
-            style: theme.textTheme.bodySmall,
-          ),
+          Text(s.colourExplanation, style: theme.textTheme.bodySmall),
           const SizedBox(height: AppSpacing.lg),
           Wrap(
             spacing: AppSpacing.md,
@@ -455,11 +454,11 @@ class _ColorDialog extends StatelessWidget {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Abbrechen'),
+          child: Text(s.cancel),
         ),
         TextButton(
           onPressed: () => Navigator.of(context).pop(const _ColorChoice(null)),
-          child: const Text('Keine Farbe'),
+          child: Text(s.noColour),
         ),
       ],
     );
@@ -480,16 +479,17 @@ class _Swatch extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final resolved = color.of(context);
+    final label = color.label(AppStrings.of(context));
 
     return Semantics(
       // The name, not just the patch - a colour picker that can only be
       // used by seeing the colours is the one place that really would
       // shut someone out.
-      label: color.label,
+      label: label,
       selected: isSelected,
       button: true,
       child: Tooltip(
-        message: color.label,
+        message: label,
         child: InkWell(
           onTap: onTap,
           customBorder: const CircleBorder(),
@@ -536,26 +536,28 @@ class _RenameDialogState extends State<_RenameDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final s = AppStrings.of(context);
+
     return AlertDialog(
-      title: const Text('Name'),
+      title: Text(s.name),
       content: TextField(
         controller: _controller,
         autofocus: true,
         textCapitalization: TextCapitalization.words,
-        decoration: const InputDecoration(
-          labelText: 'Angezeigter Name',
-          helperText: 'Leer lassen für die E-Mail-Adresse',
+        decoration: InputDecoration(
+          labelText: s.displayedName,
+          helperText: s.leaveEmptyForEmail,
         ),
         onSubmitted: (value) => Navigator.of(context).pop(value),
       ),
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Abbrechen'),
+          child: Text(s.cancel),
         ),
         TextButton(
           onPressed: () => Navigator.of(context).pop(_controller.text),
-          child: const Text('Speichern'),
+          child: Text(s.save),
         ),
       ],
     );
@@ -570,6 +572,7 @@ class _MissingSsiNumber extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final s = AppStrings.of(context);
 
     return InkWell(
       onTap: () => Navigator.of(context).push(
@@ -587,7 +590,7 @@ class _MissingSsiNumber extends StatelessWidget {
           ),
           const SizedBox(width: AppSpacing.xs),
           Text(
-            'SSI-Nummer hinterlegen',
+            s.storeSsiNumber,
             style: theme.textTheme.bodySmall?.copyWith(
               color: theme.colorScheme.primary,
               fontWeight: FontWeight.w600,
@@ -605,12 +608,14 @@ class _QuickActions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = AppStrings.of(context);
+
     return Column(
       children: [
         _ActionCard(
           icon: Icons.group_outlined,
-          title: 'SSI Buddy',
-          subtitle: 'Mittaucher und Basen speichern und teilen',
+          title: s.quickBuddyTitle,
+          subtitle: s.quickBuddySubtitle,
           onTap: () => Navigator.of(
             context,
           ).push(MaterialPageRoute(builder: (_) => const SsiBuddiesScreen())),
@@ -618,15 +623,15 @@ class _QuickActions extends StatelessWidget {
         const SizedBox(height: AppSpacing.md),
         _ActionCard(
           icon: Icons.upload_file_outlined,
-          title: 'FIT-Datei importieren',
-          subtitle: 'Falls der Garmin-Login gerade nicht funktioniert',
+          title: s.quickFitTitle,
+          subtitle: s.quickFitSubtitle,
           onTap: () => pickAndImportFitFile(context),
         ),
         const SizedBox(height: AppSpacing.md),
         _ActionCard(
           icon: Icons.tune,
-          title: 'Einstellungen',
-          subtitle: 'Helles oder dunkles Design',
+          title: s.quickSettingsTitle,
+          subtitle: s.quickSettingsSubtitle,
           onTap: () => Navigator.of(
             context,
           ).push(MaterialPageRoute(builder: (_) => const SettingsScreen())),
@@ -634,8 +639,8 @@ class _QuickActions extends StatelessWidget {
         const SizedBox(height: AppSpacing.md),
         _ActionCard(
           icon: Icons.info_outline,
-          title: 'Info',
-          subtitle: 'Version, Rechtliches und Quelltext',
+          title: s.quickInfoTitle,
+          subtitle: s.quickInfoSubtitle,
           onTap: () => Navigator.of(
             context,
           ).push(MaterialPageRoute(builder: (_) => const InfoScreen())),

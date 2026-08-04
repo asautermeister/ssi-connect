@@ -1,10 +1,16 @@
+import '../l10n/app_strings.dart';
+
 /// Shared value formatting, so the same dive reads identically in the list,
 /// the detail view and the QR screen.
 ///
-/// German conventions throughout (the app's only language): dd.MM.yyyy and
-/// a comma decimal separator for displayed values. Note this is display
-/// only - [SsiQrPayloadBuilder] formats independently, because the SSI
-/// payload requires a dot.
+/// Numbers stay German-style (comma decimal separator, dd.MM.yyyy) in both
+/// languages: the app is used next to a Garmin watch and an SSI logbook set
+/// to the same conventions, and a depth that reads `28.0` here and `28,0`
+/// there invites a misread. Only the words - weekday names, "at" - follow
+/// the chosen language.
+///
+/// Note this is display only - [SsiQrPayloadBuilder] formats independently,
+/// because the SSI payload requires a dot.
 class Fmt {
   const Fmt._();
 
@@ -20,8 +26,12 @@ class Fmt {
 
   static String dateTime(DateTime d) => '${date(d)} · ${time(d)}';
 
-  static String weekday(DateTime d) =>
-      const ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'][d.weekday - 1];
+  /// The clock time as a phrase - German puts "Uhr" after it, English puts
+  /// nothing at all.
+  static String timeOfDay(DateTime d, AppStrings s) => s.atTime(time(d));
+
+  static String weekday(DateTime d, AppStrings s) =>
+      s.weekdaysShort[d.weekday - 1];
 
   /// One decimal, comma separator. Returns null-safe placeholder.
   static String decimal(double? value) {

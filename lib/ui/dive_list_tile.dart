@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../l10n/app_strings.dart';
+
 import '../accounts/models/account_color.dart';
 import '../models/dive.dart';
 import '../ssi/ssi_buddy_code.dart';
@@ -36,6 +38,7 @@ class DiveListTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final s = AppStrings.of(context);
     final palette = theme.extension<AppPalette>()!;
     final depth = dive.maxDepthMeters;
     final showMeter = maxDepthInList > 0 && depth != null;
@@ -60,17 +63,17 @@ class DiveListTile extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      '${Fmt.weekday(dive.dateTime)}, ${Fmt.date(dive.dateTime)}',
+                      '${Fmt.weekday(dive.dateTime, s)}, ${Fmt.date(dive.dateTime)}',
                       style: theme.textTheme.titleMedium,
                     ),
                     const SizedBox(height: AppSpacing.xs),
                     Text(
                       [
-                        '${Fmt.time(dive.dateTime)} Uhr',
+                        Fmt.timeOfDay(dive.dateTime, s),
                         if (dive.duration != null)
                           '${Fmt.minutes(dive.duration)} min',
                         if (dive.descentCount != null)
-                          '${dive.descentCount}× abgetaucht',
+                          s.descentCount(dive.descentCount!),
                       ].join(' · '),
                       style: theme.textTheme.bodySmall,
                     ),
@@ -78,7 +81,10 @@ class DiveListTile extends StatelessWidget {
                     // The dive type is spelled out here as well, so the
                     // badge never has to be decoded from its shape.
                     AppChip(
-                      label: '${dive.diveNumberOfDay}. TG · ${dive.type.label}',
+                      label: s.diveOfDayAndType(
+                        dive.diveNumberOfDay,
+                        dive.type.label(s),
+                      ),
                     ),
                   ],
                 ),
@@ -104,7 +110,7 @@ class DiveListTile extends StatelessWidget {
                       ),
                     ],
                   ),
-                  Text('MAX. TIEFE', style: theme.textTheme.labelSmall),
+                  Text(s.maxDepthLabel, style: theme.textTheme.labelSmall),
                 ],
               ),
             ],

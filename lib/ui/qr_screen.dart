@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../l10n/app_strings.dart';
+
 import '../models/dive.dart';
 import '../ssi/ssi_buddy_code.dart';
 import '../ssi/ssi_qr_payload_builder.dart';
@@ -25,12 +27,13 @@ class QrScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = AppStrings.of(context);
     final String payload;
     try {
-      payload = SsiQrPayloadBuilder.build(dive, diver: diver);
+      payload = SsiQrPayloadBuilder.build(dive, strings: s, diver: diver);
     } on ArgumentError catch (e) {
       return Scaffold(
-        appBar: AppBar(title: const Text('QR-Code')),
+        appBar: AppBar(title: Text(s.qrForSsi)),
         body: ErrorState(
           icon: Icons.error_outline,
           message: e.message.toString(),
@@ -39,15 +42,13 @@ class QrScreen extends StatelessWidget {
     }
 
     return QrDisplayScreen(
-      title: 'Mit SSI-App scannen',
+      title: s.scanWithSsiApp,
       payload: payload,
       caption:
-          '${Fmt.date(dive.dateTime)} · '
+          '${Fmt.weekday(dive.dateTime, s)}, ${Fmt.date(dive.dateTime)} · '
           '${Fmt.meters(dive.maxDepthMeters)} m · '
           '${Fmt.minutes(dive.duration)} min',
-      hint:
-          'In der SSI-App einen Tauchgang hinzufügen und '
-          '„QR-Code scannen" wählen.',
+      hint: s.qrHintSingle,
     );
   }
 }

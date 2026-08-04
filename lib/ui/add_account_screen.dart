@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import '../l10n/app_strings.dart';
 import 'package:provider/provider.dart';
 
 import '../accounts/accounts_controller.dart';
@@ -105,8 +107,9 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final s = AppStrings.of(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('Garmin-Account hinzufügen')),
+      appBar: AppBar(title: Text(s.addGarminAccount)),
       body: Padding(
         padding: const EdgeInsets.all(24),
         child: ConstrainedBox(
@@ -115,8 +118,8 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              if (_step == _Step.credentials) ..._credentialsFields(),
-              if (_step == _Step.mfa) ..._mfaFields(),
+              if (_step == _Step.credentials) ..._credentialsFields(s),
+              if (_step == _Step.mfa) ..._mfaFields(s),
               if (_error != null) ...[
                 const SizedBox(height: 16),
                 Text(
@@ -144,9 +147,7 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
                         width: 20,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
-                    : Text(
-                        _step == _Step.credentials ? 'Einloggen' : 'Bestätigen',
-                      ),
+                    : Text(_step == _Step.credentials ? s.signIn : s.confirm),
               ),
             ],
           ),
@@ -155,41 +156,38 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
     );
   }
 
-  List<Widget> _credentialsFields() => [
+  List<Widget> _credentialsFields(AppStrings s) => [
     TextField(
       controller: _nameController,
-      decoration: const InputDecoration(
-        labelText: 'Name',
-        helperText: 'Optional – sonst wird die E-Mail-Adresse angezeigt',
+      decoration: InputDecoration(
+        labelText: s.name,
+        helperText: s.nameOptionalHint,
       ),
       textCapitalization: TextCapitalization.words,
     ),
     const SizedBox(height: 12),
     TextField(
       controller: _emailController,
-      decoration: const InputDecoration(labelText: 'Garmin E-Mail'),
+      decoration: InputDecoration(labelText: s.garminEmail),
       keyboardType: TextInputType.emailAddress,
       autofillHints: const [AutofillHints.email],
     ),
     const SizedBox(height: 12),
     TextField(
       controller: _passwordController,
-      decoration: const InputDecoration(labelText: 'Garmin Passwort'),
+      decoration: InputDecoration(labelText: s.garminPassword),
       obscureText: true,
       autofillHints: const [AutofillHints.password],
       onSubmitted: (_) => _submitCredentials(),
     ),
   ];
 
-  List<Widget> _mfaFields() => [
-    Text(
-      'Garmin hat einen Bestätigungscode angefordert '
-      '(${_mfaContext?.mfaMethod ?? "email"}).',
-    ),
+  List<Widget> _mfaFields(AppStrings s) => [
+    Text(s.mfaRequested(_mfaContext?.mfaMethod ?? 'email')),
     const SizedBox(height: 12),
     TextField(
       controller: _mfaController,
-      decoration: const InputDecoration(labelText: 'Code'),
+      decoration: InputDecoration(labelText: s.code),
       keyboardType: TextInputType.number,
       onSubmitted: (_) => _submitMfa(),
     ),

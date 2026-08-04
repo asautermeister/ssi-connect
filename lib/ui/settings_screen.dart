@@ -1,29 +1,29 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../l10n/app_strings.dart';
+import '../l10n/app_strings_de.dart';
+import '../l10n/app_strings_en.dart';
 import '../settings/settings_controller.dart';
 import 'theme/app_theme.dart';
 import 'widgets/app_card.dart';
 
-/// App-wide preferences.
+/// App-wide preferences: how the app looks and which language it speaks.
 ///
-/// Deliberately its own screen rather than a switch tucked into the info
-/// screen: the language selection is going to land here too, and a screen
-/// that already has a shape is easier to add to than one that has to be
-/// invented later.
-///
-/// Only settings that actually do something appear here. A language row
-/// that offers one language would be a control the user can operate
-/// without anything happening.
+/// Both choices offer "follow the device" first, then the explicit
+/// overrides. That order is deliberate - the default is the answer for
+/// most people, and the overrides exist for the cases the device gets
+/// wrong.
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     final settings = context.watch<SettingsController>();
+    final s = AppStrings.of(context);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Einstellungen')),
+      appBar: AppBar(title: Text(s.settings)),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(
           AppSpacing.lg,
@@ -32,14 +32,16 @@ class SettingsScreen extends StatelessWidget {
           AppSpacing.xxl,
         ),
         children: [
-          const SectionHeader(title: 'Darstellung'),
+          SectionHeader(title: s.appearance),
           AppCard(
             padding: EdgeInsets.zero,
             child: Column(
               children: [
                 for (final option in _ThemeOption.values)
-                  _ThemeRow(
-                    option: option,
+                  _OptionRow(
+                    icon: option.icon,
+                    label: option.label(s),
+                    description: option.description(s),
                     selected: settings.themeMode == option.mode,
                     onTap: () => settings.setThemeMode(option.mode),
                   ),
@@ -50,9 +52,35 @@ class SettingsScreen extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
             child: Text(
-              'Der QR-Code bleibt immer hell – ein dunkler Code lässt sich '
-              'von manchen Kameras nicht zuverlässig scannen.',
+              s.qrStaysLightNote,
               style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ),
+          SectionHeader(title: s.language),
+          AppCard(
+            padding: EdgeInsets.zero,
+            child: Column(
+              children: [
+                _OptionRow(
+                  icon: Icons.language,
+                  label: s.languageSystem,
+                  description: s.languageSystemHint,
+                  selected: settings.locale == null,
+                  onTap: () => settings.setLocale(null),
+                ),
+                for (final language in _languages)
+                  _OptionRow(
+                    icon: Icons.translate,
+                    // The language names itself, so it stays readable to
+                    // someone who cannot read the language currently set.
+                    label: language.strings.languageName,
+                    description: null,
+                    selected:
+                        settings.locale?.languageCode ==
+                        language.locale.languageCode,
+                    onTap: () => settings.setLocale(language.locale),
+                  ),
+              ],
             ),
           ),
         ],
@@ -61,46 +89,52 @@ class SettingsScreen extends StatelessWidget {
   }
 }
 
-/// The three choices, in the order they belong: the default first, then the
-/// two ways to override it.
-enum _ThemeOption {
-  system(
-    ThemeMode.system,
-    'Wie das Gerät',
-    'Folgt der Systemeinstellung',
-    Icons.brightness_auto_outlined,
-  ),
-  light(
-    ThemeMode.light,
-    'Hell',
-    'Gut bei Sonnenlicht an Deck',
-    Icons.light_mode_outlined,
-  ),
-  dark(
-    ThemeMode.dark,
-    'Dunkel',
-    'Schont die Augen am Abend',
-    Icons.dark_mode_outlined,
-  );
+/// The languages on offer, each paired with its own texts so the picker can
+/// name it in itself.
+final _languages = [
+  (locale: const Locale('de'), strings: const AppStringsDe()),
+  (locale: const Locale('en'), strings: const AppStringsEn()),
+];
 
-  const _ThemeOption(this.mode, this.label, this.description, this.icon);
+/// The three theme choices, in the order they belong: the default first,
+/// then the two ways to override it.
+enum _ThemeOption {
+  system(ThemeMode.system, Icons.brightness_auto_outlined),
+  light(ThemeMode.light, Icons.light_mode_outlined),
+  dark(ThemeMode.dark, Icons.dark_mode_outlined);
+
+  const _ThemeOption(this.mode, this.icon);
 
   final ThemeMode mode;
-  final String label;
-  final String description;
   final IconData icon;
+
+  String label(AppStrings s) => switch (this) {
+    _ThemeOption.system => s.themeSystem,
+    _ThemeOption.light => s.themeLight,
+    _ThemeOption.dark => s.themeDark,
+  };
+
+  String description(AppStrings s) => switch (this) {
+    _ThemeOption.system => s.themeSystemHint,
+    _ThemeOption.light => s.themeLightHint,
+    _ThemeOption.dark => s.themeDarkHint,
+  };
 }
 
 /// One choice. Built by hand rather than from [RadioListTile] so the whole
 /// row is the tap target and the styling matches the rest of the app.
-class _ThemeRow extends StatelessWidget {
-  const _ThemeRow({
-    required this.option,
+class _OptionRow extends StatelessWidget {
+  const _OptionRow({
+    required this.icon,
+    required this.label,
+    required this.description,
     required this.selected,
     required this.onTap,
   });
 
-  final _ThemeOption option;
+  final IconData icon;
+  final String label;
+  final String? description;
   final bool selected;
   final VoidCallback onTap;
 
@@ -108,6 +142,7 @@ class _ThemeRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final palette = theme.extension<AppPalette>()!;
+    final description = this.description;
 
     return InkWell(
       onTap: onTap,
@@ -116,7 +151,7 @@ class _ThemeRow extends StatelessWidget {
         child: Row(
           children: [
             Icon(
-              option.icon,
+              icon,
               size: 22,
               color: selected ? theme.colorScheme.primary : palette.inkMuted,
             ),
@@ -125,9 +160,11 @@ class _ThemeRow extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(option.label, style: theme.textTheme.titleMedium),
-                  const SizedBox(height: 2),
-                  Text(option.description, style: theme.textTheme.bodySmall),
+                  Text(label, style: theme.textTheme.titleMedium),
+                  if (description != null) ...[
+                    const SizedBox(height: 2),
+                    Text(description, style: theme.textTheme.bodySmall),
+                  ],
                 ],
               ),
             ),

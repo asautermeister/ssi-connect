@@ -20,11 +20,18 @@ class SettingsController extends ChangeNotifier {
   ThemeMode _themeMode = ThemeMode.system;
   ThemeMode get themeMode => _themeMode;
 
+  /// null means "follow the device". Kept as null rather than resolving it
+  /// to a concrete language here, so the app keeps following along when the
+  /// device language changes.
+  Locale? _locale;
+  Locale? get locale => _locale;
+
   bool _loaded = false;
   bool get loaded => _loaded;
 
   Future<void> loadFromStorage() async {
     _themeMode = await _repository.loadThemeMode() ?? ThemeMode.system;
+    _locale = await _repository.loadLocale();
     _loaded = true;
     notifyListeners();
   }
@@ -34,5 +41,12 @@ class SettingsController extends ChangeNotifier {
     _themeMode = mode;
     notifyListeners();
     await _repository.saveThemeMode(mode);
+  }
+
+  Future<void> setLocale(Locale? locale) async {
+    if (locale?.languageCode == _locale?.languageCode) return;
+    _locale = locale;
+    notifyListeners();
+    await _repository.saveLocale(locale);
   }
 }

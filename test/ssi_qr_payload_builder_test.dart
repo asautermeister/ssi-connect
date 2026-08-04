@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:ssi_connect/l10n/app_strings_de.dart';
 import 'package:ssi_connect/models/dive.dart';
 import 'package:ssi_connect/models/dive_type.dart';
 import 'package:ssi_connect/models/water_type.dart';
@@ -28,10 +29,13 @@ Dive _dive({
   );
 }
 
+const _s = AppStringsDe();
+
 void main() {
   group('SsiQrPayloadBuilder', () {
     test('builds the required fields with fractional depth', () {
       final payload = SsiQrPayloadBuilder.build(
+        strings: _s,
         _dive(
           dateTime: DateTime(2019, 7, 21, 10, 0),
           maxDepthMeters: 12.8,
@@ -53,6 +57,7 @@ void main() {
       // var_divetype_id:24;user_master_id:3902893;user_firstname:Andreas;
       // user_lastname:Sautermeister;user_leader_id:
       final payload = SsiQrPayloadBuilder.build(
+        strings: _s,
         _dive(
           dateTime: DateTime(2025, 11, 7, 10, 50),
           maxDepthMeters: 28.0,
@@ -83,6 +88,7 @@ void main() {
       // dive;noid;dive_type:2;divetime:75.0;datetime:202511060853;
       // depth_m:46.4;site:202305;... (same tail)
       final payload = SsiQrPayloadBuilder.build(
+        strings: _s,
         _dive(
           dateTime: DateTime(2025, 11, 6, 8, 53),
           maxDepthMeters: 46.4,
@@ -103,6 +109,7 @@ void main() {
       // dive;noid;dive_type:0;divetime:38.0;datetime:202509061328;
       // depth_m:13.0;site:214234;var_watertype_id:4;... (same tail)
       final payload = SsiQrPayloadBuilder.build(
+        strings: _s,
         _dive(
           dateTime: DateTime(2025, 9, 6, 13, 28),
           maxDepthMeters: 13.0,
@@ -118,6 +125,7 @@ void main() {
 
     test('salt water is the other captured value', () {
       final payload = SsiQrPayloadBuilder.build(
+        strings: _s,
         _dive(
           maxDepthMeters: 28,
           duration: const Duration(minutes: 54),
@@ -130,6 +138,7 @@ void main() {
 
     test('an unreported water type leaves the field out entirely', () {
       final payload = SsiQrPayloadBuilder.build(
+        strings: _s,
         _dive(maxDepthMeters: 28, duration: const Duration(minutes: 54)),
       );
 
@@ -141,6 +150,7 @@ void main() {
     test('maps every dive type to its code from the SSI table', () {
       int diveTypeOf(DiveType type) {
         final payload = SsiQrPayloadBuilder.build(
+          strings: _s,
           _dive(
             maxDepthMeters: 20,
             duration: const Duration(minutes: 40),
@@ -164,6 +174,7 @@ void main() {
 
     test('reports decompression as SSI codes it', () {
       String payloadFor(bool? isDecoDive) => SsiQrPayloadBuilder.build(
+        strings: _s,
         _dive(
           maxDepthMeters: 28,
           duration: const Duration(minutes: 54),
@@ -180,6 +191,7 @@ void main() {
 
     test('marks the dive as a fun dive, which is SSI\'s own default', () {
       final payload = SsiQrPayloadBuilder.build(
+        strings: _s,
         _dive(maxDepthMeters: 20, duration: const Duration(minutes: 40)),
       );
 
@@ -190,6 +202,7 @@ void main() {
 
     test('keeps one decimal place for whole-number depth and duration', () {
       final payload = SsiQrPayloadBuilder.build(
+        strings: _s,
         _dive(maxDepthMeters: 18, duration: const Duration(minutes: 53)),
       );
 
@@ -199,6 +212,7 @@ void main() {
 
     test('formats fractional dive duration in minutes', () {
       final payload = SsiQrPayloadBuilder.build(
+        strings: _s,
         _dive(
           maxDepthMeters: 20,
           duration: const Duration(minutes: 92, seconds: 30),
@@ -210,6 +224,7 @@ void main() {
 
     test('appends watertemp_c when available', () {
       final payload = SsiQrPayloadBuilder.build(
+        strings: _s,
         _dive(
           maxDepthMeters: 20,
           duration: const Duration(minutes: 40),
@@ -222,6 +237,7 @@ void main() {
 
     test('omits watertemp_c when not available', () {
       final payload = SsiQrPayloadBuilder.build(
+        strings: _s,
         _dive(maxDepthMeters: 20, duration: const Duration(minutes: 40)),
       );
 
@@ -231,6 +247,7 @@ void main() {
     test('throws when max depth is missing', () {
       expect(
         () => SsiQrPayloadBuilder.build(
+          strings: _s,
           _dive(duration: const Duration(minutes: 10)),
         ),
         throwsArgumentError,
@@ -239,7 +256,7 @@ void main() {
 
     test('throws when duration is missing', () {
       expect(
-        () => SsiQrPayloadBuilder.build(_dive(maxDepthMeters: 10)),
+        () => SsiQrPayloadBuilder.build(_dive(maxDepthMeters: 10), strings: _s),
         throwsArgumentError,
       );
     });
@@ -247,6 +264,7 @@ void main() {
     test('attributes the dive to a scanned SSI member', () {
       // Field names and values as SSI writes them in its own export.
       final payload = SsiQrPayloadBuilder.build(
+        strings: _s,
         _dive(maxDepthMeters: 28, duration: const Duration(minutes: 54)),
         diver: const SsiBuddyCode(
           memberId: '3902893',
@@ -265,6 +283,7 @@ void main() {
 
     test('emits only the member id when no name was scanned', () {
       final payload = SsiQrPayloadBuilder.build(
+        strings: _s,
         _dive(maxDepthMeters: 28, duration: const Duration(minutes: 54)),
         diver: const SsiBuddyCode(memberId: '3902893'),
       );
@@ -278,6 +297,7 @@ void main() {
       // The no-identity case has to stay byte-identical to what was
       // verified against real SSI imports.
       final payload = SsiQrPayloadBuilder.build(
+        strings: _s,
         _dive(
           dateTime: DateTime(2025, 11, 7, 10, 50),
           maxDepthMeters: 28,
@@ -294,6 +314,7 @@ void main() {
 
     test('never emits a field whose value Garmin does not report', () {
       final payload = SsiQrPayloadBuilder.build(
+        strings: _s,
         _dive(
           maxDepthMeters: 28,
           duration: const Duration(minutes: 54),
@@ -326,6 +347,7 @@ void main() {
 
     test('pads single-digit month/day/hour/minute in datetime', () {
       final payload = SsiQrPayloadBuilder.build(
+        strings: _s,
         _dive(
           dateTime: DateTime(2024, 1, 5, 7, 3),
           maxDepthMeters: 10,

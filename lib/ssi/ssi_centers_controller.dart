@@ -53,8 +53,7 @@ class SsiCentersController extends ChangeNotifier {
   static List<SsiCenterCode> _sorted(List<SsiCenterCode> centers) {
     final sorted = [...centers];
     sorted.sort(
-      (a, b) =>
-          a.displayName.toLowerCase().compareTo(b.displayName.toLowerCase()),
+      (a, b) => a.sortKey.toLowerCase().compareTo(b.sortKey.toLowerCase()),
     );
     return sorted;
   }

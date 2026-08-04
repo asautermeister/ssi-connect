@@ -1,3 +1,5 @@
+import '../l10n/app_strings.dart';
+
 /// Fresh or salt water. The one dive condition that isn't a matter of
 /// judgement - the dive computer needs it to compute depth at all, so it is
 /// recorded rather than remembered.
@@ -18,9 +20,9 @@ enum DiveWaterType {
     DiveWaterType.salt => 5,
   };
 
-  String get label => switch (this) {
-    DiveWaterType.fresh => 'Süßwasser',
-    DiveWaterType.salt => 'Salzwasser',
+  String label(AppStrings s) => switch (this) {
+    DiveWaterType.fresh => s.waterFresh,
+    DiveWaterType.salt => s.waterSalt,
   };
 
   /// Classifies a water density in kg/m³: fresh water is about 1000,

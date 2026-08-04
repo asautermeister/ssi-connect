@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 
 import 'accounts/accounts_controller.dart';
 import 'dives/dive_loader.dart';
+import 'l10n/app_strings.dart';
 import 'dives/recent_dives_controller.dart';
 import 'settings/settings_controller.dart';
 import 'ssi/ssi_buddies_controller.dart';
@@ -63,6 +65,16 @@ class SsiConnectApp extends StatelessWidget {
           theme: AppTheme.light(),
           darkTheme: AppTheme.dark(),
           themeMode: settings.themeMode,
+          // null lets Flutter resolve the device language against
+          // supportedLocales, which is what "follow the device" means.
+          locale: settings.locale,
+          supportedLocales: AppStrings.supportedLocales,
+          localizationsDelegates: const [
+            AppStrings.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
           home: const AccountsScreen(),
         ),
       ),

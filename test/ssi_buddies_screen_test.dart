@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:ssi_connect/l10n/app_strings.dart';
 import 'package:provider/provider.dart';
 import 'package:ssi_connect/accounts/account_repository.dart';
 import 'package:ssi_connect/accounts/accounts_controller.dart';
@@ -97,6 +99,14 @@ Future<SsiBuddiesController> _pump(
         ChangeNotifierProvider.value(value: accountsController),
       ],
       child: MaterialApp(
+        locale: const Locale('de'),
+        localizationsDelegates: const [
+          AppStrings.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: AppStrings.supportedLocales,
         theme: AppTheme.light(),
         home: const SsiBuddiesScreen(),
       ),

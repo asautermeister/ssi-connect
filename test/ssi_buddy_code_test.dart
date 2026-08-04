@@ -1,5 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:ssi_connect/l10n/app_strings_de.dart';
 import 'package:ssi_connect/ssi/ssi_buddy_code.dart';
+
+const _s = AppStringsDe();
 
 void main() {
   group('SsiBuddyCode.tryParse', () {
@@ -194,18 +197,18 @@ void main() {
     });
 
     test('names someone by their number when no name is known', () {
-      expect(const SsiBuddyCode(memberId: '42').displayName, 'SSI-Nr. 42');
+      expect(const SsiBuddyCode(memberId: '42').displayName(_s), 'SSI-Nr. 42');
       expect(
-        const SsiBuddyCode(memberId: '42', firstName: 'Ada').displayName,
+        const SsiBuddyCode(memberId: '42', firstName: 'Ada').displayName(_s),
         'Ada',
       );
     });
 
     test('does not repeat the number as a second line under itself', () {
       // Titled "SSI-Nr. 42" already - a subtitle saying the same is noise.
-      expect(const SsiBuddyCode(memberId: '42').memberIdLine, isNull);
+      expect(const SsiBuddyCode(memberId: '42').memberIdLine(_s), isNull);
       expect(
-        const SsiBuddyCode(memberId: '42', firstName: 'Ada').memberIdLine,
+        const SsiBuddyCode(memberId: '42', firstName: 'Ada').memberIdLine(_s),
         'SSI-Nr. 42',
       );
     });
@@ -217,10 +220,13 @@ void main() {
         const SsiBuddyCode(
           memberId: '3154225',
           leaderNumber: '110890',
-        ).professionalNumberLine,
+        ).professionalNumberLine(_s),
         'SSI Professional Nr. 110890',
       );
-      expect(const SsiBuddyCode(memberId: '42').professionalNumberLine, isNull);
+      expect(
+        const SsiBuddyCode(memberId: '42').professionalNumberLine(_s),
+        isNull,
+      );
     });
   });
 }

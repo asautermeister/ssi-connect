@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../l10n/app_strings.dart';
+
 import '../format.dart';
 import '../theme/app_theme.dart';
 import 'app_card.dart';
@@ -29,6 +31,7 @@ class OfflineBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final s = AppStrings.of(context);
     final palette = theme.extension<AppPalette>()!;
     final fetchedAt = this.fetchedAt;
 
@@ -46,23 +49,21 @@ class OfflineBanner extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  isOffline
-                      ? 'Keine Internetverbindung'
-                      : 'Gespeicherte Tauchgänge',
+                  isOffline ? s.noInternet : s.storedDives,
                   style: theme.textTheme.titleMedium,
                 ),
                 const SizedBox(height: 2),
                 Text(
                   fetchedAt == null
-                      ? 'Es werden keine aktuellen Daten geladen.'
-                      : 'Stand: ${Fmt.dateTime(fetchedAt)} Uhr',
+                      ? s.noCurrentData
+                      : s.asOf(Fmt.dateTime(fetchedAt)),
                   style: theme.textTheme.bodySmall,
                 ),
               ],
             ),
           ),
           if (onRetry != null)
-            TextButton(onPressed: onRetry, child: const Text('Erneut')),
+            TextButton(onPressed: onRetry, child: Text(s.retry)),
         ],
       ),
     );

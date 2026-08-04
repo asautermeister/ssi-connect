@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../l10n/app_strings.dart';
+
 import '../../models/dive_type.dart';
 import '../theme/app_theme.dart';
 
@@ -25,7 +27,7 @@ class DiveTypeIcon extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
 
     return Semantics(
-      label: type.label,
+      label: type.label(AppStrings.of(context)),
       child: Container(
         width: size,
         height: size,

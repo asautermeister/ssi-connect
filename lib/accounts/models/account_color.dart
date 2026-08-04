@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../l10n/app_strings.dart';
+
 /// A colour a family member can pick for their account, shown as a bar on
 /// the left edge of their dives.
 ///
@@ -17,16 +19,18 @@ import 'package:flutter/material.dart';
 /// the hues - which matters for the roughly one in twelve men who would
 /// struggle to.
 enum AccountColor {
-  coral('Koralle', Color(0xFFD1452B), Color(0xFFFF8A6B)),
-  amber('Bernstein', Color(0xFFB07000), Color(0xFFF0B84A)),
-  green('Grün', Color(0xFF2A7A47), Color(0xFF6BCB8B)),
-  blue('Blau', Color(0xFF2A5FCC), Color(0xFF7FA8FF)),
-  violet('Violett', Color(0xFF6D3F9E), Color(0xFFBA92E8)),
-  pink('Pink', Color(0xFFB03270), Color(0xFFF48FBC));
+  coral(Color(0xFFD1452B), Color(0xFFFF8A6B)),
+  amber(Color(0xFFB07000), Color(0xFFF0B84A)),
+  green(Color(0xFF2A7A47), Color(0xFF6BCB8B)),
+  blue(Color(0xFF2A5FCC), Color(0xFF7FA8FF)),
+  violet(Color(0xFF6D3F9E), Color(0xFFBA92E8)),
+  pink(Color(0xFFB03270), Color(0xFFF48FBC));
 
-  const AccountColor(this.label, this._light, this._dark);
+  const AccountColor(this._light, this._dark);
 
-  final String label;
+  /// The name is not stored on the enum: it has to change with the app
+  /// language, and an enum constant cannot.
+  String label(AppStrings s) => s.colourNames[index];
 
   /// Darker on a light card, lighter on a dark one - the same choice has to
   /// carry on both surfaces.

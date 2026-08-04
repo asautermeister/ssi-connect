@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:ssi_connect/l10n/app_strings.dart';
 import 'package:ssi_connect/models/dive.dart';
 import 'package:ssi_connect/ssi/ssi_buddy_code.dart';
 import 'package:ssi_connect/ui/qr_display_screen.dart';
@@ -22,7 +24,20 @@ Future<void> _pump(WidgetTester tester, Widget screen) async {
   tester.view.devicePixelRatio = 1.0;
   addTearDown(tester.view.reset);
 
-  await tester.pumpWidget(MaterialApp(theme: AppTheme.light(), home: screen));
+  await tester.pumpWidget(
+    MaterialApp(
+      locale: const Locale('de'),
+      localizationsDelegates: const [
+        AppStrings.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: AppStrings.supportedLocales,
+      theme: AppTheme.light(),
+      home: screen,
+    ),
+  );
   await tester.pumpAndSettle();
 }
 
@@ -34,7 +49,9 @@ void main() {
       await _pump(tester, QrScreen(dive: _dive()));
 
       expect(find.text('Mit SSI-App scannen'), findsOneWidget);
-      expect(find.text('07.11.2025 · 28,0 m · 54 min'), findsOneWidget);
+      // The weekday is spelled out here too, so the caption reads the
+      // same way as the dive list it was opened from.
+      expect(find.text('Fr, 07.11.2025 · 28,0 m · 54 min'), findsOneWidget);
       expect(find.byType(QrDisplayScreen), findsOneWidget);
     });
 

@@ -1,5 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:ssi_connect/l10n/app_strings_de.dart';
 import 'package:ssi_connect/ui/format.dart';
+
+const _s = AppStringsDe();
 
 void main() {
   group('Fmt', () {
@@ -14,7 +17,7 @@ void main() {
 
     test('names weekdays', () {
       // 8 Nov 2025 was a Saturday.
-      expect(Fmt.weekday(DateTime(2025, 11, 8)), 'Sa');
+      expect(Fmt.weekday(DateTime(2025, 11, 8), _s), 'Sa');
     });
 
     test('uses a comma as the decimal separator for display', () {

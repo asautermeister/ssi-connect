@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../l10n/app_strings.dart';
+
 import '../models/dive.dart';
 import '../ssi/ssi_buddy_code.dart';
 import 'format.dart';
@@ -21,10 +23,11 @@ class DiveDetailScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final s = AppStrings.of(context);
     final palette = theme.extension<AppPalette>()!;
 
     return Scaffold(
-      appBar: AppBar(title: Text('${dive.diveNumberOfDay}. Tauchgang')),
+      appBar: AppBar(title: Text(s.diveOfDayTitle(dive.diveNumberOfDay))),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(
           AppSpacing.lg,
@@ -53,11 +56,11 @@ class DiveDetailScreen extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            dive.type.label,
+                            dive.type.label(s),
                             style: theme.textTheme.titleMedium,
                           ),
                           Text(
-                            '${Fmt.weekday(dive.dateTime)}, ${Fmt.dateTime(dive.dateTime)} Uhr',
+                            '${Fmt.weekday(dive.dateTime, s)}, ${Fmt.timeOfDay(dive.dateTime, s)}',
                             style: theme.textTheme.bodySmall,
                           ),
                         ],
@@ -67,7 +70,7 @@ class DiveDetailScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: AppSpacing.lg),
                 StatTile(
-                  label: 'Max. Tiefe',
+                  label: s.maxDepthLabel,
                   value: Fmt.meters(dive.maxDepthMeters),
                   unit: 'm',
                   emphasis: StatEmphasis.hero,
@@ -94,7 +97,7 @@ class DiveDetailScreen extends StatelessWidget {
               ],
             ),
           ),
-          const SectionHeader(title: 'Werte'),
+          SectionHeader(title: s.values),
           AppCard(
             padding: const EdgeInsets.all(AppSpacing.xl),
             child: Column(
@@ -104,14 +107,14 @@ class DiveDetailScreen extends StatelessWidget {
                   children: [
                     Expanded(
                       child: StatTile(
-                        label: 'Dauer',
+                        label: s.duration,
                         value: Fmt.minutes(dive.duration),
                         unit: 'min',
                       ),
                     ),
                     Expanded(
                       child: StatTile(
-                        label: 'Ø Tiefe',
+                        label: s.avgDepth,
                         value: Fmt.meters(dive.avgDepthMeters),
                         unit: 'm',
                       ),
@@ -124,16 +127,16 @@ class DiveDetailScreen extends StatelessWidget {
                   children: [
                     Expanded(
                       child: StatTile(
-                        label: 'Wassertemp.',
+                        label: s.waterTemperature,
                         value: Fmt.celsius(dive.waterTemperatureCelsius),
                         unit: '°C',
                       ),
                     ),
                     Expanded(
                       child: StatTile(
-                        label: 'Tauchgang',
+                        label: s.diveOfDayTitleShort,
                         value: '${dive.diveNumberOfDay}',
-                        unit: 'des Tages',
+                        unit: s.diveOfDay,
                       ),
                     ),
                   ],
@@ -156,16 +159,16 @@ class DiveDetailScreen extends StatelessWidget {
                       Expanded(
                         child: dive.waterType != null
                             ? StatTile(
-                                label: 'Wasser',
-                                value: dive.waterType!.label,
+                                label: s.water,
+                                value: dive.waterType!.label(s),
                               )
                             : const SizedBox.shrink(),
                       ),
                       Expanded(
                         child: dive.isDecoDive != null
                             ? StatTile(
-                                label: 'Deko',
-                                value: dive.isDecoDive! ? 'Ja' : 'Nein',
+                                label: s.deco,
+                                value: dive.isDecoDive! ? s.yes : s.no,
                               )
                             : const SizedBox.shrink(),
                       ),
@@ -178,7 +181,7 @@ class DiveDetailScreen extends StatelessWidget {
                       children: [
                         Expanded(
                           child: StatTile(
-                            label: 'Abtauchvorgänge',
+                            label: s.descents,
                             value: '${dive.descentCount}',
                           ),
                         ),
@@ -199,7 +202,7 @@ class DiveDetailScreen extends StatelessWidget {
           ),
         ),
         icon: const Icon(Icons.qr_code_2),
-        label: const Text('QR-Code für SSI'),
+        label: Text(s.qrForSsi),
       ),
     );
   }

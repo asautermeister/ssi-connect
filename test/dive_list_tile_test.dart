@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:ssi_connect/l10n/app_strings.dart';
 import 'package:ssi_connect/models/dive.dart';
 import 'package:ssi_connect/models/dive_type.dart';
 import 'package:ssi_connect/ui/dive_list_tile.dart';
@@ -27,13 +29,23 @@ Dive _dive({
   );
 }
 
-Future<void> _pump(WidgetTester tester, Widget child) {
-  return tester.pumpWidget(
+Future<void> _pump(WidgetTester tester, Widget child) async {
+  await tester.pumpWidget(
     MaterialApp(
+      locale: const Locale('de'),
+      localizationsDelegates: const [
+        AppStrings.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: AppStrings.supportedLocales,
       theme: AppTheme.light(),
       home: Scaffold(body: child),
     ),
   );
+  // The texts are loaded by a delegate, so the first frame is still empty.
+  await tester.pumpAndSettle();
 }
 
 void main() {

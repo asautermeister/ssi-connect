@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import '../l10n/app_strings.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
@@ -18,10 +20,11 @@ class InfoScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final s = AppStrings.of(context);
     final developerMode = context.watch<DeveloperMode>();
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Info')),
+      appBar: AppBar(title: Text(s.quickInfoTitle)),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(
           AppSpacing.lg,
@@ -32,92 +35,53 @@ class InfoScreen extends StatelessWidget {
         children: [
           const _VersionCard(),
 
-          const SectionHeader(title: 'Was die App tut'),
+          SectionHeader(title: s.whatTheAppDoes),
           _TextCard(
             children: [
-              Text(
-                'SSI Connect liest die Tauchgänge, die deine Garmin-Uhr '
-                'ohnehin aufzeichnet, und macht daraus einen QR-Code, den '
-                'die SSI-App einlesen kann. Der Code wird auf diesem Gerät '
-                'angezeigt und von einem zweiten Gerät abgescannt.',
-                style: theme.textTheme.bodyMedium,
-              ),
+              Text(s.whatTheAppDoesBody, style: theme.textTheme.bodyMedium),
             ],
           ),
 
-          const SectionHeader(title: 'Deine Daten'),
+          SectionHeader(title: s.yourData),
           _TextCard(
             children: [
-              _Bullet(
-                'Zugangsdaten, SSI-Nummern, Buddies und die zuletzt '
-                'geladenen Tauchgänge liegen verschlüsselt im '
-                'Schlüsselspeicher dieses Geräts.',
-              ),
-              _Bullet(
-                'Es werden keine Daten an Dritte übertragen. Die einzige '
-                'Verbindung nach außen geht zu Garmin, um deine eigenen '
-                'Tauchgänge abzurufen.',
-              ),
-              _Bullet(
-                'Es gibt keinen Server und kein Konto bei uns. Die App '
-                'entfernen löscht alles.',
-              ),
-              _Bullet(
-                'Gespeicherte Tauchgänge lassen sich jederzeit pro Account '
-                'löschen; sie verschwinden auch, wenn du den Account '
-                'entfernst.',
-              ),
+              _Bullet(s.yourDataStorage),
+              _Bullet(s.yourDataNoThirdParty),
+              _Bullet(s.yourDataNoServer),
+              _Bullet(s.yourDataDeletable),
             ],
           ),
 
-          const SectionHeader(title: 'Rechtliches'),
+          SectionHeader(title: s.legal),
           _TextCard(
             children: [
-              _Bullet(
-                'Diese App steht in keiner Verbindung zu Garmin Ltd. oder '
-                'zu Scuba Schools International (SSI). Beide Namen und '
-                'Logos gehören ihren jeweiligen Inhabern und werden hier '
-                'nur zur Beschreibung verwendet.',
-              ),
-              _Bullet(
-                'Der Zugriff auf Garmin Connect nutzt eine nicht offiziell '
-                'dokumentierte Schnittstelle. Sie kann jederzeit ohne '
-                'Vorankündigung brechen.',
-              ),
-              _Bullet(
-                'Die Nutzung erfolgt auf eigene Verantwortung, ohne Gewähr '
-                'für Richtigkeit oder Vollständigkeit der übertragenen '
-                'Werte. Prüfe jeden Tauchgang, bevor du ihn übernimmst.',
-              ),
-              _Bullet(
-                'Die App ist kein Tauchcomputer, kein Ersatz für einen und '
-                'kein Ersatz für eine Tauchausbildung. Sie zeigt nur '
-                'Werte, die bereits aufgezeichnet wurden, und berechnet '
-                'nichts.',
-              ),
+              _Bullet(s.legalNoAffiliation),
+              _Bullet(s.legalUnofficialApi),
+              _Bullet(s.legalNoWarranty),
+              _Bullet(s.legalNotADiveComputer),
             ],
           ),
 
-          const SectionHeader(title: 'Quelltext & Lizenzen'),
+          SectionHeader(title: s.sourceAndLicences),
           const _RepositoryCard(),
           const SizedBox(height: AppSpacing.md),
           _ActionCard(
             icon: Icons.description_outlined,
-            title: 'Open-Source-Lizenzen',
-            subtitle: 'Die Lizenzen der verwendeten Pakete',
+            title: s.openSourceLicences,
+            subtitle: s.licencesSubtitle,
             onTap: () => showLicensePage(
               context: context,
-              applicationName: 'SSI Connect',
+              applicationName: s.appName,
               applicationVersion: AppInfo.version,
             ),
           ),
 
           if (developerMode.enabled) ...[
-            const SectionHeader(title: 'Diagnose'),
+            SectionHeader(title: s.diagnostics),
             _ActionCard(
               icon: Icons.bug_report_outlined,
-              title: 'API-Protokoll',
-              subtitle: 'Aufgezeichnete Garmin-Aufrufe ansehen',
+              title: s.apiLog,
+              subtitle: s.apiLogSubtitle,
               onTap: () => Navigator.of(
                 context,
               ).push(MaterialPageRoute(builder: (_) => const DebugLogScreen())),
@@ -125,8 +89,8 @@ class InfoScreen extends StatelessWidget {
             const SizedBox(height: AppSpacing.md),
             _ActionCard(
               icon: Icons.qr_code_scanner,
-              title: 'SSI-Code analysieren',
-              subtitle: 'Felder eines echten SSI-QR-Codes im Klartext',
+              title: s.inspectSsiCode,
+              subtitle: s.inspectSsiCodeSubtitle,
               onTap: () => Navigator.of(context).push(
                 MaterialPageRoute(
                   builder: (_) => const SsiPayloadInspectScreen(),
@@ -148,6 +112,7 @@ class _VersionCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final palette = theme.extension<AppPalette>()!;
+    final s = AppStrings.of(context);
     final developerMode = context.watch<DeveloperMode>();
 
     return AppCard(
@@ -156,19 +121,19 @@ class _VersionCard extends StatelessWidget {
         final unlocked = context.read<DeveloperMode>().registerVersionTap();
         if (!unlocked) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Diagnose-Werkzeuge sichtbar')),
+          SnackBar(content: Text(AppStrings.of(context).diagnosticsUnlocked)),
         );
       },
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('SSI Connect', style: theme.textTheme.headlineSmall),
+          Text(s.appName, style: theme.textTheme.headlineSmall),
           const SizedBox(height: AppSpacing.xs),
-          Text('Version ${AppInfo.version}', style: theme.textTheme.bodyMedium),
+          Text(s.version(AppInfo.version), style: theme.textTheme.bodyMedium),
           if (developerMode.tapsRemaining > 0) ...[
             const SizedBox(height: AppSpacing.sm),
             Text(
-              'Noch ${developerMode.tapsRemaining}× tippen',
+              s.tapsRemaining(developerMode.tapsRemaining),
               style: theme.textTheme.bodySmall?.copyWith(
                 color: palette.inkMuted,
               ),
@@ -189,6 +154,7 @@ class _RepositoryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final s = AppStrings.of(context);
 
     return AppCard(
       child: Row(
@@ -197,7 +163,7 @@ class _RepositoryCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Quelltext', style: theme.textTheme.titleMedium),
+                Text(s.sourceCode, style: theme.textTheme.titleMedium),
                 const SizedBox(height: 2),
                 SelectableText(
                   AppInfo.repositoryUrl,
@@ -208,15 +174,13 @@ class _RepositoryCard extends StatelessWidget {
           ),
           IconButton(
             icon: const Icon(Icons.copy_all),
-            tooltip: 'Adresse kopieren',
+            tooltip: s.copyAddress,
             onPressed: () async {
               final messenger = ScaffoldMessenger.of(context);
               await Clipboard.setData(
                 const ClipboardData(text: AppInfo.repositoryUrl),
               );
-              messenger.showSnackBar(
-                const SnackBar(content: Text('Adresse kopiert')),
-              );
+              messenger.showSnackBar(SnackBar(content: Text(s.addressCopied)));
             },
           ),
         ],

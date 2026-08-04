@@ -1,3 +1,5 @@
+import '../l10n/app_strings.dart';
+
 /// A dive centre as encoded in the QR code the SSI app shows for it.
 ///
 /// Observed payload:
@@ -18,11 +20,15 @@ class SsiCenterCode {
 
   /// What to put on screen: the name if the code carried one, otherwise
   /// the number, which is all we know about it.
-  String get displayName => name ?? 'Basis-Nr. $centerId';
+  String displayName(AppStrings s) => name ?? s.centreNumberLine(centerId);
+
+  /// Language-independent sort key, see [SsiBuddyCode.sortKey].
+  String get sortKey => name ?? centerId;
 
   /// The number as a secondary line - null when [displayName] is already
   /// that number, so a nameless centre isn't labelled twice.
-  String? get centerIdLine => name == null ? null : 'Basis-Nr. $centerId';
+  String? centerIdLine(AppStrings s) =>
+      name == null ? null : s.centreNumberLine(centerId);
 
   /// The payload as SSI writes it, so the centre can be shown as a QR code
   /// for someone else's app to scan.

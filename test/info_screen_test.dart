@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:ssi_connect/l10n/app_strings.dart';
 import 'package:provider/provider.dart';
 import 'package:ssi_connect/app_info.dart';
 import 'package:ssi_connect/ui/developer_mode.dart';
@@ -14,7 +16,18 @@ Future<void> _pump(WidgetTester tester) async {
   await tester.pumpWidget(
     ChangeNotifierProvider(
       create: (_) => DeveloperMode(),
-      child: MaterialApp(theme: AppTheme.light(), home: const InfoScreen()),
+      child: MaterialApp(
+        locale: const Locale('de'),
+        localizationsDelegates: const [
+          AppStrings.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: AppStrings.supportedLocales,
+        theme: AppTheme.light(),
+        home: const InfoScreen(),
+      ),
     ),
   );
   await tester.pumpAndSettle();
