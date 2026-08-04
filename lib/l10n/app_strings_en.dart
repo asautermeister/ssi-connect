@@ -203,6 +203,38 @@ class AppStringsEn extends AppStrings {
   String get diveOfDay => 'of the day';
   @override
   String get qrForSsi => 'QR code for SSI';
+  @override
+  String get position => 'Position';
+  @override
+  String get diveSite => 'Dive site';
+  @override
+  String get assignDiveSite => 'Assign a dive site';
+  @override
+  String get changeDiveSite => 'Change dive site';
+  @override
+  String get noDiveSiteYet => 'No dive site assigned yet';
+  @override
+  String get diveSiteNumber => 'SSI site number or link';
+  @override
+  String get diveSiteNumberHint =>
+      'Type the number, or paste the address of the site page – the number '
+      'is read out of it.';
+  @override
+  String get diveSiteName => 'Name of the site';
+  @override
+  String get siteSuggestion => 'Suggestion';
+  @override
+  String get useSuggestion => 'Use it';
+  @override
+  String siteNearby(String name, int metres) => '$name · $metres m away';
+  @override
+  String get noPositionNoSite =>
+      'Without a position this dive cannot be matched to a site '
+      'automatically – by hand still works.';
+  @override
+  String get siteIdUnreadable =>
+      'No number in there. A site number is expected, or an address ending '
+      'in one.';
 
   @override
   String get selectDives => 'Select dives';

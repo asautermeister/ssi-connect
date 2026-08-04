@@ -156,6 +156,32 @@ class GarminActivity {
   String? get locationName =>
       raw['locationName'] as String? ?? raw['startLocationName'] as String?;
 
+  /// Where the dive was, in degrees. Garmin reports the surface fix at each
+  /// end of the activity; the start is preferred because that is where the
+  /// diver entered the water, and the end can be a drift dive's exit point
+  /// several hundred metres away.
+  ///
+  /// Confirmed present as `endLatitude`/`endLongitude` in a real response;
+  /// the `start*` names are read first in case the detail endpoint carries
+  /// them too.
+  double? get latitude =>
+      _plausibleDegrees(_numAny(['startLatitude', 'endLatitude']), 90);
+
+  double? get longitude =>
+      _plausibleDegrees(_numAny(['startLongitude', 'endLongitude']), 180);
+
+  /// Rejects values outside the possible range instead of passing them on.
+  /// A field that turns out to hold something other than degrees then
+  /// leaves the position unset rather than putting the dive in the wrong
+  /// ocean - the same rule the water type follows.
+  static double? _plausibleDegrees(num? value, num limit) {
+    if (value == null) return null;
+    if (value < -limit || value > limit) return null;
+    // Exactly 0/0 is null island - a missing fix reported as a number.
+    if (value == 0) return null;
+    return value.toDouble();
+  }
+
   /// Which key names count as a measurement worth reporting in the probe.
   static const _probeKeyParts = [
     'depth',
@@ -172,6 +198,10 @@ class GarminActivity {
     // it through - and under which name - is unconfirmed.
     'deco',
     'ndl',
+    // The dive site work needs a position; these confirm which key
+    // actually carries one on the endpoint being used.
+    'latitude',
+    'longitude',
   ];
 
   /// Every field whose name mentions one of [_probeKeyParts], with the

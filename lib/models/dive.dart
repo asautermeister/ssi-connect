@@ -14,6 +14,8 @@ class Dive {
     required this.waterTemperatureCelsius,
     required this.duration,
     required this.locationName,
+    this.latitude,
+    this.longitude,
     this.diveNumber,
     this.descentCount,
     this.waterType,
@@ -29,6 +31,11 @@ class Dive {
   final double? waterTemperatureCelsius;
   final Duration? duration;
   final String? locationName;
+
+  /// Where the dive was, in degrees, when Garmin reported a surface fix.
+  /// Null is "no position" - and stays null rather than becoming 0/0.
+  final double? latitude;
+  final double? longitude;
 
   /// The diver's running dive number, when the source provides one. Null
   /// means "not reported" - it is never invented, since a made-up number
@@ -52,6 +59,10 @@ class Dive {
   final DiveType type;
   final int diveNumberOfDay;
 
+  /// True when both coordinates are known, which is what any lookup by
+  /// position needs.
+  bool get hasPosition => latitude != null && longitude != null;
+
   Dive copyWith({int? diveNumberOfDay}) => Dive(
     id: id,
     dateTime: dateTime,
@@ -60,6 +71,8 @@ class Dive {
     waterTemperatureCelsius: waterTemperatureCelsius,
     duration: duration,
     locationName: locationName,
+    latitude: latitude,
+    longitude: longitude,
     diveNumber: diveNumber,
     descentCount: descentCount,
     waterType: waterType,
@@ -79,6 +92,8 @@ class Dive {
     'waterTemperatureCelsius': waterTemperatureCelsius,
     'durationSeconds': duration?.inSeconds,
     'locationName': locationName,
+    'latitude': latitude,
+    'longitude': longitude,
     'diveNumber': diveNumber,
     'descentCount': descentCount,
     'waterType': waterType?.name,
@@ -102,6 +117,8 @@ class Dive {
           ? null
           : Duration(seconds: durationSeconds),
       locationName: json['locationName'] as String?,
+      latitude: (json['latitude'] as num?)?.toDouble(),
+      longitude: (json['longitude'] as num?)?.toDouble(),
       diveNumber: json['diveNumber'] as int?,
       descentCount: json['descentCount'] as int?,
       waterType: _enumByName(DiveWaterType.values, json['waterType']),
@@ -136,6 +153,8 @@ class Dive {
           ? null
           : Duration(seconds: durationSeconds.round()),
       locationName: activity.locationName,
+      latitude: activity.latitude,
+      longitude: activity.longitude,
       diveNumber: activity.diveNumber,
       descentCount: activity.descentCount,
       waterType: activity.waterType,

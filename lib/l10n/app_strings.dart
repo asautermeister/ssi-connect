@@ -140,6 +140,19 @@ abstract class AppStrings {
   String get diveOfDayTitleShort;
   String get diveOfDay;
   String get qrForSsi;
+  String get position;
+  String get diveSite;
+  String get assignDiveSite;
+  String get changeDiveSite;
+  String get noDiveSiteYet;
+  String get diveSiteNumber;
+  String get diveSiteNumberHint;
+  String get diveSiteName;
+  String get siteSuggestion;
+  String get useSuggestion;
+  String siteNearby(String name, int metres);
+  String get noPositionNoSite;
+  String get siteIdUnreadable;
 
   // ------------------------------------------------------- batch and export
 

@@ -26,6 +26,10 @@ Kamera der SSI-App scannt.
 - **Detailansicht** mit allen geladenen Werten (Tiefe, Dauer, Wassertemperatur, ...)
 - **QR-Code-Export** im Format, das der SSI-QR-Scanner beim Anlegen eines Tauchgangs erwartet –
   inklusive der SSI-Mitgliedsnummer, wenn für den Account eine hinterlegt ist
+- **Tauchplätze**: einmal pro Platz die SSI-Platznummer zuordnen (eintippen oder die Adresse der
+  Platzseite einfügen), danach erkennt die App den Platz an der Position des Tauchgangs wieder
+  und schlägt ihn vor. Bestätigt landet er als `site:` im QR-Code – vorgeschlagen wird immer,
+  gesetzt nie von allein
 - **Tauchtag am Stück übertragen**: mehrere Tauchgänge auswählen (ein Tippen wählt einen ganzen
   Tauchtag) und als Folge von QR-Codes durchblättern. Das Handy mit der SSI-App bleibt liegen –
   scannen, „Weiter", scannen
@@ -66,6 +70,9 @@ deshalb ist die App als Tablet-/Zweitgerät-App gedacht und nicht als Handy-App 
 - Fehlt ein Wert in der Quelle, bleibt das entsprechende Feld im QR-Code leer, statt geraten zu
   werden. Wetter, Einstieg, Strömung und Sicht zeichnet ein Tauchcomputer nicht auf und werden
   deshalb nie befüllt.
+- **Der Tauchplatz lässt sich nicht aus den Koordinaten ableiten.** SSIs Platznummern stammen aus
+  einer eigenen Datenbank ohne offene Abfrage. Die Zuordnung passiert deshalb einmal von Hand;
+  danach greift der Umkreis-Vorschlag.
 - **Buddies lassen sich nicht mit einem Tauchgang übertragen.** SSIs Import-Format hat kein
   Feld dafür – die Auswahl unter dem QR-Code wurde deshalb wieder entfernt, statt sie
   funktionsfähig aussehen zu lassen. Die Buddy-Liste bleibt und kann jeden Eintrag als

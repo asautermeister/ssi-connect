@@ -207,6 +207,38 @@ class AppStringsDe extends AppStrings {
   String get diveOfDay => 'des Tages';
   @override
   String get qrForSsi => 'QR-Code für SSI';
+  @override
+  String get position => 'Position';
+  @override
+  String get diveSite => 'Tauchplatz';
+  @override
+  String get assignDiveSite => 'Tauchplatz zuordnen';
+  @override
+  String get changeDiveSite => 'Tauchplatz ändern';
+  @override
+  String get noDiveSiteYet => 'Noch kein Tauchplatz zugeordnet';
+  @override
+  String get diveSiteNumber => 'SSI-Platznummer oder Link';
+  @override
+  String get diveSiteNumberHint =>
+      'Nummer eintippen oder die Adresse der Platzseite einfügen – die '
+      'Nummer wird daraus gelesen.';
+  @override
+  String get diveSiteName => 'Name des Platzes';
+  @override
+  String get siteSuggestion => 'Vorschlag';
+  @override
+  String get useSuggestion => 'Übernehmen';
+  @override
+  String siteNearby(String name, int metres) => '$name · $metres m entfernt';
+  @override
+  String get noPositionNoSite =>
+      'Ohne Position lässt sich dieser Tauchgang keinem Platz automatisch '
+      'zuordnen – von Hand geht es trotzdem.';
+  @override
+  String get siteIdUnreadable =>
+      'Darin steckt keine Nummer. Erwartet wird eine Platznummer oder eine '
+      'Adresse, die auf eine endet.';
 
   @override
   String get selectDives => 'Tauchgänge auswählen';

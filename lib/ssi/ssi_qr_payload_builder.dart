@@ -1,6 +1,7 @@
 import '../l10n/app_strings.dart';
 import '../models/dive.dart';
 import '../models/dive_type.dart';
+import 'dive_site.dart';
 import 'ssi_buddy_code.dart';
 
 /// Builds the text payload the official SSI app (com.divessi.ssi) expects
@@ -49,9 +50,15 @@ import 'ssi_buddy_code.dart';
 /// when the source reported them, plus the `user_*` fields when an SSI
 /// identity has been scanned for the account.
 ///
+/// `site` was in this list until the numbering was pinned down: it is an
+/// SSI dive-site id, and Garmin only has coordinates. It is emitted now
+/// when - and only when - the user has matched the dive's position to a
+/// site number themselves. Never derived from the coordinates alone: no
+/// open lookup exists, and a wrongly guessed site files the dive at the
+/// wrong place with no feedback that it happened.
+///
 /// Still left out, now for a different reason - not because the code is
 /// unknown, but because Garmin never reports the value:
-/// - `site` - an SSI dive-site id. Garmin only has GPS coordinates.
 /// - `var_weather_id`, `var_entry_id`, `var_water_body_id`,
 ///   `var_current_id`, `var_surface_id`, `vis_m` - conditions a dive
 ///   computer doesn't record. Fresh water narrows the water body to lake,
@@ -120,10 +127,14 @@ class SsiQrPayloadBuilder {
   ///
   /// Throws [ArgumentError] if [dive] is missing a field the payload can't
   /// be built without - see [unexportableReason].
+  /// [site] is the dive site the user matched this dive to. Optional:
+  /// without it the payload is exactly what it was before, and SSI leaves
+  /// the dive without a site.
   static String build(
     Dive dive, {
     required AppStrings strings,
     SsiBuddyCode? diver,
+    DiveSite? site,
   }) {
     final reason = unexportableReason(dive, strings: strings);
     if (reason != null) throw ArgumentError(reason);
@@ -139,6 +150,11 @@ class SsiQrPayloadBuilder {
       'divetime:${_formatFixed(duration.inSeconds / 60.0)}',
       'depth_m:${_formatFixed(maxDepth)}',
     ];
+
+    // Where SSI's own export puts it - between the measurements and the
+    // `var_*` codes. Order doesn't matter to the parser, but matching the
+    // real thing keeps the two comparable by eye.
+    if (site != null) fields.add('site:${site.siteId}');
 
     fields.add('var_divetype_id:$_diveSubTypeFunDive');
 

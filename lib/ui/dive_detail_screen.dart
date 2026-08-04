@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import '../l10n/app_strings.dart';
 
 import '../models/dive.dart';
+import '../ssi/dive_site.dart';
 import '../ssi/ssi_buddy_code.dart';
+import 'dive_site_section.dart';
 import 'format.dart';
 import 'qr_screen.dart';
 import 'theme/app_theme.dart';
@@ -14,14 +16,26 @@ import 'widgets/stat_tile.dart';
 /// One dive in full. Max depth leads as the hero number, the remaining
 /// measurements sit in a two-column grid of stat tiles below it, and the
 /// QR export is the single primary action.
-class DiveDetailScreen extends StatelessWidget {
+class DiveDetailScreen extends StatefulWidget {
   const DiveDetailScreen({super.key, required this.dive, this.diver});
 
   final Dive dive;
   final SsiBuddyCode? diver;
 
   @override
+  State<DiveDetailScreen> createState() => _DiveDetailScreenState();
+}
+
+class _DiveDetailScreenState extends State<DiveDetailScreen> {
+  /// Chosen for this dive only, and only for this visit. The pairing of
+  /// position to site number is what persists; which dive got which site
+  /// is not stored, because the dives themselves are only a cache.
+  DiveSite? _site;
+
+  @override
   Widget build(BuildContext context) {
+    final dive = widget.dive;
+    final diver = widget.diver;
     final theme = Theme.of(context);
     final s = AppStrings.of(context);
     final palette = theme.extension<AppPalette>()!;
@@ -97,6 +111,13 @@ class DiveDetailScreen extends StatelessWidget {
               ],
             ),
           ),
+          SectionHeader(title: s.diveSite),
+          DiveSiteSection(
+            dive: dive,
+            selected: _site,
+            onChanged: (site) => setState(() => _site = site),
+          ),
+
           SectionHeader(title: s.values),
           AppCard(
             padding: const EdgeInsets.all(AppSpacing.xl),
@@ -198,7 +219,7 @@ class DiveDetailScreen extends StatelessWidget {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => Navigator.of(context).push(
           MaterialPageRoute(
-            builder: (_) => QrScreen(dive: dive, diver: diver),
+            builder: (_) => QrScreen(dive: dive, diver: diver, site: _site),
           ),
         ),
         icon: const Icon(Icons.qr_code_2),
