@@ -1,6 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:ssi_connect/l10n/app_strings_de.dart';
 import 'package:ssi_connect/ssi/ssi_buddy_code.dart';
 import 'package:ssi_connect/ssi/ssi_center_code.dart';
+
+const _s = AppStringsDe();
 
 void main() {
   group('SsiCenterCode.tryParse', () {
@@ -14,7 +17,7 @@ void main() {
       // The comma belongs to the name - only the semicolon separates
       // fields, so splitting any further would truncate the base.
       expect(code.name, 'Nero-Sport Diving Center, Zakynthos');
-      expect(code.displayName, 'Nero-Sport Diving Center, Zakynthos');
+      expect(code.displayName(_s), 'Nero-Sport Diving Center, Zakynthos');
     });
 
     test('accepts a code carrying only the centre number', () {
@@ -23,7 +26,7 @@ void main() {
       expect(code, isNotNull);
       expect(code!.centerId, '718019');
       expect(code.name, isNull);
-      expect(code.displayName, 'Basis-Nr. 718019');
+      expect(code.displayName(_s), 'Basis-Nr. 718019');
     });
 
     test('is tolerant of casing, spacing and unknown fields', () {
@@ -111,9 +114,9 @@ void main() {
     });
 
     test('does not repeat the number as a second line under itself', () {
-      expect(const SsiCenterCode(centerId: '42').centerIdLine, isNull);
+      expect(const SsiCenterCode(centerId: '42').centerIdLine(_s), isNull);
       expect(
-        const SsiCenterCode(centerId: '42', name: 'Blue Hole').centerIdLine,
+        const SsiCenterCode(centerId: '42', name: 'Blue Hole').centerIdLine(_s),
         'Basis-Nr. 42',
       );
     });

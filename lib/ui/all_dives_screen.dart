@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import '../l10n/app_strings.dart';
 import 'package:provider/provider.dart';
 
 import '../accounts/accounts_controller.dart';
@@ -25,9 +27,10 @@ class AllDivesScreen extends StatelessWidget {
     final accounts = context.watch<AccountsController>().accounts;
     final controller = context.watch<RecentDivesController>();
     final dives = controller.merged(accounts);
+    final s = AppStrings.of(context);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Alle Tauchgänge')),
+      appBar: AppBar(title: Text(s.allDives)),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(
           AppSpacing.lg,
@@ -71,24 +74,21 @@ class _LoadMore extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final s = AppStrings.of(context);
     final palette = theme.extension<AppPalette>()!;
     final error = controller.loadMoreError;
 
     return Column(
       children: [
         Text(
-          loadedCount == 1
-              ? '1 Tauchgang geladen'
-              : '$loadedCount Tauchgänge geladen',
+          s.divesLoadedCount(loadedCount),
           style: theme.textTheme.bodySmall?.copyWith(color: palette.inkMuted),
         ),
         const SizedBox(height: AppSpacing.md),
         if (error != null) ...[
           AppCard(
             child: Text(
-              error is GarminAuthException
-                  ? error.message
-                  : 'Weitere Tauchgänge konnten nicht geladen werden.',
+              error is GarminAuthException ? error.message : s.loadMoreFailed,
               style: theme.textTheme.bodyMedium,
             ),
           ),
@@ -103,15 +103,13 @@ class _LoadMore extends StatelessWidget {
           FilledButton.icon(
             onPressed: onPressed,
             icon: const Icon(Icons.history),
-            label: Text(
-              error == null ? 'Ältere Tauchgänge laden' : 'Erneut versuchen',
-            ),
+            label: Text(error == null ? s.loadOlderDives : s.retry),
           )
         else
           Text(
             // Said outright, so a list that stops isn't mistaken for one
             // that failed.
-            'Keine älteren Tauchgänge mehr bei Garmin.',
+            s.noOlderDives,
             textAlign: TextAlign.center,
             style: theme.textTheme.bodySmall,
           ),

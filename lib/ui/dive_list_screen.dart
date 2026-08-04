@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import '../l10n/app_strings.dart';
 import 'package:provider/provider.dart';
 
 import '../accounts/models/account_color.dart';
@@ -45,6 +47,7 @@ class _DiveListScreenState extends State<DiveListScreen> {
     final load = context.watch<RecentDivesController>().forAccount(
       widget.account.id,
     );
+    final s = AppStrings.of(context);
 
     // Normally the start screen has already loaded this account. It hasn't
     // if the cache was just cleared, so fetch on arrival. Keyed on
@@ -66,7 +69,7 @@ class _DiveListScreenState extends State<DiveListScreen> {
           if (load.dives.isNotEmpty)
             IconButton(
               icon: const Icon(Icons.checklist_rtl),
-              tooltip: 'Mehrere exportieren',
+              tooltip: s.exportSeveral,
               onPressed: () => Navigator.of(context).push(
                 MaterialPageRoute(
                   builder: (_) => DiveExportSelectionScreen(
@@ -81,18 +84,18 @@ class _DiveListScreenState extends State<DiveListScreen> {
           if (context.watch<DeveloperMode>().enabled)
             IconButton(
               icon: const Icon(Icons.bug_report_outlined),
-              tooltip: 'API-Protokoll',
+              tooltip: s.apiLog,
               onPressed: () => Navigator.of(
                 context,
               ).push(MaterialPageRoute(builder: (_) => const DebugLogScreen())),
             ),
         ],
       ),
-      body: _body(load),
+      body: _body(load, s),
     );
   }
 
-  Widget _body(AccountDives load) {
+  Widget _body(AccountDives load, AppStrings s) {
     if (load.dives.isNotEmpty) {
       return RefreshIndicator(
         onRefresh: () async => _refresh(),
@@ -125,17 +128,17 @@ class _DiveListScreenState extends State<DiveListScreen> {
         icon: load.isOffline ? Icons.cloud_off_outlined : Icons.error_outline,
         message: error is GarminAuthException
             ? error.message
-            : 'Tauchgänge konnten nicht geladen werden.',
+            : s.divesLoadFailed,
         details: error is GarminAuthException ? error.details : null,
         onRetry: _refresh,
-        secondaryLabel: 'Stattdessen FIT-Datei importieren',
+        secondaryLabel: s.importFitInstead,
         onSecondary: () => pickAndImportFitFile(context),
       );
     }
 
-    return const ErrorState(
+    return ErrorState(
       icon: Icons.scuba_diving_outlined,
-      message: 'Keine Tauchgänge gefunden.',
+      message: s.noDivesFoundPeriod,
     );
   }
 }

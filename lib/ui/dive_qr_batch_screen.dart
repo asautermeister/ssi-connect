@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../l10n/app_strings.dart';
+
 import '../models/dive.dart';
 import '../ssi/ssi_buddy_code.dart';
 import '../ssi/ssi_qr_payload_builder.dart';
@@ -60,12 +62,13 @@ class _DiveQrBatchScreenState extends State<DiveQrBatchScreen> {
       child: Builder(
         builder: (context) {
           final theme = Theme.of(context);
+          final s = AppStrings.of(context);
 
           return Scaffold(
             backgroundColor: Colors.white,
             appBar: AppBar(
               backgroundColor: Colors.white,
-              title: const Text('Mit SSI-App scannen'),
+              title: Text(s.scanWithSsiApp),
             ),
             body: SafeArea(
               child: Column(
@@ -80,17 +83,16 @@ class _DiveQrBatchScreenState extends State<DiveQrBatchScreen> {
                         return QrScanSurface(
                           payload: SsiQrPayloadBuilder.build(
                             dive,
+                            strings: s,
                             diver: widget.diver,
                           ),
                           caption:
-                              '${Fmt.weekday(dive.dateTime)}, '
+                              '${Fmt.weekday(dive.dateTime, s)}, '
                               '${Fmt.date(dive.dateTime)} · '
-                              '${dive.diveNumberOfDay}. TG · '
+                              '${s.diveOfDayAndType(dive.diveNumberOfDay, dive.type.label(s))} · '
                               '${Fmt.meters(dive.maxDepthMeters)} m · '
                               '${Fmt.minutes(dive.duration)} min',
-                          hint:
-                              'In der SSI-App einen Tauchgang hinzufügen und '
-                              '„QR-Code scannen" wählen, danach hier weiter.',
+                          hint: s.qrHintBatch,
                         );
                       },
                     ),
@@ -109,11 +111,11 @@ class _DiveQrBatchScreenState extends State<DiveQrBatchScreen> {
                               ? null
                               : () => _goTo(_index - 1),
                           icon: const Icon(Icons.chevron_left),
-                          label: const Text('Zurück'),
+                          label: Text(s.back),
                         ),
                         Expanded(
                           child: Text(
-                            '${_index + 1} von $total',
+                            s.pageOf(_index + 1, total),
                             textAlign: TextAlign.center,
                             style: theme.textTheme.titleMedium,
                           ),
@@ -124,13 +126,13 @@ class _DiveQrBatchScreenState extends State<DiveQrBatchScreen> {
                             ? FilledButton(
                                 style: _inRow,
                                 onPressed: () => Navigator.of(context).pop(),
-                                child: const Text('Fertig'),
+                                child: Text(s.done),
                               )
                             : FilledButton.icon(
                                 style: _inRow,
                                 onPressed: () => _goTo(_index + 1),
                                 icon: const Icon(Icons.chevron_right),
-                                label: const Text('Weiter'),
+                                label: Text(s.next),
                               ),
                       ],
                     ),

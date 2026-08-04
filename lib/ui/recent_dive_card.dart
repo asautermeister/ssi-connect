@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../l10n/app_strings.dart';
+
 import '../dives/recent_dives_controller.dart';
 import 'format.dart';
 import 'qr_screen.dart';
@@ -21,6 +23,7 @@ class RecentDiveCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final s = AppStrings.of(context);
     final palette = theme.extension<AppPalette>()!;
     final dive = entry.dive;
 
@@ -41,7 +44,7 @@ class RecentDiveCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '${Fmt.weekday(dive.dateTime)}, ${Fmt.date(dive.dateTime)}',
+                  '${Fmt.weekday(dive.dateTime, s)}, ${Fmt.date(dive.dateTime)}',
                   style: theme.textTheme.titleMedium,
                 ),
                 const SizedBox(height: 2),

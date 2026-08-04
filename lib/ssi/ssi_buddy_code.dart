@@ -1,3 +1,5 @@
+import '../l10n/app_strings.dart';
+
 /// A diver's identity as encoded in the QR code the SSI app shows under
 /// "Dein QR-Code".
 ///
@@ -52,17 +54,22 @@ class SsiBuddyCode {
 
   /// What to put on screen for this person: their name if the code carried
   /// one, otherwise the member number, which is all we know about them.
-  String get displayName => fullName ?? 'SSI-Nr. $memberId';
+  String displayName(AppStrings s) => fullName ?? s.ssiNumber(memberId);
+
+  /// A language-independent key for sorting, so the list does not
+  /// reshuffle when the app language changes.
+  String get sortKey => fullName ?? memberId;
 
   /// The member number as a secondary line - null when [displayName] is
   /// already that number, so a nameless buddy isn't labelled twice with the
   /// same digits.
-  String? get memberIdLine => fullName == null ? null : 'SSI-Nr. $memberId';
+  String? memberIdLine(AppStrings s) =>
+      fullName == null ? null : s.ssiNumber(memberId);
 
   /// The professional number as a secondary line, or null for a code
   /// without one.
-  String? get professionalNumberLine =>
-      leaderNumber == null ? null : 'SSI Professional Nr. $leaderNumber';
+  String? professionalNumberLine(AppStrings s) =>
+      leaderNumber == null ? null : s.professionalNumber(leaderNumber!);
 
   /// The payload as SSI writes it, so this member can be shown as a QR
   /// code for someone else's app to scan.

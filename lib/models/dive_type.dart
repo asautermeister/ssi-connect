@@ -1,3 +1,5 @@
+import '../l10n/app_strings.dart';
+
 /// The kind of dive, as far as the list needs to distinguish it.
 ///
 /// Garmin exposes this as an `activityType.typeKey` on each activity (with
@@ -41,11 +43,14 @@ enum DiveType {
 
   /// Short German label, used as the icon's accessibility description and
   /// in the detail view - the icon never carries the meaning alone.
-  String get label => switch (this) {
-    DiveType.apnea => 'Apnoe',
-    DiveType.singleGas => 'Single Gas',
-    DiveType.multiGas => 'Multi Gas',
-    DiveType.rebreather => 'Rebreather (CCR)',
-    DiveType.scuba => 'Gerätetauchgang',
+  /// Takes the texts rather than reading them from a `BuildContext`: an
+  /// enum has no context, and passing one in keeps the type free of the
+  /// widget layer.
+  String label(AppStrings s) => switch (this) {
+    DiveType.apnea => s.diveTypeApnea,
+    DiveType.singleGas => s.diveTypeSingleGas,
+    DiveType.multiGas => s.diveTypeMultiGas,
+    DiveType.rebreather => s.diveTypeRebreather,
+    DiveType.scuba => s.diveTypeScuba,
   };
 }

@@ -55,8 +55,7 @@ class SsiBuddiesController extends ChangeNotifier {
   static List<SsiBuddyCode> _sorted(List<SsiBuddyCode> buddies) {
     final sorted = [...buddies];
     sorted.sort(
-      (a, b) =>
-          a.displayName.toLowerCase().compareTo(b.displayName.toLowerCase()),
+      (a, b) => a.sortKey.toLowerCase().compareTo(b.sortKey.toLowerCase()),
     );
     return sorted;
   }

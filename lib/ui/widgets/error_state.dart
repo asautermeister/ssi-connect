@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../l10n/app_strings.dart';
+
 import '../debug_log_screen.dart';
 import '../theme/app_theme.dart';
 
@@ -66,7 +68,7 @@ class ErrorState extends StatelessWidget {
                 const SizedBox(height: AppSpacing.xl),
                 FilledButton(
                   onPressed: onRetry,
-                  child: const Text('Erneut versuchen'),
+                  child: Text(AppStrings.of(context).retry),
                 ),
               ],
               if (onSecondary != null && secondaryLabel != null) ...[
@@ -80,7 +82,7 @@ class ErrorState extends StatelessWidget {
                 const SizedBox(height: AppSpacing.sm),
                 TextButton.icon(
                   icon: const Icon(Icons.bug_report_outlined, size: 18),
-                  label: const Text('API-Protokoll öffnen'),
+                  label: Text(AppStrings.of(context).openApiLog),
                   onPressed: () => Navigator.of(context).push(
                     MaterialPageRoute(builder: (_) => const DebugLogScreen()),
                   ),

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import '../l10n/app_strings.dart';
 import 'package:provider/provider.dart';
 
 import '../accounts/accounts_controller.dart';
@@ -35,6 +37,7 @@ class SsiBuddiesScreen extends StatelessWidget {
     final buddies = context.watch<SsiBuddiesController>();
     final centers = context.watch<SsiCentersController>();
     final accounts = context.watch<AccountsController>();
+    final s = AppStrings.of(context);
 
     final withIdentity = [
       for (final account in accounts.accounts)
@@ -56,7 +59,7 @@ class SsiBuddiesScreen extends StatelessWidget {
         withIdentity.isEmpty && standalone.isEmpty && centers.centers.isEmpty;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('SSI Buddy')),
+      appBar: AppBar(title: Text(s.ssiBuddy)),
       body: !loaded
           ? const Center(child: CircularProgressIndicator())
           : empty
@@ -70,7 +73,7 @@ class SsiBuddiesScreen extends StatelessWidget {
               ),
               children: [
                 if (withIdentity.isNotEmpty) ...[
-                  const SectionHeader(title: 'Aus den Accounts'),
+                  SectionHeader(title: s.fromAccounts),
                   for (final account in withIdentity) ...[
                     _AccountBuddyCard(account: account),
                     const SizedBox(height: AppSpacing.md),
@@ -78,9 +81,7 @@ class SsiBuddiesScreen extends StatelessWidget {
                 ],
                 if (standalone.isNotEmpty) ...[
                   SectionHeader(
-                    title: withIdentity.isEmpty
-                        ? 'Gespeichert'
-                        : 'Zusätzlich gespeichert',
+                    title: withIdentity.isEmpty ? s.stored : s.alsoStored,
                   ),
                   for (final buddy in standalone) ...[
                     _BuddyCard(buddy: buddy),
@@ -88,7 +89,7 @@ class SsiBuddiesScreen extends StatelessWidget {
                   ],
                 ],
                 if (centers.centers.isNotEmpty) ...[
-                  const SectionHeader(title: 'Tauchbasen'),
+                  SectionHeader(title: s.diveCentres),
                   for (final center in centers.centers) ...[
                     _CenterCard(center: center),
                     const SizedBox(height: AppSpacing.md),
@@ -102,7 +103,7 @@ class SsiBuddiesScreen extends StatelessWidget {
         // held up, so making the user choose first would be a question the
         // code already answers.
         icon: const Icon(Icons.qr_code_scanner),
-        label: const Text('Code scannen'),
+        label: Text(s.scanCode),
       ),
     );
   }
@@ -119,6 +120,7 @@ class _AccountBuddyCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final s = AppStrings.of(context);
     final palette = theme.extension<AppPalette>()!;
     final identity = account.ssiIdentity!;
     final color = account.color?.of(context);
@@ -149,13 +151,13 @@ class _AccountBuddyCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  'SSI-Nr. ${account.ssiMemberId}',
+                  s.ssiNumber(account.ssiMemberId!),
                   style: theme.textTheme.bodySmall,
                   overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: AppSpacing.sm),
                 // Says why this row has no options menu.
-                const AppChip(label: 'GARMIN-ACCOUNT'),
+                AppChip(label: s.garminAccountChip),
               ],
             ),
           ),
@@ -172,6 +174,7 @@ class _EmptyBuddies extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final s = AppStrings.of(context);
     final palette = theme.extension<AppPalette>()!;
 
     return Center(
@@ -183,27 +186,25 @@ class _EmptyBuddies extends StatelessWidget {
             Icon(Icons.group_outlined, size: 44, color: palette.inkMuted),
             const SizedBox(height: AppSpacing.lg),
             Text(
-              'Noch keine Buddies gespeichert',
+              s.noBuddiesYetTitle,
               textAlign: TextAlign.center,
               style: theme.textTheme.titleMedium,
             ),
             const SizedBox(height: AppSpacing.sm),
             Text(
-              'Lass dir den QR-Code deines Buddys in der SSI-App unter '
-              '„Dein QR-Code" zeigen und scanne ihn hier. Der Code einer '
-              'Tauchbasis funktioniert genauso.',
+              s.noBuddiesYetBody,
               textAlign: TextAlign.center,
               style: theme.textTheme.bodyMedium,
             ),
             const SizedBox(height: AppSpacing.xl),
             TextButton.icon(
               icon: const Icon(Icons.keyboard_alt_outlined),
-              label: const Text('Buddy von Hand eintragen'),
+              label: Text(s.addBuddyByHand),
               onPressed: () => enterBuddyManually(context),
             ),
             TextButton.icon(
               icon: const Icon(Icons.store_outlined),
-              label: const Text('Tauchbasis von Hand eintragen'),
+              label: Text(s.addCentreByHand),
               onPressed: () => enterCenterManually(context),
             ),
           ],
@@ -223,12 +224,13 @@ class _BuddyCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final s = AppStrings.of(context);
     final palette = theme.extension<AppPalette>()!;
     // A buddy without a name is already titled by their number, so only
     // repeat it here when the title is an actual name.
     final subtitle = [
-      buddy.memberIdLine,
-      buddy.professionalNumberLine,
+      buddy.memberIdLine(s),
+      buddy.professionalNumberLine(s),
       buddy.email,
     ].whereType<String>().join(' · ');
 
@@ -253,7 +255,7 @@ class _BuddyCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  buddy.displayName,
+                  buddy.displayName(s),
                   style: theme.textTheme.titleMedium,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -270,26 +272,20 @@ class _BuddyCard extends StatelessWidget {
           ),
           PopupMenuButton<_BuddyAction>(
             icon: const Icon(Icons.more_horiz),
-            tooltip: 'Optionen',
+            tooltip: s.options,
             onSelected: (action) => switch (action) {
               _BuddyAction.showQr => _showQr(context, buddy),
               _BuddyAction.edit => enterBuddyManually(context, existing: buddy),
               _BuddyAction.remove =>
                 context.read<SsiBuddiesController>().remove(buddy.memberId),
             },
-            itemBuilder: (context) => const [
+            itemBuilder: (context) => [
               PopupMenuItem(
                 value: _BuddyAction.showQr,
-                child: Text('Als QR-Code zeigen'),
+                child: Text(s.showAsQr),
               ),
-              PopupMenuItem(
-                value: _BuddyAction.edit,
-                child: Text('Bearbeiten'),
-              ),
-              PopupMenuItem(
-                value: _BuddyAction.remove,
-                child: Text('Entfernen'),
-              ),
+              PopupMenuItem(value: _BuddyAction.edit, child: Text(s.edit)),
+              PopupMenuItem(value: _BuddyAction.remove, child: Text(s.remove)),
             ],
           ),
         ],
@@ -309,8 +305,9 @@ class _CenterCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final s = AppStrings.of(context);
     final palette = theme.extension<AppPalette>()!;
-    final subtitle = center.centerIdLine;
+    final subtitle = center.centerIdLine(s);
 
     return AppCard(
       onTap: () => _showCenterQr(context, center),
@@ -331,7 +328,7 @@ class _CenterCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  center.displayName,
+                  center.displayName(s),
                   style: theme.textTheme.titleMedium,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -348,7 +345,7 @@ class _CenterCard extends StatelessWidget {
           ),
           PopupMenuButton<_BuddyAction>(
             icon: const Icon(Icons.more_horiz),
-            tooltip: 'Optionen',
+            tooltip: s.options,
             onSelected: (action) => switch (action) {
               _BuddyAction.showQr => _showCenterQr(context, center),
               _BuddyAction.edit => enterCenterManually(
@@ -358,19 +355,13 @@ class _CenterCard extends StatelessWidget {
               _BuddyAction.remove =>
                 context.read<SsiCentersController>().remove(center.centerId),
             },
-            itemBuilder: (context) => const [
+            itemBuilder: (context) => [
               PopupMenuItem(
                 value: _BuddyAction.showQr,
-                child: Text('Als QR-Code zeigen'),
+                child: Text(s.showAsQr),
               ),
-              PopupMenuItem(
-                value: _BuddyAction.edit,
-                child: Text('Bearbeiten'),
-              ),
-              PopupMenuItem(
-                value: _BuddyAction.remove,
-                child: Text('Entfernen'),
-              ),
+              PopupMenuItem(value: _BuddyAction.edit, child: Text(s.edit)),
+              PopupMenuItem(value: _BuddyAction.remove, child: Text(s.remove)),
             ],
           ),
         ],
@@ -383,30 +374,28 @@ class _CenterCard extends StatelessWidget {
 /// "Dein QR-Code", so another device can scan them straight into its own
 /// buddy list - including this app's scanner.
 void _showQr(BuildContext context, SsiBuddyCode buddy) {
+  final s = AppStrings.of(context);
   Navigator.of(context).push(
     MaterialPageRoute(
       builder: (_) => QrDisplayScreen(
-        title: buddy.displayName,
+        title: buddy.displayName(s),
         payload: buddy.toPayload(),
-        caption: 'SSI-Nr. ${buddy.memberId}',
-        hint:
-            'Mit der Kamera eines anderen Geräts scannen, um diesen Buddy '
-            'dort zu speichern.',
+        caption: s.ssiNumber(buddy.memberId),
+        hint: s.buddyQrHint,
       ),
     ),
   );
 }
 
 void _showCenterQr(BuildContext context, SsiCenterCode center) {
+  final s = AppStrings.of(context);
   Navigator.of(context).push(
     MaterialPageRoute(
       builder: (_) => QrDisplayScreen(
-        title: center.displayName,
+        title: center.displayName(s),
         payload: center.toPayload(),
-        caption: 'Basis-Nr. ${center.centerId}',
-        hint:
-            'Mit der Kamera eines anderen Geräts scannen, um diese '
-            'Tauchbasis dort zu speichern.',
+        caption: s.centreNumberLine(center.centerId),
+        hint: s.centreQrHint,
       ),
     ),
   );
@@ -418,6 +407,7 @@ void _showCenterQr(BuildContext context, SsiCenterCode center) {
 Future<void> _scan(BuildContext context) async {
   final buddies = context.read<SsiBuddiesController>();
   final centers = context.read<SsiCentersController>();
+  final s = AppStrings.of(context);
   final code = await Navigator.of(
     context,
   ).push<Object>(MaterialPageRoute(builder: (_) => const SsiCodeScanScreen()));
@@ -427,10 +417,10 @@ Future<void> _scan(BuildContext context) async {
   switch (code) {
     case SsiBuddyCode():
       await buddies.save(code);
-      name = code.displayName;
+      name = code.displayName(s);
     case SsiCenterCode():
       await centers.save(code);
-      name = code.displayName;
+      name = code.displayName(s);
     default:
       // The scanner only ever pops one of the two; anything else means the
       // scanner grew a case this screen doesn't handle yet.
@@ -440,7 +430,7 @@ Future<void> _scan(BuildContext context) async {
   if (!context.mounted) return;
   ScaffoldMessenger.of(
     context,
-  ).showSnackBar(SnackBar(content: Text('$name gespeichert')));
+  ).showSnackBar(SnackBar(content: Text(s.savedConfirmation(name))));
 }
 
 /// Manual fallback, for a tablet without a working camera or a buddy who
@@ -514,10 +504,10 @@ class _BuddyDialogState extends State<_BuddyDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final s = AppStrings.of(context);
+
     return AlertDialog(
-      title: Text(
-        widget.existing == null ? 'Buddy anlegen' : 'Buddy bearbeiten',
-      ),
+      title: Text(widget.existing == null ? s.newBuddy : s.editBuddy),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -525,17 +515,17 @@ class _BuddyDialogState extends State<_BuddyDialog> {
             controller: _memberId,
             autofocus: true,
             keyboardType: TextInputType.number,
-            decoration: const InputDecoration(labelText: 'SSI-Mitgliedsnummer'),
+            decoration: InputDecoration(labelText: s.ssiMemberNumber),
           ),
           const SizedBox(height: AppSpacing.md),
           TextField(
             controller: _firstName,
-            decoration: const InputDecoration(labelText: 'Vorname'),
+            decoration: InputDecoration(labelText: s.firstName),
           ),
           const SizedBox(height: AppSpacing.md),
           TextField(
             controller: _lastName,
-            decoration: const InputDecoration(labelText: 'Nachname'),
+            decoration: InputDecoration(labelText: s.lastName),
             onSubmitted: (_) => _submit(),
           ),
         ],
@@ -543,9 +533,9 @@ class _BuddyDialogState extends State<_BuddyDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Abbrechen'),
+          child: Text(s.cancel),
         ),
-        TextButton(onPressed: _submit, child: const Text('Speichern')),
+        TextButton(onPressed: _submit, child: Text(s.save)),
       ],
     );
   }
@@ -606,12 +596,10 @@ class _CenterDialogState extends State<_CenterDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final s = AppStrings.of(context);
+
     return AlertDialog(
-      title: Text(
-        widget.existing == null
-            ? 'Tauchbasis anlegen'
-            : 'Tauchbasis bearbeiten',
-      ),
+      title: Text(widget.existing == null ? s.newCentre : s.editCentre),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -619,12 +607,12 @@ class _CenterDialogState extends State<_CenterDialog> {
             controller: _centerId,
             autofocus: true,
             keyboardType: TextInputType.number,
-            decoration: const InputDecoration(labelText: 'Basis-Nummer'),
+            decoration: InputDecoration(labelText: s.centreNumber),
           ),
           const SizedBox(height: AppSpacing.md),
           TextField(
             controller: _name,
-            decoration: const InputDecoration(labelText: 'Name der Basis'),
+            decoration: InputDecoration(labelText: s.centreName),
             onSubmitted: (_) => _submit(),
           ),
         ],
@@ -632,9 +620,9 @@ class _CenterDialogState extends State<_CenterDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Abbrechen'),
+          child: Text(s.cancel),
         ),
-        TextButton(onPressed: _submit, child: const Text('Speichern')),
+        TextButton(onPressed: _submit, child: Text(s.save)),
       ],
     );
   }

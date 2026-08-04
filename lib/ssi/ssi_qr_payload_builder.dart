@@ -1,3 +1,4 @@
+import '../l10n/app_strings.dart';
 import '../models/dive.dart';
 import '../models/dive_type.dart';
 import 'ssi_buddy_code.dart';
@@ -106,13 +107,10 @@ class SsiQrPayloadBuilder {
   /// know which ones it may offer, before the user picks one. Both go
   /// through this method so the two can never disagree about what counts
   /// as exportable.
-  static String? unexportableReason(Dive dive) {
-    if (dive.maxDepthMeters == null) {
-      return 'Tauchgang hat keine maximale Tiefe - QR-Code nicht möglich.';
-    }
-    if (dive.duration == null) {
-      return 'Tauchgang hat keine Dauer - QR-Code nicht möglich.';
-    }
+  static String? unexportableReason(Dive dive, {required AppStrings strings}) {
+    final s = strings;
+    if (dive.maxDepthMeters == null) return s.noMaxDepthNoQr;
+    if (dive.duration == null) return s.noDurationNoQr;
     return null;
   }
 
@@ -122,8 +120,12 @@ class SsiQrPayloadBuilder {
   ///
   /// Throws [ArgumentError] if [dive] is missing a field the payload can't
   /// be built without - see [unexportableReason].
-  static String build(Dive dive, {SsiBuddyCode? diver}) {
-    final reason = unexportableReason(dive);
+  static String build(
+    Dive dive, {
+    required AppStrings strings,
+    SsiBuddyCode? diver,
+  }) {
+    final reason = unexportableReason(dive, strings: strings);
     if (reason != null) throw ArgumentError(reason);
 
     // Non-null past the check above; `build` and `unexportableReason` ask

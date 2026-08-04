@@ -1,7 +1,10 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:ssi_connect/l10n/app_strings_de.dart';
 import 'package:ssi_connect/garmin/models/garmin_activity.dart';
 import 'package:ssi_connect/models/dive.dart';
 import 'package:ssi_connect/models/dive_type.dart';
+
+const _s = AppStringsDe();
 
 void main() {
   group('DiveType.fromGarminTypeKey', () {
@@ -28,7 +31,7 @@ void main() {
 
     test('every type has a label, so an icon never stands alone', () {
       for (final type in DiveType.values) {
-        expect(type.label, isNotEmpty);
+        expect(type.label(_s), isNotEmpty);
       }
     });
   });

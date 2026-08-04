@@ -3,6 +3,8 @@ import 'dart:typed_data';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 
+import '../l10n/app_strings.dart';
+
 import '../fit/fit_dive_importer.dart';
 import '../fit/fit_import_exception.dart';
 import 'imported_dive_list_screen.dart';
@@ -20,7 +22,7 @@ Future<void> pickAndImportFitFile(BuildContext context) async {
     );
   } catch (e) {
     if (!context.mounted) return;
-    _showError(context, 'Dateiauswahl fehlgeschlagen: $e');
+    _showError(context, AppStrings.of(context).filePickFailed('$e'));
     return;
   }
   if (picked == null) return;
@@ -30,7 +32,7 @@ Future<void> pickAndImportFitFile(BuildContext context) async {
     bytes = await picked.readAsBytes();
   } catch (e) {
     if (!context.mounted) return;
-    _showError(context, 'Datei konnte nicht gelesen werden: $e');
+    _showError(context, AppStrings.of(context).fileReadFailed('$e'));
     return;
   }
   if (!context.mounted) return;

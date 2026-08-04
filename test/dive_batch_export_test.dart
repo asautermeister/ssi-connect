@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:ssi_connect/l10n/app_strings_de.dart';
+import 'package:ssi_connect/l10n/app_strings.dart';
 import 'package:ssi_connect/models/dive.dart';
 import 'package:ssi_connect/ssi/ssi_buddy_code.dart';
 import 'package:ssi_connect/ssi/ssi_qr_payload_builder.dart';
@@ -33,6 +36,14 @@ Future<void> _pumpSelection(
 
   await tester.pumpWidget(
     MaterialApp(
+      locale: const Locale('de'),
+      localizationsDelegates: const [
+        AppStrings.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: AppStrings.supportedLocales,
       theme: AppTheme.light(),
       home: DiveExportSelectionScreen(
         dives: assignDiveNumbersOfDay(dives),
@@ -43,6 +54,8 @@ Future<void> _pumpSelection(
   await tester.pumpAndSettle();
 }
 
+const _s = AppStringsDe();
+
 void main() {
   group('SsiQrPayloadBuilder.unexportableReason', () {
     test('agrees with what build throws on', () {
@@ -50,16 +63,25 @@ void main() {
       final noDepth = _dive('b', DateTime(2025, 11, 8), depth: null);
       final noDuration = _dive('c', DateTime(2025, 11, 8), duration: null);
 
-      expect(SsiQrPayloadBuilder.unexportableReason(complete), isNull);
-      expect(() => SsiQrPayloadBuilder.build(complete), returnsNormally);
+      expect(
+        SsiQrPayloadBuilder.unexportableReason(complete, strings: _s),
+        isNull,
+      );
+      expect(
+        () => SsiQrPayloadBuilder.build(complete, strings: _s),
+        returnsNormally,
+      );
 
       for (final dive in [noDepth, noDuration]) {
-        final reason = SsiQrPayloadBuilder.unexportableReason(dive);
+        final reason = SsiQrPayloadBuilder.unexportableReason(
+          dive,
+          strings: _s,
+        );
         expect(reason, isNotNull);
         // The list and the builder must not disagree about which dives can
         // be exported, so both read the same answer.
         expect(
-          () => SsiQrPayloadBuilder.build(dive),
+          () => SsiQrPayloadBuilder.build(dive, strings: _s),
           throwsA(
             isA<ArgumentError>().having((e) => e.message, 'message', reason),
           ),
@@ -169,6 +191,14 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
+          locale: const Locale('de'),
+          localizationsDelegates: const [
+            AppStrings.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          supportedLocales: AppStrings.supportedLocales,
           theme: AppTheme.light(),
           home: DiveQrBatchScreen(dives: dives),
         ),
@@ -210,7 +240,7 @@ void main() {
 
       // So the person scanning can tell which dive is on screen.
       expect(
-        find.textContaining('Sa, 08.11.2025 · 1. TG · 28,0 m · 54 min'),
+        find.textContaining('Sa, 08.11.2025 · 1. TG · Gerätetauchgang'),
         findsOneWidget,
       );
     });

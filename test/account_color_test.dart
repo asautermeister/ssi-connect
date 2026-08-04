@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:ssi_connect/l10n/app_strings_de.dart';
 import 'package:ssi_connect/accounts/models/account_color.dart';
+
+const _s = AppStringsDe();
 
 void main() {
   group('AccountColor storage', () {
@@ -46,12 +49,12 @@ void main() {
         expect(
           contrast(color.resolve(Brightness.light), lightSurface),
           greaterThan(3.0),
-          reason: '${color.label} verschwindet auf der hellen Karte',
+          reason: '${color.label(_s)} verschwindet auf der hellen Karte',
         );
         expect(
           contrast(color.resolve(Brightness.dark), darkSurface),
           greaterThan(3.0),
-          reason: '${color.label} verschwindet auf der dunklen Karte',
+          reason: '${color.label(_s)} verschwindet auf der dunklen Karte',
         );
       }
     });
@@ -59,7 +62,7 @@ void main() {
     test('each colour has a readable label, never just a hue', () {
       // The picker names its swatches, so it works without seeing colour.
       for (final color in AccountColor.values) {
-        expect(color.label, isNotEmpty);
+        expect(color.label(_s), isNotEmpty);
       }
     });
   });

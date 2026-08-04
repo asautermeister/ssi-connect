@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:ssi_connect/l10n/app_strings.dart';
 import 'package:provider/provider.dart';
 import 'package:ssi_connect/accounts/account_repository.dart';
 import 'package:ssi_connect/accounts/accounts_controller.dart';
@@ -130,7 +132,18 @@ Future<void> _pump(
         ChangeNotifierProvider.value(value: recent),
         Provider<DiveFetcher>.value(value: fetch),
       ],
-      child: MaterialApp(theme: AppTheme.light(), home: const AccountsScreen()),
+      child: MaterialApp(
+        locale: const Locale('de'),
+        localizationsDelegates: const [
+          AppStrings.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: AppStrings.supportedLocales,
+        theme: AppTheme.light(),
+        home: const AccountsScreen(),
+      ),
     ),
   );
   await tester.pumpAndSettle();
@@ -247,6 +260,7 @@ void main() {
       for (final label in const [
         'SSI Buddy',
         'FIT-Datei importieren',
+        'Einstellungen',
         'Info',
       ]) {
         expect(find.text(label), findsOneWidget);

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../l10n/app_strings.dart';
+
 import '../models/dive.dart';
 import 'dive_list_screen.dart';
 import 'widgets/error_state.dart';
@@ -13,12 +15,14 @@ class ImportedDiveListScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = AppStrings.of(context);
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Importierte Tauchgänge')),
+      appBar: AppBar(title: Text(s.importedDives)),
       body: dives.isEmpty
-          ? const ErrorState(
+          ? ErrorState(
               icon: Icons.scuba_diving_outlined,
-              message: 'Keine Tauchgänge in der Datei gefunden.',
+              message: s.noDivesInFile,
             )
           : DiveList(dives: dives),
     );

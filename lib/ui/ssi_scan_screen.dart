@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import '../l10n/app_strings.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
 import '../ssi/ssi_buddy_code.dart';
@@ -59,6 +61,8 @@ class _QrScanScreenState<T extends Object> extends State<QrScanScreen<T>> {
 
   @override
   Widget build(BuildContext context) {
+    final s = AppStrings.of(context);
+
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
@@ -68,12 +72,12 @@ class _QrScanScreenState<T extends Object> extends State<QrScanScreen<T>> {
         actions: [
           IconButton(
             icon: const Icon(Icons.flash_on),
-            tooltip: 'Licht',
+            tooltip: s.torch,
             onPressed: () => _controller.toggleTorch(),
           ),
           IconButton(
             icon: const Icon(Icons.cameraswitch_outlined),
-            tooltip: 'Kamera wechseln',
+            tooltip: s.switchCamera,
             onPressed: () => _controller.switchCamera(),
           ),
         ],
@@ -103,12 +107,11 @@ class SsiScanScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = AppStrings.of(context);
     return QrScanScreen<SsiBuddyCode>(
       parse: SsiBuddyCode.tryParse,
-      title: 'SSI-QR-Code scannen',
-      hint:
-          'In der SSI-App „Dein QR-Code" öffnen und die Kamera darauf '
-          'richten.',
+      title: s.scanSsiQr,
+      hint: s.scanHintMember,
     );
   }
 }
@@ -125,12 +128,11 @@ class SsiCodeScanScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = AppStrings.of(context);
     return QrScanScreen<Object>(
       parse: (raw) => SsiBuddyCode.tryParse(raw) ?? SsiCenterCode.tryParse(raw),
-      title: 'SSI-QR-Code scannen',
-      hint:
-          'Den QR-Code eines Buddys („Dein QR-Code" in der SSI-App) oder '
-          'einer Tauchbasis in die Kamera halten.',
+      title: s.scanSsiQr,
+      hint: s.scanHintMemberOrCentre,
     );
   }
 }
@@ -188,11 +190,8 @@ class _ScannerError extends StatelessWidget {
             const SizedBox(height: AppSpacing.lg),
             Text(
               denied
-                  ? 'Kein Kamerazugriff. Bitte in den Systemeinstellungen '
-                        'für SSI Connect erlauben – oder die Mitgliedsnummer '
-                        'von Hand eintragen.'
-                  : 'Kamera konnte nicht gestartet werden. Die '
-                        'Mitgliedsnummer lässt sich auch von Hand eintragen.',
+                  ? AppStrings.of(context).cameraDenied
+                  : AppStrings.of(context).cameraFailed,
               textAlign: TextAlign.center,
               style: const TextStyle(color: Colors.white, fontSize: 15),
             ),
