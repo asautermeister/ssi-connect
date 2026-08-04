@@ -247,6 +247,7 @@ void main() {
       for (final label in const [
         'SSI Buddy',
         'FIT-Datei importieren',
+        'Einstellungen',
         'Info',
       ]) {
         expect(find.text(label), findsOneWidget);

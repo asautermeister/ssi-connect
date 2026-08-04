@@ -34,6 +34,8 @@ Kamera der SSI-App scannt.
   „Tauchbasen" die Basen selbst. Jeder Eintrag lässt sich wieder als QR-Code anzeigen, damit ein
   anderes Gerät ihn einlesen kann; der Scanner erkennt selbst, ob ein Buddy- oder ein
   Basis-Code vor der Kamera ist
+- **Helles oder dunkles Design**, unter „Einstellungen" umschaltbar oder der Systemeinstellung
+  folgend. Der QR-Code bleibt immer hell – ein dunkler Code ist für Kameras unzuverlässig
 - **FIT-Datei-Import** als Alternative, falls der Garmin-Login gerade nicht funktioniert
   (z.B. Original-FIT-Export aus Garmin Connect Web)
 - **Offline nutzbar**: die zuletzt geladenen Tauchgänge liegen auf dem Gerät und stehen auch

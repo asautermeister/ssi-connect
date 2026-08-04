@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'accounts/accounts_controller.dart';
 import 'dives/dive_loader.dart';
 import 'dives/recent_dives_controller.dart';
+import 'settings/settings_controller.dart';
 import 'ssi/ssi_buddies_controller.dart';
 import 'ssi/ssi_centers_controller.dart';
 import 'ui/accounts_screen.dart';
@@ -30,6 +31,9 @@ class SsiConnectApp extends StatelessWidget {
         ChangeNotifierProvider(
           create: (_) => SsiCentersController()..loadFromStorage(),
         ),
+        ChangeNotifierProvider(
+          create: (_) => SettingsController()..loadFromStorage(),
+        ),
         ChangeNotifierProvider(create: (_) => RecentDivesController()),
         // Session-only: the diagnostic tools stay hidden until someone
         // taps the version in the info screen, and a restart hides them
@@ -45,16 +49,22 @@ class SsiConnectApp extends StatelessWidget {
           ).load,
         ),
       ],
-      child: MaterialApp(
-        title: 'SSI Connect',
-        // Flutters schräges DEBUG-Band oben rechts. Es erscheint ohnehin
-        // nur in Debug-Builds, aber getestet wird hier auf echten Geräten
-        // mit echten Tauchgängen - da ist es kein Hinweis mehr, sondern
-        // steht dem QR-Code und der Tauchgangsliste im Weg.
-        debugShowCheckedModeBanner: false,
-        theme: AppTheme.light(),
-        darkTheme: AppTheme.dark(),
-        home: const AccountsScreen(),
+      // Rebuilt when the theme preference changes. Only this one is watched
+      // here - the rest of the app reads its controllers where it needs
+      // them, and rebuilding the whole tree for a dive list would be waste.
+      child: Consumer<SettingsController>(
+        builder: (context, settings, _) => MaterialApp(
+          title: 'SSI Connect',
+          // Flutters schräges DEBUG-Band oben rechts. Es erscheint ohnehin
+          // nur in Debug-Builds, aber getestet wird hier auf echten Geräten
+          // mit echten Tauchgängen - da ist es kein Hinweis mehr, sondern
+          // steht dem QR-Code und der Tauchgangsliste im Weg.
+          debugShowCheckedModeBanner: false,
+          theme: AppTheme.light(),
+          darkTheme: AppTheme.dark(),
+          themeMode: settings.themeMode,
+          home: const AccountsScreen(),
+        ),
       ),
     );
   }

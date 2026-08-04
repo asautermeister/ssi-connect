@@ -13,6 +13,7 @@ import 'fit_import_flow.dart';
 import 'format.dart';
 import 'info_screen.dart';
 import 'recent_dive_card.dart';
+import 'settings_screen.dart';
 import 'ssi_buddies_screen.dart';
 import 'ssi_identity_screen.dart';
 import 'theme/app_theme.dart';
@@ -620,6 +621,15 @@ class _QuickActions extends StatelessWidget {
           title: 'FIT-Datei importieren',
           subtitle: 'Falls der Garmin-Login gerade nicht funktioniert',
           onTap: () => pickAndImportFitFile(context),
+        ),
+        const SizedBox(height: AppSpacing.md),
+        _ActionCard(
+          icon: Icons.tune,
+          title: 'Einstellungen',
+          subtitle: 'Helles oder dunkles Design',
+          onTap: () => Navigator.of(
+            context,
+          ).push(MaterialPageRoute(builder: (_) => const SettingsScreen())),
         ),
         const SizedBox(height: AppSpacing.md),
         _ActionCard(
