@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import '../l10n/app_strings.dart';
 import 'package:flutter/services.dart';
 
 import '../ssi/ssi_payload_fields.dart';
@@ -25,16 +27,15 @@ class _SsiPayloadInspectScreenState extends State<SsiPayloadInspectScreen> {
   String? _raw;
 
   Future<void> _scan() async {
+    final s = AppStrings.of(context);
     final raw = await Navigator.of(context).push<String>(
       MaterialPageRoute(
         builder: (_) => QrScanScreen<String>(
           // Anything scannable is interesting here - the whole point is to
           // see payloads this app cannot interpret yet.
           parse: (value) => value,
-          title: 'SSI-Code analysieren',
-          hint:
-              'Beliebigen SSI-QR-Code scannen – z. B. den Export eines '
-              'Tauchgangs, in dem der gesuchte Wert schon eingetragen ist.',
+          title: s.inspectSsiCode,
+          hint: s.inspectHint,
         ),
       ),
     );
@@ -46,22 +47,23 @@ class _SsiPayloadInspectScreenState extends State<SsiPayloadInspectScreen> {
     await Clipboard.setData(ClipboardData(text: _raw!));
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Payload in die Zwischenablage kopiert')),
+      SnackBar(content: Text(AppStrings.of(context).payloadCopied)),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final s = AppStrings.of(context);
     final raw = _raw;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('SSI-Code analysieren'),
+        title: Text(s.inspectSsiCode),
         actions: [
           IconButton(
             icon: const Icon(Icons.copy_all),
-            tooltip: 'Payload kopieren',
+            tooltip: s.copyPayload,
             onPressed: raw == null ? null : _copy,
           ),
         ],
@@ -74,23 +76,17 @@ class _SsiPayloadInspectScreenState extends State<SsiPayloadInspectScreen> {
           96,
         ),
         children: [
-          Text(
-            'Zeigt an, welche Felder ein echter SSI-Code enthält. Damit '
-            'lassen sich Felder ermitteln, die SSI Connect noch nicht kennt '
-            '– etwa die Buddy-Angabe: in der SSI-App einen Tauchgang mit '
-            'Buddy exportieren und den QR-Code hier scannen.',
-            style: theme.textTheme.bodyMedium,
-          ),
+          Text(s.inspectExplanation, style: theme.textTheme.bodyMedium),
           const SizedBox(height: AppSpacing.lg),
           FilledButton.icon(
             icon: const Icon(Icons.qr_code_scanner),
-            label: Text(raw == null ? 'QR-Code scannen' : 'Weiteren scannen'),
+            label: Text(raw == null ? s.scanQrCode : s.scanAnother),
             onPressed: _scan,
           ),
           if (raw != null) ...[
-            const SectionHeader(title: 'Felder'),
+            SectionHeader(title: s.fields),
             _Fields(payload: SsiPayloadFields.parse(raw)),
-            const SectionHeader(title: 'Rohdaten'),
+            SectionHeader(title: s.rawData),
             AppCard(
               child: SelectableText(
                 raw,
@@ -112,22 +108,20 @@ class _Fields extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final s = AppStrings.of(context);
 
     return AppCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _Row(
-            name: 'Typ',
+            name: s.type,
             value: [payload.marker, ...payload.positional].join(' · '),
           ),
           for (final entry in payload.fields.entries)
             _Row(name: entry.key, value: entry.value),
           if (payload.fields.isEmpty)
-            Text(
-              'Keine key:value-Felder enthalten.',
-              style: theme.textTheme.bodySmall,
-            ),
+            Text(s.noKeyValueFields, style: theme.textTheme.bodySmall),
         ],
       ),
     );
@@ -163,7 +157,7 @@ class _Row extends StatelessWidget {
           const SizedBox(width: AppSpacing.sm),
           Expanded(
             child: SelectableText(
-              value.isEmpty ? '(leer)' : value,
+              value.isEmpty ? AppStrings.of(context).emptyValue : value,
               style: theme.textTheme.bodyMedium,
             ),
           ),

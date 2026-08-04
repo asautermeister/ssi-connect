@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import '../l10n/app_strings.dart';
 import 'package:flutter/services.dart';
 
 import '../debug/api_log.dart';
@@ -35,23 +37,24 @@ class _DebugLogScreenState extends State<DebugLogScreen> {
     final text = ApiLog.instance.allAsText();
     await Clipboard.setData(ClipboardData(text: text));
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Log in die Zwischenablage kopiert')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(AppStrings.of(context).logCopied)));
   }
 
   @override
   Widget build(BuildContext context) {
     final log = ApiLog.instance;
     final entries = log.entries;
+    final s = AppStrings.of(context);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('API-Protokoll'),
+        title: Text(s.apiLog),
         actions: [
           IconButton(
             icon: const Icon(Icons.qr_code_scanner),
-            tooltip: 'SSI-Code analysieren',
+            tooltip: s.inspectSsiCode,
             onPressed: () => Navigator.of(context).push(
               MaterialPageRoute(
                 builder: (_) => const SsiPayloadInspectScreen(),
@@ -60,12 +63,12 @@ class _DebugLogScreenState extends State<DebugLogScreen> {
           ),
           IconButton(
             icon: const Icon(Icons.copy_all),
-            tooltip: 'Alles kopieren',
+            tooltip: s.copyAll,
             onPressed: entries.isEmpty ? null : _copyAll,
           ),
           IconButton(
             icon: const Icon(Icons.delete_outline),
-            tooltip: 'Log leeren',
+            tooltip: s.clearLog,
             onPressed: entries.isEmpty ? null : log.clear,
           ),
         ],
@@ -73,18 +76,15 @@ class _DebugLogScreenState extends State<DebugLogScreen> {
       body: Column(
         children: [
           SwitchListTile(
-            title: const Text('Aufzeichnung aktiv'),
-            subtitle: const Text(
-              'Zeichnet Garmin-API-Aufrufe auf und zeigt Rohdaten bei Fehlern. '
-              'Passwörter und Tokens werden dabei unkenntlich gemacht.',
-            ),
+            title: Text(s.recordingActive),
+            subtitle: Text(s.recordingExplanation),
             value: log.enabled,
             onChanged: log.setEnabled,
           ),
           const Divider(height: 1),
           Expanded(
             child: entries.isEmpty
-                ? const Center(child: Text('Noch keine Aufrufe aufgezeichnet.'))
+                ? Center(child: Text(s.noCallsRecorded))
                 : ListView.separated(
                     itemCount: entries.length,
                     separatorBuilder: (_, _) => const Divider(height: 1),
