@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../l10n/app_strings.dart';
 
 import '../models/dive.dart';
+import '../ssi/dive_site.dart';
 import '../ssi/ssi_buddy_code.dart';
 import '../ssi/ssi_qr_payload_builder.dart';
 import 'format.dart';
@@ -17,7 +18,7 @@ import 'widgets/error_state.dart';
 /// doesn't is worse than no control. They live in the buddy list instead,
 /// where each one can be shown as their own code.
 class QrScreen extends StatelessWidget {
-  const QrScreen({super.key, required this.dive, this.diver});
+  const QrScreen({super.key, required this.dive, this.diver, this.site});
 
   final Dive dive;
 
@@ -25,12 +26,21 @@ class QrScreen extends StatelessWidget {
   /// dive to them; otherwise SSI files it under whoever is logged in.
   final SsiBuddyCode? diver;
 
+  /// Dive site the user matched this dive to; see
+  /// [SsiQrPayloadBuilder.build].
+  final DiveSite? site;
+
   @override
   Widget build(BuildContext context) {
     final s = AppStrings.of(context);
     final String payload;
     try {
-      payload = SsiQrPayloadBuilder.build(dive, strings: s, diver: diver);
+      payload = SsiQrPayloadBuilder.build(
+        dive,
+        strings: s,
+        diver: diver,
+        site: site,
+      );
     } on ArgumentError catch (e) {
       return Scaffold(
         appBar: AppBar(title: Text(s.qrForSsi)),

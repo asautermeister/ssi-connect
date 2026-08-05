@@ -203,6 +203,113 @@ class AppStringsEn extends AppStrings {
   String get diveOfDay => 'of the day';
   @override
   String get qrForSsi => 'QR code for SSI';
+  @override
+  String get position => 'Position';
+  @override
+  String get diveSite => 'Dive site';
+  @override
+  String get assignDiveSite => 'Assign a dive site';
+  @override
+  String get changeDiveSite => 'Change dive site';
+  @override
+  String get noDiveSiteYet => 'No dive site assigned yet';
+  @override
+  String get diveSiteNumber => 'SSI site number or link';
+  @override
+  String get diveSiteNumberHint =>
+      'Type the number, or paste the address of the site page – the number '
+      'is read out of it.';
+  @override
+  String get diveSiteName => 'Name of the site';
+  @override
+  String get siteSuggestion => 'Suggestion';
+  @override
+  String get useSuggestion => 'Use it';
+  @override
+  String siteNearby(String name, int metres) =>
+      '$name · ${distance(metres)} away';
+  @override
+  String moreSitesNearby(int count) =>
+      count == 1 ? '1 more site nearby' : '$count more nearby';
+  @override
+  String get searchDiveSite => 'Search dive site';
+  @override
+  String get noSiteMatches => 'No matching dive site';
+  @override
+  String distance(int metres) =>
+      metres < 1000 ? '$metres m' : '${(metres / 1000).toStringAsFixed(1)} km';
+  @override
+  String get noPositionNoSite =>
+      'Without a position this dive cannot be matched to a site '
+      'automatically – by hand still works.';
+  @override
+  String get noSiteNearby =>
+      'No known dive site nearby. Assign the dive to a site in the SSI app '
+      'once and sync afterwards – or enter the number here by hand.';
+  @override
+  String get siteIdUnreadable =>
+      'No number in there. A site number is expected, or an address ending '
+      'in one.';
+
+  @override
+  String get ssiAccount => 'SSI account';
+  @override
+  String get ssiAccountHint =>
+      'The member number comes straight from SSI – nothing to scan, nothing '
+      'to type. The same login fetches the dive sites from the logbook.';
+  @override
+  String get signInWithSsi => 'Sign in with SSI';
+  @override
+  String get diveSites => 'Dive sites';
+  @override
+  String get ssiLogbook => 'SSI logbook';
+  @override
+  String knownDiveSites(int count) =>
+      count == 1 ? '1 dive site known' : '$count dive sites known';
+  @override
+  String knownBuddies(int count) =>
+      count == 1 ? '1 buddy stored' : '$count buddies stored';
+  @override
+  String lastSyncedAt(String timestamp) => 'Last synced: $timestamp';
+  @override
+  String ssiBuddiesImported(int added) =>
+      added == 1 ? '1 new buddy added' : '$added new buddies added';
+  @override
+  String get noSsiAccountConnected =>
+      'No SSI account connected. The login sits with each account – under '
+      '"SSI identity" there.';
+  @override
+  String get ssiSignIn => 'Sign in';
+  @override
+  String get ssiSignOut => 'Sign out';
+  @override
+  String get ssiEmail => 'Email';
+  @override
+  String get ssiPassword => 'Password';
+  @override
+  String get ssiPasswordNotStored =>
+      'The password is only used to sign in and is not stored – all that stays '
+      'on the device is the session token, encrypted.';
+  @override
+  String get ssiSyncSites => 'Sync dive sites';
+  @override
+  String ssiConnectedAs(String email) => 'Connected as $email';
+  @override
+  String ssiSitesImported(int added, int total) => added == 1
+      ? '1 new dive site added (of $total in the logbook)'
+      : '$added new dive sites added (of $total in the logbook)';
+  @override
+  String ssiSitesUpToDate(int total) =>
+      'Up to date – $total dive sites in the logbook, none new.';
+  @override
+  String get ssiSyncExplanation =>
+      'Fetches every dive site SSI has you logged at – number, name and '
+      'position – and the buddies from the logbook. Entries you already have '
+      'are left as they are.';
+  @override
+  String get ssiUnofficialNote =>
+      'Uses the same unofficial interface as the SSI app. Should it change, '
+      'entering sites by hand remains.';
 
   @override
   String get selectDives => 'Select dives';

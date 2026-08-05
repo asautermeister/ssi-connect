@@ -13,9 +13,13 @@ import 'package:ssi_connect/dives/recent_dives_controller.dart';
 import 'package:ssi_connect/garmin/garmin_auth_exceptions.dart';
 import 'package:ssi_connect/garmin/models/garmin_session.dart';
 import 'package:ssi_connect/models/dive.dart';
+import 'package:ssi_connect/ssi/dive_site.dart';
+import 'package:ssi_connect/ssi/dive_site_repository.dart';
+import 'package:ssi_connect/ssi/dive_sites_controller.dart';
 import 'package:ssi_connect/ssi/ssi_buddies_controller.dart';
 import 'package:ssi_connect/ssi/ssi_buddy_code.dart';
 import 'package:ssi_connect/ssi/ssi_buddy_repository.dart';
+import 'package:ssi_connect/ssi/ssi_sync_controller.dart';
 import 'package:ssi_connect/ui/accounts_screen.dart';
 import 'package:ssi_connect/ui/theme/app_theme.dart';
 import 'package:ssi_connect/ui/widgets/app_card.dart';
@@ -33,6 +37,14 @@ class _InMemoryAccounts extends AccountRepository {
 
   @override
   Future<void> remove(String accountId) async {}
+}
+
+class _NoDiveSites extends DiveSiteRepository {
+  @override
+  Future<List<DiveSite>> loadAll() async => const [];
+
+  @override
+  Future<void> saveAll(List<DiveSite> sites) async {}
 }
 
 class _InMemoryBuddies extends SsiBuddyRepository {
@@ -130,6 +142,13 @@ Future<void> _pump(
         ChangeNotifierProvider.value(value: accountsController),
         ChangeNotifierProvider.value(value: buddies),
         ChangeNotifierProvider.value(value: recent),
+        // The SSI identity screen offers signing in to SSI, which needs
+        // both of these; the sites land device-wide rather than on the
+        // account.
+        ChangeNotifierProvider(create: (_) => SsiSyncController()),
+        ChangeNotifierProvider(
+          create: (_) => DiveSitesController(repository: _NoDiveSites()),
+        ),
         Provider<DiveFetcher>.value(value: fetch),
       ],
       child: MaterialApp(

@@ -1,6 +1,6 @@
-import 'dart:io';
-
-import 'package:dio/dio.dart';
+// Re-exported so the existing `isOfflineDioError` imports from this file
+// keep working now that the helper is shared with the SSI client.
+export '../net/dio_errors.dart' show isOfflineDioError;
 
 /// Error categories a caller needs to react to differently
 /// (e.g. show a retry hint vs. prompt for new credentials).
@@ -20,21 +20,6 @@ enum GarminAuthErrorType {
   /// block, an unexpected response shape.
   connectionError,
 }
-
-/// Whether a Dio failure means "the request never left the device or never
-/// found a server", as opposed to "the server answered something we didn't
-/// like".
-///
-/// [DioExceptionType.connectionError] covers the socket-level failures
-/// (no route, DNS, connection refused); the timeouts are here too, because
-/// a request that times out on a tablet in a boat's dry bag is offline for
-/// every practical purpose.
-bool isOfflineDioError(DioException e) =>
-    e.type == DioExceptionType.connectionError ||
-    e.type == DioExceptionType.connectionTimeout ||
-    e.type == DioExceptionType.sendTimeout ||
-    e.type == DioExceptionType.receiveTimeout ||
-    e.error is SocketException;
 
 /// Thrown by [GarminAuthClient] whenever the login/refresh flow can't
 /// complete. The unofficial Garmin login API can fail for reasons outside

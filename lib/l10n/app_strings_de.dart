@@ -207,6 +207,117 @@ class AppStringsDe extends AppStrings {
   String get diveOfDay => 'des Tages';
   @override
   String get qrForSsi => 'QR-Code für SSI';
+  @override
+  String get position => 'Position';
+  @override
+  String get diveSite => 'Tauchplatz';
+  @override
+  String get assignDiveSite => 'Tauchplatz zuordnen';
+  @override
+  String get changeDiveSite => 'Tauchplatz ändern';
+  @override
+  String get noDiveSiteYet => 'Noch kein Tauchplatz zugeordnet';
+  @override
+  String get diveSiteNumber => 'SSI-Platznummer oder Link';
+  @override
+  String get diveSiteNumberHint =>
+      'Nummer eintippen oder die Adresse der Platzseite einfügen – die '
+      'Nummer wird daraus gelesen.';
+  @override
+  String get diveSiteName => 'Name des Platzes';
+  @override
+  String get siteSuggestion => 'Vorschlag';
+  @override
+  String get useSuggestion => 'Übernehmen';
+  @override
+  String siteNearby(String name, int metres) =>
+      '$name · ${distance(metres)} entfernt';
+  @override
+  String moreSitesNearby(int count) => count == 1
+      ? '1 weiterer Platz in der Nähe'
+      : '$count weitere in der Nähe';
+  @override
+  String get searchDiveSite => 'Tauchplatz suchen';
+  @override
+  String get noSiteMatches => 'Kein passender Tauchplatz';
+  @override
+  String distance(int metres) => metres < 1000
+      ? '$metres m'
+      : '${(metres / 1000).toStringAsFixed(1).replaceAll('.', ',')} km';
+  @override
+  String get noPositionNoSite =>
+      'Ohne Position lässt sich dieser Tauchgang keinem Platz automatisch '
+      'zuordnen – von Hand geht es trotzdem.';
+  @override
+  String get noSiteNearby =>
+      'Kein bekannter Tauchplatz in der Nähe. Den Tauchgang einmal in der '
+      'SSI-App einem Platz zuordnen und danach abgleichen – oder die Nummer '
+      'hier von Hand eintragen.';
+  @override
+  String get siteIdUnreadable =>
+      'Darin steckt keine Nummer. Erwartet wird eine Platznummer oder eine '
+      'Adresse, die auf eine endet.';
+
+  @override
+  String get ssiAccount => 'SSI-Konto';
+  @override
+  String get ssiAccountHint =>
+      'Die Mitgliedsnummer kommt dabei direkt von SSI – kein Scannen, kein '
+      'Abtippen. Dieselbe Anmeldung holt die Tauchplätze aus dem Logbuch.';
+  @override
+  String get signInWithSsi => 'Mit SSI anmelden';
+  @override
+  String get diveSites => 'Tauchplätze';
+  @override
+  String get ssiLogbook => 'SSI-Logbuch';
+  @override
+  String knownDiveSites(int count) =>
+      count == 1 ? '1 Tauchplatz bekannt' : '$count Tauchplätze bekannt';
+  @override
+  String knownBuddies(int count) =>
+      count == 1 ? '1 Buddy gespeichert' : '$count Buddys gespeichert';
+  @override
+  String lastSyncedAt(String timestamp) =>
+      'Zuletzt abgeglichen: $timestamp Uhr';
+  @override
+  String ssiBuddiesImported(int added) =>
+      added == 1 ? '1 neuer Buddy übernommen' : '$added neue Buddys übernommen';
+  @override
+  String get noSsiAccountConnected =>
+      'Kein SSI-Konto verbunden. Die Anmeldung liegt beim jeweiligen Account – '
+      'dort unter „SSI-Identität".';
+  @override
+  String get ssiSignIn => 'Anmelden';
+  @override
+  String get ssiSignOut => 'Abmelden';
+  @override
+  String get ssiEmail => 'E-Mail';
+  @override
+  String get ssiPassword => 'Passwort';
+  @override
+  String get ssiPasswordNotStored =>
+      'Das Passwort wird nur für die Anmeldung benutzt und nicht gespeichert – '
+      'auf dem Gerät bleibt nur der Sitzungs-Token, verschlüsselt.';
+  @override
+  String get ssiSyncSites => 'Tauchplätze abgleichen';
+  @override
+  String ssiConnectedAs(String email) => 'Verbunden als $email';
+  @override
+  String ssiSitesImported(int added, int total) => added == 1
+      ? '1 neuer Tauchplatz übernommen (von $total im Logbuch)'
+      : '$added neue Tauchplätze übernommen (von $total im Logbuch)';
+  @override
+  String ssiSitesUpToDate(int total) =>
+      'Alles aktuell – $total Tauchplätze im Logbuch, keine neuen.';
+  @override
+  String get ssiSyncExplanation =>
+      'Holt jeden Tauchplatz, an dem du laut SSI schon getaucht bist – mit '
+      'Nummer, Name und Position – und die Buddys aus dem Logbuch. Bereits '
+      'vorhandene Einträge bleiben, wie sie sind.';
+  @override
+  String get ssiUnofficialNote =>
+      'Nutzt dieselbe inoffizielle Schnittstelle wie die SSI-App. Sollte sie '
+      'sich ändern, bleibt die Eingabe von Hand.';
 
   @override
   String get selectDives => 'Tauchgänge auswählen';

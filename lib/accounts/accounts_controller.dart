@@ -6,6 +6,7 @@ import 'package:uuid/uuid.dart';
 import '../garmin/garmin_auth_client.dart';
 import '../garmin/models/garmin_session.dart';
 import '../ssi/ssi_buddy_code.dart';
+import '../ssi/ssi_session.dart';
 import 'account_repository.dart';
 import 'models/account_color.dart';
 import 'models/garmin_account.dart';
@@ -142,6 +143,56 @@ class AccountsController extends ChangeNotifier {
         ssiEmail: code.email,
       ),
     );
+  }
+
+  /// Stores an SSI login and the identity it proves.
+  ///
+  /// SSI answers a login with `mid`, its member number for that account -
+  /// the same number a scanned QR code carries, but from SSI itself rather
+  /// than from a camera. So signing in fills the identity as a side effect,
+  /// and a name scanned earlier is kept: the login does not report one.
+  Future<void> setSsiSession(String accountId, SsiSession ssiSession) async {
+    await _updateAccount(
+      accountId,
+      (account) => account.copyWith(
+        ssiSession: ssiSession,
+        ssiMemberId: ssiSession.memberId?.toString(),
+        ssiEmail: ssiSession.email,
+      ),
+    );
+  }
+
+  /// Fills in a name for the account with this SSI member number, but only
+  /// where none is stored yet.
+  ///
+  /// An SSI login reports no name of its own - but the person appears in
+  /// the buddy list of anyone they dive with, and there SSI does write
+  /// `firstname` and `lastname`. So a family whose members are on each
+  /// other's buddy lists gets its names filled in for free.
+  ///
+  /// Never overwrites: a name already on file was scanned or typed by
+  /// somebody, and a stranger's spelling of it does not get to win.
+  Future<void> completeSsiName(
+    String memberId, {
+    String? firstName,
+    String? lastName,
+  }) async {
+    if (firstName == null && lastName == null) return;
+    final account = _accounts
+        .where((a) => a.ssiMemberId == memberId && a.ssiFullName == null)
+        .firstOrNull;
+    if (account == null) return;
+
+    await _updateAccount(
+      account.id,
+      (a) => a.copyWith(ssiFirstName: firstName, ssiLastName: lastName),
+    );
+  }
+
+  /// Signs out of SSI. Keeps the member number - it is still this person's
+  /// number, and a QR export needs nothing else.
+  Future<void> clearSsiSession(String accountId) async {
+    await _updateAccount(accountId, (account) => account.withoutSsiSession());
   }
 
   Future<void> clearSsiIdentity(String accountId) async {
