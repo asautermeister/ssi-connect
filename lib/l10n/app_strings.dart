@@ -166,6 +166,10 @@ abstract class AppStrings {
 
   String get ssiAccount;
   String get ssiAccountHint;
+  String get signInWithSsi;
+  String get diveSites;
+  String knownDiveSites(int count);
+  String get noSsiAccountConnected;
   String get ssiSignIn;
   String get ssiSignOut;
   String get ssiEmail;

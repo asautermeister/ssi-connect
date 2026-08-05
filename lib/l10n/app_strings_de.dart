@@ -262,8 +262,19 @@ class AppStringsDe extends AppStrings {
   String get ssiAccount => 'SSI-Konto';
   @override
   String get ssiAccountHint =>
-      'Mit dem SSI-Konto verbinden, um die Tauchplätze aus deinem Logbuch zu '
-      'übernehmen. Danach erkennt die App sie an der Position wieder.';
+      'Die Mitgliedsnummer kommt dabei direkt von SSI – kein Scannen, kein '
+      'Abtippen. Dieselbe Anmeldung holt die Tauchplätze aus dem Logbuch.';
+  @override
+  String get signInWithSsi => 'Mit SSI anmelden';
+  @override
+  String get diveSites => 'Tauchplätze';
+  @override
+  String knownDiveSites(int count) =>
+      count == 1 ? '1 Tauchplatz bekannt' : '$count Tauchplätze bekannt';
+  @override
+  String get noSsiAccountConnected =>
+      'Kein SSI-Konto verbunden. Die Anmeldung liegt beim jeweiligen Account – '
+      'dort unter „SSI-Identität".';
   @override
   String get ssiSignIn => 'Anmelden';
   @override

@@ -255,8 +255,19 @@ class AppStringsEn extends AppStrings {
   String get ssiAccount => 'SSI account';
   @override
   String get ssiAccountHint =>
-      'Connect your SSI account to bring in the dive sites from your logbook. '
-      'After that the app recognises them by position.';
+      'The member number comes straight from SSI – nothing to scan, nothing '
+      'to type. The same login fetches the dive sites from the logbook.';
+  @override
+  String get signInWithSsi => 'Sign in with SSI';
+  @override
+  String get diveSites => 'Dive sites';
+  @override
+  String knownDiveSites(int count) =>
+      count == 1 ? '1 dive site known' : '$count dive sites known';
+  @override
+  String get noSsiAccountConnected =>
+      'No SSI account connected. The login sits with each account – under '
+      '"SSI identity" there.';
   @override
   String get ssiSignIn => 'Sign in';
   @override

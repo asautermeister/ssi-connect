@@ -8,9 +8,10 @@ import 'package:ssi_connect/settings/settings_repository.dart';
 import 'package:ssi_connect/ssi/dive_site.dart';
 import 'package:ssi_connect/ssi/dive_site_repository.dart';
 import 'package:ssi_connect/ssi/dive_sites_controller.dart';
-import 'package:ssi_connect/ssi/ssi_account_controller.dart';
-import 'package:ssi_connect/ssi/ssi_account_repository.dart';
-import 'package:ssi_connect/ssi/ssi_session.dart';
+import 'package:ssi_connect/accounts/account_repository.dart';
+import 'package:ssi_connect/accounts/accounts_controller.dart';
+import 'package:ssi_connect/accounts/models/garmin_account.dart';
+import 'package:ssi_connect/ssi/ssi_sync_controller.dart';
 import 'package:ssi_connect/ui/settings_screen.dart';
 import 'package:ssi_connect/ui/theme/app_theme.dart';
 
@@ -38,15 +39,15 @@ class _InMemoryRepository extends SettingsRepository {
 /// those two controllers. Both get in-memory repositories: a real one calls
 /// the keystore plugin, which has no platform under a widget test and hangs
 /// the test rather than failing it.
-class _NoSsiAccount extends SsiAccountRepository {
+class _NoAccounts extends AccountRepository {
   @override
-  Future<SsiSession?> load() async => null;
+  Future<List<GarminAccount>> loadAll() async => const [];
 
   @override
-  Future<void> save(SsiSession session) async {}
+  Future<void> save(GarminAccount account) async {}
 
   @override
-  Future<void> clear() async {}
+  Future<void> remove(String accountId) async {}
 }
 
 class _NoDiveSites extends DiveSiteRepository {
@@ -75,8 +76,9 @@ Future<SettingsController> _pump(
     MultiProvider(
       providers: [
         ChangeNotifierProvider.value(value: controller),
+        ChangeNotifierProvider(create: (_) => SsiSyncController()),
         ChangeNotifierProvider(
-          create: (_) => SsiAccountController(repository: _NoSsiAccount()),
+          create: (_) => AccountsController(repository: _NoAccounts()),
         ),
         ChangeNotifierProvider(
           create: (_) => DiveSitesController(repository: _NoDiveSites()),

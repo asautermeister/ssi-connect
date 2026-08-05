@@ -5,17 +5,24 @@ import 'package:provider/provider.dart';
 
 import '../accounts/accounts_controller.dart';
 import '../accounts/models/garmin_account.dart';
+import '../ssi/dive_sites_controller.dart';
 import '../ssi/ssi_buddy_code.dart';
+import '../ssi/ssi_sync_controller.dart';
 import 'ssi_scan_screen.dart';
+import 'ssi_sign_in_dialog.dart';
 import 'theme/app_theme.dart';
 import 'widgets/app_card.dart';
 import 'widgets/stat_tile.dart';
 
 /// Shows and edits the SSI identity attached to one Garmin account.
 ///
-/// Scanning the member QR code is the intended path, but the number can
-/// always be typed instead - a tablet without a working camera, or a
-/// member who only knows their number, shouldn't be locked out.
+/// Three ways in, in the order they are worth trying. Signing in to SSI is
+/// first: it reports the member number as `mid`, straight from SSI, and the
+/// same login then fills the dive sites out of that person's logbook.
+/// Scanning the member QR code and typing the number stay, because not
+/// everyone with a dive watch has an SSI login - a guest or a child may
+/// have nothing but the number, and a tablet without a working camera still
+/// has a keyboard.
 class SsiIdentityScreen extends StatelessWidget {
   const SsiIdentityScreen({super.key, required this.accountId});
 
@@ -82,7 +89,31 @@ class _Body extends StatelessWidget {
           ),
         ),
         SectionHeader(title: s.storeIt),
-        FilledButton.icon(
+        if (account.hasSsiLogin) ...[
+          Text(
+            s.ssiConnectedAs(account.ssiSession!.email),
+            style: theme.textTheme.bodyMedium,
+          ),
+          const SizedBox(height: AppSpacing.md),
+          OutlinedButton.icon(
+            icon: const Icon(Icons.logout, size: 18),
+            label: Text(s.ssiSignOut),
+            onPressed: () =>
+                context.read<AccountsController>().clearSsiSession(account.id),
+          ),
+        ] else ...[
+          FilledButton.icon(
+            icon: const Icon(Icons.login),
+            label: Text(s.signInWithSsi),
+            onPressed: context.watch<SsiSyncController>().isBusy
+                ? null
+                : () => _signIn(context),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Text(s.ssiAccountHint, style: theme.textTheme.bodySmall),
+        ],
+        const SizedBox(height: AppSpacing.lg),
+        OutlinedButton.icon(
           icon: const Icon(Icons.qr_code_scanner),
           label: Text(s.scanSsiQr),
           onPressed: () => _scan(context),
@@ -101,10 +132,44 @@ class _Body extends StatelessWidget {
             child: Text(s.removeSsiNumber),
           ),
         ],
+        if (context.watch<SsiSyncController>().error case final error?) ...[
+          const SizedBox(height: AppSpacing.md),
+          Text(
+            error,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.error,
+            ),
+          ),
+        ],
         const SizedBox(height: AppSpacing.xl),
         Text(s.ssiNumberWhereToFind, style: theme.textTheme.bodySmall),
       ],
     );
+  }
+
+  /// Signs in, then goes straight on to fetch the dive sites - the login
+  /// exists for both, and stopping in between to press a second button
+  /// would be a step that only the code needs.
+  Future<void> _signIn(BuildContext context) async {
+    final sync = context.read<SsiSyncController>();
+    final accounts = context.read<AccountsController>();
+    final sites = context.read<DiveSitesController>();
+
+    final credentials = await showDialog<({String email, String password})>(
+      context: context,
+      // The Garmin address is a reasonable first guess at the SSI one, and
+      // wrong often enough that it stays editable.
+      builder: (_) => SsiSignInDialog(initialEmail: account.email),
+    );
+    if (credentials == null) return;
+
+    final ok = await sync.signIn(
+      accountId: account.id,
+      email: credentials.email,
+      password: credentials.password,
+      accounts: accounts,
+    );
+    if (ok) await sync.syncAll(accounts: accounts, sites: sites);
   }
 
   Future<void> _scan(BuildContext context) async {

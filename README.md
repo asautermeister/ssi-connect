@@ -26,8 +26,13 @@ Kamera der SSI-App scannt.
 - **Detailansicht** mit allen geladenen Werten (Tiefe, Dauer, Wassertemperatur, ...)
 - **QR-Code-Export** im Format, das der SSI-QR-Scanner beim Anlegen eines Tauchgangs erwartet –
   inklusive der SSI-Mitgliedsnummer, wenn für den Account eine hinterlegt ist
-- **Tauchplätze aus dem SSI-Logbuch**: einmal mit dem SSI-Konto verbinden, und jeder Platz, an
-  dem man laut SSI schon getaucht ist, landet mit Nummer, Name und Position auf dem Gerät.
+- **SSI-Anmeldung pro Account**: wer mag, meldet sich bei seinem Garmin-Account zusätzlich bei
+  SSI an. Die SSI-Mitgliedsnummer kommt dann direkt von SSI statt aus einem gescannten
+  QR-Code – Scannen und Eintippen bleiben für alle, die kein SSI-Konto haben
+- **Tauchplätze aus dem SSI-Logbuch**: dieselbe Anmeldung holt jeden Platz, an
+  dem man laut SSI schon getaucht ist, mit Nummer, Name und Position auf das Gerät.
+  Die Plätze gelten geräteweit, die Anmeldungen pro Person – ein Tauchplatz ist ein Ort,
+  und den teilt die Familie.
   Danach erkennt die App den Platz an der Position des Tauchgangs wieder und schlägt ihn vor;
   bestätigt landet er als `site:` im QR-Code. Liegen mehrere Plätze im Umkreis, werden alle
   angeboten – vorgeschlagen wird immer, gesetzt nie von allein. Ein Platz lässt sich weiterhin
