@@ -159,6 +159,7 @@ abstract class AppStrings {
   /// metres up close, kilometres once that stops being readable.
   String distance(int metres);
   String get noPositionNoSite;
+  String get noSiteNearby;
   String get siteIdUnreadable;
 
   // ----------------------------------------------------------- SSI account

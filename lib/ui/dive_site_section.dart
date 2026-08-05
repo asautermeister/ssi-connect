@@ -137,6 +137,19 @@ class DiveSiteSection extends StatelessWidget {
                 color: palette.inkMuted,
               ),
             ),
+          ] else if (selected == null && suggestions.isEmpty) ...[
+            // The first dive at a new place. The site number cannot be
+            // looked up from here - SSI has no open query for it - but it
+            // arrives on its own once the dive is filed in the SSI app,
+            // which does have a working site search. Worth saying at the
+            // moment it applies, rather than leaving the section blank.
+            const SizedBox(height: AppSpacing.sm),
+            Text(
+              s.noSiteNearby,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: palette.inkMuted,
+              ),
+            ),
           ],
         ],
       ),

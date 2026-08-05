@@ -243,6 +243,10 @@ class AppStringsEn extends AppStrings {
       'Without a position this dive cannot be matched to a site '
       'automatically – by hand still works.';
   @override
+  String get noSiteNearby =>
+      'No known dive site nearby. Assign the dive to a site in the SSI app '
+      'once and sync afterwards – or enter the number here by hand.';
+  @override
   String get siteIdUnreadable =>
       'No number in there. A site number is expected, or an address ending '
       'in one.';

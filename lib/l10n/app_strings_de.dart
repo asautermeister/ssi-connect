@@ -249,6 +249,11 @@ class AppStringsDe extends AppStrings {
       'Ohne Position lässt sich dieser Tauchgang keinem Platz automatisch '
       'zuordnen – von Hand geht es trotzdem.';
   @override
+  String get noSiteNearby =>
+      'Kein bekannter Tauchplatz in der Nähe. Den Tauchgang einmal in der '
+      'SSI-App einem Platz zuordnen und danach abgleichen – oder die Nummer '
+      'hier von Hand eintragen.';
+  @override
   String get siteIdUnreadable =>
       'Darin steckt keine Nummer. Erwartet wird eine Platznummer oder eine '
       'Adresse, die auf eine endet.';
