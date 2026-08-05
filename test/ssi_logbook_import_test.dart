@@ -403,6 +403,74 @@ void main() {
     });
   });
 
+  group('SsiApiClient logged dives', () {
+    test('reads the entry time, and takes it as local', () async {
+      // There is no timezone anywhere in the entry - this is the time the
+      // diver entered the water, which is what makes it comparable with
+      // Garmin's startTimeLocal.
+      final (client, _) = _clientAnswering(
+        (_) => jsonEncode({
+          'logbook_sites': [],
+          'logbook_details': [
+            {
+              'odin_user_log_datetime': '2023-08-12 12:54',
+              'odin_user_log_date': '2023-08-12',
+              'odin_user_log_entry_time': '12:54',
+              'odin_user_log_depth_m': 13,
+              'odin_user_log_deleted': 0,
+            },
+          ],
+        }),
+      );
+
+      final logged = (await client.loadLogbook(_session)).dives.single;
+
+      expect(logged.dateTime, DateTime(2023, 8, 12, 12, 54));
+      expect(logged.dateTime.isUtc, isFalse);
+      expect(logged.depthMeters, 13);
+    });
+
+    test('falls back to the separate date and time fields', () async {
+      final (client, _) = _clientAnswering(
+        (_) => jsonEncode({
+          'logbook_sites': [],
+          'logbook_details': [
+            {
+              'odin_user_log_date': '2023-08-13',
+              'odin_user_log_entry_time': '13:18',
+            },
+          ],
+        }),
+      );
+
+      expect(
+        (await client.loadLogbook(_session)).dives.single.dateTime,
+        DateTime(2023, 8, 13, 13, 18),
+      );
+    });
+
+    test('skips deleted entries and ones without a time', () async {
+      final (client, _) = _clientAnswering(
+        (_) => jsonEncode({
+          'logbook_sites': [],
+          'logbook_details': [
+            {
+              'odin_user_log_datetime': '2023-08-12 12:54',
+              'odin_user_log_deleted': 1,
+            },
+            {'odin_user_log_depth_m': 13},
+            {'odin_user_log_datetime': '2023-08-13 13:18'},
+          ],
+        }),
+      );
+
+      final dives = (await client.loadLogbook(_session)).dives;
+
+      expect(dives, hasLength(1));
+      expect(dives.single.dateTime, DateTime(2023, 8, 13, 13, 18));
+    });
+  });
+
   group('DiveSitesController.addAllNew', () {
     test('adds what is new and reports how much', () async {
       final controller = await _controllerWith([]);

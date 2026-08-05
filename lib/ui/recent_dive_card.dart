@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../l10n/app_strings.dart';
 
+import '../dives/exported_dives_controller.dart';
 import '../dives/recent_dives_controller.dart';
 import 'format.dart';
+import 'qr_display_screen.dart';
 import 'qr_screen.dart';
 import 'theme/app_theme.dart';
 import 'widgets/app_card.dart';
@@ -16,9 +19,18 @@ import 'widgets/dive_type_icon.dart';
 /// Shared by the start screen's short list and the full list behind it, so
 /// the same dive looks the same in both.
 class RecentDiveCard extends StatelessWidget {
-  const RecentDiveCard({super.key, required this.entry});
+  const RecentDiveCard({
+    super.key,
+    required this.entry,
+    this.inSsiLogbook = false,
+  });
 
   final RecentDive entry;
+
+  /// Whether this dive was found in the SSI logbook of the account it
+  /// belongs to. Worked out by the list, which can keep each account's
+  /// dives against that account's logbook.
+  final bool inSsiLogbook;
 
   @override
   Widget build(BuildContext context) {
@@ -43,9 +55,23 @@ class RecentDiveCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  '${Fmt.weekday(dive.dateTime, s)}, ${Fmt.date(dive.dateTime)}',
-                  style: theme.textTheme.titleMedium,
+                Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        '${Fmt.weekday(dive.dateTime, s)}, '
+                        '${Fmt.date(dive.dateTime)}',
+                        style: theme.textTheme.titleMedium,
+                      ),
+                    ),
+                    if (context.watch<ExportedDivesController>().isTransferred(
+                      dive,
+                      inLogbook: inSsiLogbook,
+                    )) ...[
+                      const SizedBox(width: AppSpacing.sm),
+                      const DiveTransferredMark(),
+                    ],
+                  ],
                 ),
                 const SizedBox(height: 2),
                 Text(

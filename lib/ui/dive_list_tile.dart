@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../l10n/app_strings.dart';
 
 import '../accounts/models/account_color.dart';
+import '../dives/exported_dives_controller.dart';
 import '../models/dive.dart';
 import '../ssi/ssi_buddy_code.dart';
 import 'dive_detail_screen.dart';
 import 'format.dart';
+import 'qr_display_screen.dart';
 import 'theme/app_theme.dart';
 import 'widgets/app_card.dart';
 import 'widgets/dive_type_icon.dart';
@@ -22,6 +25,7 @@ class DiveListTile extends StatelessWidget {
     required this.maxDepthInList,
     this.diver,
     this.accountColor,
+    this.inSsiLogbook = false,
   });
 
   final Dive dive;
@@ -34,6 +38,11 @@ class DiveListTile extends StatelessWidget {
   /// Deepest dive currently listed, so the bars share one scale. Pass 0 to
   /// hide the bar entirely.
   final double maxDepthInList;
+
+  /// Whether this dive was found in the SSI logbook of the account it
+  /// belongs to. Worked out by the list, which knows whose dives these are
+  /// - a logbook may only be matched against its own person's dives.
+  final bool inSsiLogbook;
 
   @override
   Widget build(BuildContext context) {
@@ -62,9 +71,25 @@ class DiveListTile extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      '${Fmt.weekday(dive.dateTime, s)}, ${Fmt.date(dive.dateTime)}',
-                      style: theme.textTheme.titleMedium,
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            '${Fmt.weekday(dive.dateTime, s)}, '
+                            '${Fmt.date(dive.dateTime)}',
+                            style: theme.textTheme.titleMedium,
+                          ),
+                        ),
+                        // Beside the date rather than off in a corner: the
+                        // question this answers is "did this one already go
+                        // across?", asked while reading down the list.
+                        if (context
+                            .watch<ExportedDivesController>()
+                            .isTransferred(dive, inLogbook: inSsiLogbook)) ...[
+                          const SizedBox(width: AppSpacing.sm),
+                          const DiveTransferredMark(),
+                        ],
+                      ],
                     ),
                     const SizedBox(height: AppSpacing.xs),
                     Text(

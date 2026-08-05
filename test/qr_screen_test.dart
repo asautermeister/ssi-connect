@@ -7,6 +7,8 @@ import 'package:ssi_connect/ssi/ssi_buddy_code.dart';
 import 'package:ssi_connect/ui/qr_display_screen.dart';
 import 'package:ssi_connect/ui/qr_screen.dart';
 import 'package:ssi_connect/ui/theme/app_theme.dart';
+import 'support/exported_dives.dart';
+import 'package:provider/provider.dart';
 
 Dive _dive({double? maxDepthMeters = 28, Duration? duration}) => Dive(
   id: 'a',
@@ -25,17 +27,20 @@ Future<void> _pump(WidgetTester tester, Widget screen) async {
   addTearDown(tester.view.reset);
 
   await tester.pumpWidget(
-    MaterialApp(
-      locale: const Locale('de'),
-      localizationsDelegates: const [
-        AppStrings.delegate,
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-      ],
-      supportedLocales: AppStrings.supportedLocales,
-      theme: AppTheme.light(),
-      home: screen,
+    MultiProvider(
+      providers: [exportedDivesProvider()],
+      child: MaterialApp(
+        locale: const Locale('de'),
+        localizationsDelegates: const [
+          AppStrings.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: AppStrings.supportedLocales,
+        theme: AppTheme.light(),
+        home: screen,
+      ),
     ),
   );
   await tester.pumpAndSettle();

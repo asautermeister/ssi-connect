@@ -9,6 +9,8 @@ import 'package:ssi_connect/ssi/ssi_qr_payload_builder.dart';
 import 'package:ssi_connect/ui/dive_export_selection_screen.dart';
 import 'package:ssi_connect/ui/dive_qr_batch_screen.dart';
 import 'package:ssi_connect/ui/theme/app_theme.dart';
+import 'support/exported_dives.dart';
+import 'package:provider/provider.dart';
 
 Dive _dive(
   String id,
@@ -35,19 +37,22 @@ Future<void> _pumpSelection(
   addTearDown(tester.view.reset);
 
   await tester.pumpWidget(
-    MaterialApp(
-      locale: const Locale('de'),
-      localizationsDelegates: const [
-        AppStrings.delegate,
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-      ],
-      supportedLocales: AppStrings.supportedLocales,
-      theme: AppTheme.light(),
-      home: DiveExportSelectionScreen(
-        dives: assignDiveNumbersOfDay(dives),
-        diver: diver,
+    MultiProvider(
+      providers: [exportedDivesProvider()],
+      child: MaterialApp(
+        locale: const Locale('de'),
+        localizationsDelegates: const [
+          AppStrings.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: AppStrings.supportedLocales,
+        theme: AppTheme.light(),
+        home: DiveExportSelectionScreen(
+          dives: assignDiveNumbersOfDay(dives),
+          diver: diver,
+        ),
       ),
     ),
   );
@@ -190,17 +195,20 @@ void main() {
       addTearDown(tester.view.reset);
 
       await tester.pumpWidget(
-        MaterialApp(
-          locale: const Locale('de'),
-          localizationsDelegates: const [
-            AppStrings.delegate,
-            GlobalMaterialLocalizations.delegate,
-            GlobalWidgetsLocalizations.delegate,
-            GlobalCupertinoLocalizations.delegate,
-          ],
-          supportedLocales: AppStrings.supportedLocales,
-          theme: AppTheme.light(),
-          home: DiveQrBatchScreen(dives: dives),
+        MultiProvider(
+          providers: [exportedDivesProvider()],
+          child: MaterialApp(
+            locale: const Locale('de'),
+            localizationsDelegates: const [
+              AppStrings.delegate,
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
+            supportedLocales: AppStrings.supportedLocales,
+            theme: AppTheme.light(),
+            home: DiveQrBatchScreen(dives: dives),
+          ),
         ),
       );
       await tester.pumpAndSettle();

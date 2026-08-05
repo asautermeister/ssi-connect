@@ -14,6 +14,7 @@ import 'package:ssi_connect/garmin/models/garmin_session.dart';
 import 'package:ssi_connect/models/dive.dart';
 import 'package:ssi_connect/ui/all_dives_screen.dart';
 import 'package:ssi_connect/ui/theme/app_theme.dart';
+import 'support/exported_dives.dart';
 
 class _InMemoryAccounts extends AccountRepository {
   _InMemoryAccounts(this.stored);
@@ -253,6 +254,7 @@ void main() {
           providers: [
             ChangeNotifierProvider.value(value: accountsController),
             ChangeNotifierProvider.value(value: recent),
+            exportedDivesProvider(),
             Provider<DiveFetcher>.value(value: fetch),
           ],
           child: MaterialApp(

@@ -41,6 +41,13 @@ Kamera der SSI-App scannt.
 - **Tauchtag am Stück übertragen**: mehrere Tauchgänge auswählen (ein Tippen wählt einen ganzen
   Tauchtag) und als Folge von QR-Codes durchblättern. Das Handy mit der SSI-App bleibt liegen –
   scannen, „Weiter", scannen
+- **„In SSI übernommen"**: unter dem QR-Code lässt sich abhaken, dass der Tauchgang drüben
+  angekommen ist; in der Liste steht dann ein grüner Haken neben dem Datum. Wer sein SSI-Konto
+  verbunden hat, bekommt den Haken zusätzlich **automatisch** – der Abgleich liest die
+  Tauchgänge aus dem Logbuch und erkennt sie an Datum, Uhrzeit und Tiefe wieder. Der Haken von
+  Hand hat immer Vorrang, in beide Richtungen. Nie abgeleitet wird er aus dem Export selbst:
+  ein angezeigter QR-Code ist kein Beleg dafür, dass ihn jemand gescannt hat, und ein Haken,
+  der zu früh kommt, markiert genau den Tauchgang, der danach übersprungen wird
 - **SSI Buddy**: eine Liste aller SSI-Codes, die das Gerät kennt – die Accounts mit hinterlegter
   Nummer, die Mittaucher (aus dem SSI-Logbuch übernommen oder abgescannt, bei Profis inklusive
   SSI Professional Nr.) und unter „Tauchbasen" die Basen selbst. Jeder Eintrag lässt sich wieder

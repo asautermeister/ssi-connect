@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../l10n/app_strings.dart';
 
+import '../dives/exported_dives_controller.dart';
 import '../models/dive.dart';
 import '../ssi/ssi_buddy_code.dart';
 import '../ssi/ssi_qr_payload_builder.dart';
@@ -56,6 +58,7 @@ class _DiveQrBatchScreenState extends State<DiveQrBatchScreen> {
   Widget build(BuildContext context) {
     final total = widget.dives.length;
     final isLast = _index == total - 1;
+    final exported = context.watch<ExportedDivesController>();
 
     return Theme(
       data: AppTheme.light(),
@@ -93,6 +96,15 @@ class _DiveQrBatchScreenState extends State<DiveQrBatchScreen> {
                               '${Fmt.meters(dive.maxDepthMeters)} m · '
                               '${Fmt.minutes(dive.duration)} min',
                           hint: s.qrHintBatch,
+                          // One tick per page: a dive day is exactly where
+                          // losing track of which one already went across
+                          // costs a scan too many.
+                          footer: DiveTransferredCheckbox(
+                            label: s.transferredToSsi,
+                            value: exported.isTransferred(dive),
+                            onChanged: (value) =>
+                                exported.setTransferred(dive.id, value),
+                          ),
                         );
                       },
                     ),

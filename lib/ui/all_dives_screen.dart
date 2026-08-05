@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 
 import '../accounts/accounts_controller.dart';
 import '../dives/dive_loader.dart';
+import '../dives/exported_dives_controller.dart';
 import '../dives/recent_dives_controller.dart';
 import '../garmin/garmin_auth_exceptions.dart';
 import 'recent_dive_card.dart';
@@ -28,6 +29,11 @@ class AllDivesScreen extends StatelessWidget {
     final controller = context.watch<RecentDivesController>();
     final dives = controller.merged(accounts);
     final s = AppStrings.of(context);
+    // Each account's dives against that account's logbook - a family dives
+    // together, so a cross-account match would tick everybody at once.
+    final inLogbook = context.watch<ExportedDivesController>().matchedAcross(
+      dives,
+    );
 
     return Scaffold(
       appBar: AppBar(title: Text(s.allDives)),
@@ -40,7 +46,10 @@ class AllDivesScreen extends StatelessWidget {
         ),
         children: [
           for (final entry in dives) ...[
-            RecentDiveCard(entry: entry),
+            RecentDiveCard(
+              entry: entry,
+              inSsiLogbook: inLogbook.contains(entry.dive.id),
+            ),
             const SizedBox(height: AppSpacing.md),
           ],
           const SizedBox(height: AppSpacing.sm),

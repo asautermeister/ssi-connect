@@ -7,6 +7,7 @@ import '../accounts/accounts_controller.dart';
 import '../accounts/models/account_color.dart';
 import '../accounts/models/garmin_account.dart';
 import '../dives/dive_loader.dart';
+import '../dives/exported_dives_controller.dart';
 import '../dives/recent_dives_controller.dart';
 import 'add_account_screen.dart';
 import 'all_dives_screen.dart';
@@ -126,6 +127,9 @@ class _RecentDives extends StatelessWidget {
     final theme = Theme.of(context);
     final s = AppStrings.of(context);
     final recent = controller.recent(accounts);
+    final inLogbook = context.watch<ExportedDivesController>().matchedAcross(
+      recent,
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -170,7 +174,10 @@ class _RecentDives extends StatelessWidget {
           )
         else ...[
           for (final entry in recent) ...[
-            RecentDiveCard(entry: entry),
+            RecentDiveCard(
+              entry: entry,
+              inSsiLogbook: inLogbook.contains(entry.dive.id),
+            ),
             const SizedBox(height: AppSpacing.md),
           ],
           // Named rather than silently missing: with several accounts on one
