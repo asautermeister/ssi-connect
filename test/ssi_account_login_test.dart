@@ -1,3 +1,4 @@
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ssi_connect/accounts/account_repository.dart';
 import 'package:ssi_connect/accounts/accounts_controller.dart';
@@ -100,6 +101,52 @@ class _InMemoryBuddies extends SsiBuddyRepository {
 
   @override
   Future<void> saveAll(List<SsiBuddyCode> buddies) async => stored = buddies;
+}
+
+/// Stands in for the keystore, which needs a platform under a widget-less
+/// test - and the sync timestamp is written there.
+class _FakeStorage extends FlutterSecureStorage {
+  final Map<String, String> values = {};
+
+  @override
+  Future<String?> read({
+    required String key,
+    AppleOptions? iOptions,
+    AndroidOptions? aOptions,
+    LinuxOptions? lOptions,
+    WebOptions? webOptions,
+    AppleOptions? mOptions,
+    WindowsOptions? wOptions,
+  }) async => values[key];
+
+  @override
+  Future<void> write({
+    required String key,
+    required String? value,
+    AppleOptions? iOptions,
+    AndroidOptions? aOptions,
+    LinuxOptions? lOptions,
+    WebOptions? webOptions,
+    AppleOptions? mOptions,
+    WindowsOptions? wOptions,
+  }) async {
+    if (value == null) {
+      values.remove(key);
+    } else {
+      values[key] = value;
+    }
+  }
+
+  @override
+  Future<void> delete({
+    required String key,
+    AppleOptions? iOptions,
+    AndroidOptions? aOptions,
+    LinuxOptions? lOptions,
+    WebOptions? webOptions,
+    AppleOptions? mOptions,
+    WindowsOptions? wOptions,
+  }) async => values.remove(key);
 }
 
 Future<SsiBuddiesController> _emptyBuddies() async {
@@ -239,6 +286,7 @@ void main() {
       ]);
       final sites = await _emptySites();
       final sync = SsiSyncController(
+        storage: _FakeStorage(),
         client: _FakeClient({
           'ta': [_site('1'), _site('2')],
           // '2' is in both logbooks - they dived it together.
@@ -272,6 +320,7 @@ void main() {
       ]);
       final sites = await _emptySites();
       final sync = SsiSyncController(
+        storage: _FakeStorage(),
         client: _FakeClient(
           {
             'tm': [_site('3')],
@@ -301,6 +350,7 @@ void main() {
         ),
       ]);
       final sync = SsiSyncController(
+        storage: _FakeStorage(),
         client: _FakeClient(const {}, rejected: {'stale'}),
       );
 
@@ -325,6 +375,7 @@ void main() {
       ]);
       final buddies = await _emptyBuddies();
       final sync = SsiSyncController(
+        storage: _FakeStorage(),
         client: _FakeClient(
           const {},
           buddiesByToken: {
@@ -366,6 +417,7 @@ void main() {
       ]);
       final buddies = await _emptyBuddies();
       final sync = SsiSyncController(
+        storage: _FakeStorage(),
         client: _FakeClient(
           const {},
           buddiesByToken: {
@@ -415,6 +467,7 @@ void main() {
         ),
       ]);
       final sync = SsiSyncController(
+        storage: _FakeStorage(),
         client: _FakeClient(
           const {},
           buddiesByToken: {
@@ -450,6 +503,7 @@ void main() {
       ]);
       final buddies = await _emptyBuddies();
       final sync = SsiSyncController(
+        storage: _FakeStorage(),
         client: _FakeClient(
           const {},
           buddiesByToken: {
@@ -471,9 +525,72 @@ void main() {
       expect(sync.lastBuddyCount, 2);
     });
 
+    test('records when the logbooks were last read', () async {
+      final accounts = await _accountsWith([
+        _account(
+          'Jan',
+          ssiSession: const SsiSession(email: 'j@x', token: 'tj'),
+        ),
+      ]);
+      final storage = _FakeStorage();
+      final sync = SsiSyncController(
+        storage: storage,
+        client: _FakeClient(const {}),
+      );
+
+      final before = DateTime.now();
+      await sync.syncAll(
+        accounts: accounts,
+        sites: await _emptySites(),
+        buddies: await _emptyBuddies(),
+      );
+
+      expect(sync.lastSyncAt, isNotNull);
+      expect(sync.lastSyncAt!.isBefore(before), isFalse);
+
+      // Survives a restart: the counts describe a sync you just watched,
+      // this answers "is this still current?" days later.
+      final restarted = SsiSyncController(
+        storage: storage,
+        client: _FakeClient(const {}),
+      );
+      await restarted.initialize();
+      expect(
+        restarted.lastSyncAt?.toIso8601String(),
+        sync.lastSyncAt?.toIso8601String(),
+      );
+    });
+
+    test('a sync where everything failed does not count as fresh', () async {
+      // Otherwise the timestamp would promise data that never arrived.
+      final storage = _FakeStorage();
+      final accounts = await _accountsWith([
+        _account(
+          'Jan',
+          ssiSession: const SsiSession(email: 'j@x', token: 'stale'),
+        ),
+      ]);
+      final sync = SsiSyncController(
+        storage: storage,
+        client: _FakeClient(const {}, rejected: {'stale'}),
+      );
+
+      await sync.syncAll(
+        accounts: accounts,
+        sites: await _emptySites(),
+        buddies: await _emptyBuddies(),
+      );
+
+      expect(sync.lastSyncAt, isNull);
+      expect(storage.values, isEmpty);
+    });
+
     test('does nothing when nobody is connected', () async {
       final accounts = await _accountsWith([_account('Andreas')]);
-      final sync = SsiSyncController(client: _FakeClient(const {}));
+      final sync = SsiSyncController(
+        storage: _FakeStorage(),
+        client: _FakeClient(const {}),
+      );
 
       expect(
         await sync.syncAll(

@@ -6,6 +6,7 @@ import '../l10n/app_strings.dart';
 import '../ssi/dive_sites_controller.dart';
 import '../ssi/ssi_buddies_controller.dart';
 import '../ssi/ssi_sync_controller.dart';
+import 'format.dart';
 import 'theme/app_theme.dart';
 import 'widgets/app_card.dart';
 
@@ -44,6 +45,15 @@ class SsiSitesSection extends StatelessWidget {
                 s.knownBuddies(buddies.buddies.length),
                 style: theme.textTheme.bodySmall,
               ),
+              // Survives a restart, so it answers "is this still current?"
+              // long after the counts below have gone.
+              if (sync.lastSyncAt case final at?)
+                Text(
+                  s.lastSyncedAt(Fmt.dateTime(at)),
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: palette.inkMuted,
+                  ),
+                ),
               const SizedBox(height: AppSpacing.md),
 
               if (connected.isEmpty)

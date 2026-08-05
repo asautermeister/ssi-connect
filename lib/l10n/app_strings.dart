@@ -171,6 +171,7 @@ abstract class AppStrings {
   String get ssiLogbook;
   String knownDiveSites(int count);
   String knownBuddies(int count);
+  String lastSyncedAt(String timestamp);
   String ssiBuddiesImported(int added);
   String get noSsiAccountConnected;
   String get ssiSignIn;

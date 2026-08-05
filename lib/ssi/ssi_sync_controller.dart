@@ -32,6 +32,8 @@ class SsiSyncController extends ChangeNotifier {
   /// keystore unused and unreachable.
   static const _legacyAccountKey = 'ssi_connect.ssi_account';
 
+  static const _lastSyncKey = 'ssi_connect.ssi.last_sync';
+
   bool _busy = false;
   bool get isBusy => _busy;
 
@@ -58,8 +60,20 @@ class SsiSyncController extends ChangeNotifier {
   int? _lastBuddyAddedCount;
   int? get lastBuddyAddedCount => _lastBuddyAddedCount;
 
-  Future<void> discardLegacyAccount() =>
-      _storage.delete(key: _legacyAccountKey);
+  /// When the logbooks were last read.
+  ///
+  /// Outlives the app run, unlike the counts beside it: those describe the
+  /// sync you just watched happen, this answers "is what I am looking at
+  /// still current?" days later.
+  DateTime? _lastSyncAt;
+  DateTime? get lastSyncAt => _lastSyncAt;
+
+  Future<void> initialize() async {
+    await _storage.delete(key: _legacyAccountKey);
+    final stored = await _storage.read(key: _lastSyncKey);
+    _lastSyncAt = stored == null ? null : DateTime.tryParse(stored);
+    notifyListeners();
+  }
 
   /// Signs in and stores the session on [accountId].
   ///
@@ -128,6 +142,17 @@ class SsiSyncController extends ChangeNotifier {
       _lastAddedCount = siteAdded;
       _lastBuddyCount = buddyTotal;
       _lastBuddyAddedCount = await _absorbBuddies(harvested, accounts, buddies);
+
+      // Recorded when at least one logbook came through: what is on the
+      // device really is that fresh. Had every account failed, the old
+      // timestamp is the honest answer and stays.
+      if (failures.length < connected.length) {
+        _lastSyncAt = DateTime.now();
+        await _storage.write(
+          key: _lastSyncKey,
+          value: _lastSyncAt!.toIso8601String(),
+        );
+      }
 
       if (failures.isNotEmpty) _error = failures.join('\n');
       return failures.isEmpty;

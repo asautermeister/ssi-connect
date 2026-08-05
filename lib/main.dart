@@ -42,11 +42,12 @@ class SsiConnectApp extends StatelessWidget {
           create: (_) => DiveSitesController()..loadFromStorage(),
         ),
         // The SSI login itself lives on the account it belongs to; this
-        // only drives the calls. `discardLegacyAccount` clears the
-        // device-wide login of the previous version, so its token does not
-        // linger in the keystore with nothing able to reach it.
+        // only drives the calls. `initialize` reads back when the last
+        // sync was, and clears the device-wide login of the previous
+        // version so its token does not linger in the keystore with
+        // nothing able to reach it.
         ChangeNotifierProvider(
-          create: (_) => SsiSyncController()..discardLegacyAccount(),
+          create: (_) => SsiSyncController()..initialize(),
         ),
         ChangeNotifierProvider(create: (_) => RecentDivesController()),
         // Session-only: the diagnostic tools stay hidden until someone

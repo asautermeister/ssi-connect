@@ -270,6 +270,8 @@ class AppStringsEn extends AppStrings {
   String knownBuddies(int count) =>
       count == 1 ? '1 buddy stored' : '$count buddies stored';
   @override
+  String lastSyncedAt(String timestamp) => 'Last synced: $timestamp';
+  @override
   String ssiBuddiesImported(int added) =>
       added == 1 ? '1 new buddy added' : '$added new buddies added';
   @override
