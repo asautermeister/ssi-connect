@@ -29,10 +29,12 @@ Kamera der SSI-App scannt.
 - **SSI-Anmeldung pro Account**: wer mag, meldet sich bei seinem Garmin-Account zusätzlich bei
   SSI an. Die SSI-Mitgliedsnummer kommt dann direkt von SSI statt aus einem gescannten
   QR-Code – Scannen und Eintippen bleiben für alle, die kein SSI-Konto haben
-- **Tauchplätze aus dem SSI-Logbuch**: dieselbe Anmeldung holt jeden Platz, an
-  dem man laut SSI schon getaucht ist, mit Nummer, Name und Position auf das Gerät.
-  Die Plätze gelten geräteweit, die Anmeldungen pro Person – ein Tauchplatz ist ein Ort,
-  und den teilt die Familie.
+- **Tauchplätze und Buddys aus dem SSI-Logbuch**: dieselbe Anmeldung holt jeden Platz, an
+  dem man laut SSI schon getaucht ist, mit Nummer, Name und Position auf das Gerät – und
+  die Mittaucher gleich mit. Die Plätze gelten geräteweit, die Anmeldungen pro Person –
+  ein Tauchplatz ist ein Ort, und den teilt die Familie. Von den Buddy-Einträgen wird nur
+  übernommen, was auch in einem gescannten Buddy-QR-Code steht (Nummer, Name, E-Mail,
+  SSI Professional Nr.); Geburtsdatum, Wohnort, Telefon und Foto werden verworfen
   Danach erkennt die App den Platz an der Position des Tauchgangs wieder und schlägt ihn vor;
   bestätigt landet er als `site:` im QR-Code. Liegen mehrere Plätze im Umkreis, werden alle
   angeboten – vorgeschlagen wird immer, gesetzt nie von allein. Ein Platz lässt sich weiterhin
@@ -41,7 +43,8 @@ Kamera der SSI-App scannt.
   Tauchtag) und als Folge von QR-Codes durchblättern. Das Handy mit der SSI-App bleibt liegen –
   scannen, „Weiter", scannen
 - **SSI Buddy**: eine Liste aller SSI-Codes, die das Gerät kennt – die Accounts mit hinterlegter
-  Nummer, zusätzlich gescannte Mittaucher (bei Profis inklusive SSI Professional Nr.) und unter
+  Nummer, zusätzlich Mittaucher aus dem SSI-Logbuch oder gescannt (bei Profis inklusive
+  SSI Professional Nr.) und unter
   „Tauchbasen" die Basen selbst. Jeder Eintrag lässt sich wieder als QR-Code anzeigen, damit ein
   anderes Gerät ihn einlesen kann; der Scanner erkennt selbst, ob ein Buddy- oder ein
   Basis-Code vor der Kamera ist

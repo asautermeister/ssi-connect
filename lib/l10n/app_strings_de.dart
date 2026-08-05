@@ -269,8 +269,16 @@ class AppStringsDe extends AppStrings {
   @override
   String get diveSites => 'Tauchplätze';
   @override
+  String get ssiLogbook => 'SSI-Logbuch';
+  @override
   String knownDiveSites(int count) =>
       count == 1 ? '1 Tauchplatz bekannt' : '$count Tauchplätze bekannt';
+  @override
+  String knownBuddies(int count) =>
+      count == 1 ? '1 Buddy gespeichert' : '$count Buddys gespeichert';
+  @override
+  String ssiBuddiesImported(int added) =>
+      added == 1 ? '1 neuer Buddy übernommen' : '$added neue Buddys übernommen';
   @override
   String get noSsiAccountConnected =>
       'Kein SSI-Konto verbunden. Die Anmeldung liegt beim jeweiligen Account – '
@@ -301,8 +309,8 @@ class AppStringsDe extends AppStrings {
   @override
   String get ssiSyncExplanation =>
       'Holt jeden Tauchplatz, an dem du laut SSI schon getaucht bist – mit '
-      'Nummer, Name und Position. Bereits vorhandene Plätze bleiben, wie sie '
-      'sind.';
+      'Nummer, Name und Position – und die Buddys aus dem Logbuch. Bereits '
+      'vorhandene Einträge bleiben, wie sie sind.';
   @override
   String get ssiUnofficialNote =>
       'Nutzt dieselbe inoffizielle Schnittstelle wie die SSI-App. Sollte sie '

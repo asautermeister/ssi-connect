@@ -262,8 +262,16 @@ class AppStringsEn extends AppStrings {
   @override
   String get diveSites => 'Dive sites';
   @override
+  String get ssiLogbook => 'SSI logbook';
+  @override
   String knownDiveSites(int count) =>
       count == 1 ? '1 dive site known' : '$count dive sites known';
+  @override
+  String knownBuddies(int count) =>
+      count == 1 ? '1 buddy stored' : '$count buddies stored';
+  @override
+  String ssiBuddiesImported(int added) =>
+      added == 1 ? '1 new buddy added' : '$added new buddies added';
   @override
   String get noSsiAccountConnected =>
       'No SSI account connected. The login sits with each account – under '
@@ -294,7 +302,8 @@ class AppStringsEn extends AppStrings {
   @override
   String get ssiSyncExplanation =>
       'Fetches every dive site SSI has you logged at – number, name and '
-      'position. Sites you already have are left as they are.';
+      'position – and the buddies from the logbook. Entries you already have '
+      'are left as they are.';
   @override
   String get ssiUnofficialNote =>
       'Uses the same unofficial interface as the SSI app. Should it change, '

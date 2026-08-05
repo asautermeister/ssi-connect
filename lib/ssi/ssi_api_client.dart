@@ -7,7 +7,11 @@ import '../debug/api_log_interceptor.dart';
 import '../net/dio_errors.dart';
 import 'dive_site.dart';
 import 'ssi_api_exceptions.dart';
+import 'ssi_buddy_code.dart';
 import 'ssi_session.dart';
+
+/// What one `get_divelog` call yields that this app has a use for.
+typedef SsiLogbook = ({List<DiveSite> sites, List<SsiBuddyCode> buddies});
 
 /// Reads the user's own SSI logbook through the API that SSI's mobile app
 /// uses.
@@ -35,7 +39,8 @@ import 'ssi_session.dart';
 ///   `{"authenticated": true, "token": "...", "mid": 3837926,
 ///     "imperial": false, "authenticated_email": "..."}`.
 /// - `what=get_divelog` with `token` answers `logbook_sites` (every site
-///   the account has logged a dive at) and `logbook_details` (the dives).
+///   the account has logged a dive at), `logbook_details` (the dives),
+///   `logbook_buddies` (the divers on file) and `logbook_history` (totals).
 ///
 /// POST rather than GET, even though the API accepts both: a GET would put
 /// the password in the URL, where it lands in server logs and in this app's
@@ -91,43 +96,54 @@ class SsiApiClient {
     );
   }
 
-  /// Every dive site the account has logged a dive at, with SSI's own site
-  /// number and position.
+  /// The account's logbook, reduced to the two things this app can use:
+  /// the dive sites it has been to, and the buddies on file.
   ///
-  /// This is the whole point of the integration: those numbers are exactly
+  /// The sites are the point of the integration - those numbers are exactly
   /// what the QR code's `site:` field wants, and they cannot be derived
-  /// from coordinates.
-  Future<List<DiveSite>> loadLogbookSites(SsiSession session) async {
+  /// from coordinates. The buddies come along in the same answer, and carry
+  /// the same fields a scanned buddy QR code does.
+  Future<SsiLogbook> loadLogbook(SsiSession session) async {
     final data = await _post({
       'what': 'get_divelog',
       'token': session.token,
       'ssiapp': _clientApp,
-    }, context: 'SSI-Tauchplätze');
+    }, context: 'SSI-Logbuch');
 
-    final raw = data['logbook_sites'];
-    if (raw == null) {
+    if (!data.containsKey('logbook_sites')) {
       // The token is the only thing that can go stale here, and SSI does
       // not answer that with an HTTP status.
       throw SsiApiException(
         SsiApiErrorType.invalidCredentials,
-        'SSI hat keine Tauchplätze geliefert. Die Sitzung ist vermutlich '
+        'SSI hat kein Logbuch geliefert. Die Sitzung ist vermutlich '
         'abgelaufen - bitte erneut anmelden.',
       );
     }
 
+    final sites = <DiveSite>[];
+    for (final entry in _entriesOf(data['logbook_sites'])) {
+      final site = _siteFromLogbookEntry(entry);
+      if (site != null) sites.add(site);
+    }
+
+    final buddies = <SsiBuddyCode>[];
+    for (final entry in _entriesOf(data['logbook_buddies'])) {
+      final buddy = _buddyFromLogbookEntry(entry);
+      if (buddy != null) buddies.add(buddy);
+    }
+
+    return (sites: sites, buddies: buddies);
+  }
+
+  /// SSI hands these back as a list, but has been seen keying them by id
+  /// elsewhere; both read the same from here.
+  static Iterable<Map<String, dynamic>> _entriesOf(Object? raw) {
     final entries = switch (raw) {
       List list => list,
       Map map => map.values.toList(),
       _ => const [],
     };
-
-    final sites = <DiveSite>[];
-    for (final entry in entries) {
-      if (entry is! Map) continue;
-      final site = _siteFromLogbookEntry(entry.cast<String, dynamic>());
-      if (site != null) sites.add(site);
-    }
-    return sites;
+    return entries.whereType<Map>().map((e) => e.cast<String, dynamic>());
   }
 
   Future<Map<String, dynamic>> _post(
@@ -222,12 +238,8 @@ class SsiApiClient {
 /// `odin_dive_sites_address` held SSI's own office address rather than the
 /// site's. Only `odin_dive_sites_lat`/`_lon` describe the place.
 DiveSite? _siteFromLogbookEntry(Map<String, dynamic> entry) {
-  final siteId = switch (entry['odin_dive_sites_id']) {
-    final num id => id.toInt().toString(),
-    final String id => id.trim(),
-    _ => null,
-  };
-  if (siteId == null || !RegExp(r'^\d+$').hasMatch(siteId)) return null;
+  final siteId = _idOf(entry['odin_dive_sites_id']);
+  if (siteId == null) return null;
 
   final latitude = (entry['odin_dive_sites_lat'] as num?)?.toDouble();
   final longitude = (entry['odin_dive_sites_lon'] as num?)?.toDouble();
@@ -247,4 +259,70 @@ DiveSite? _siteFromLogbookEntry(Map<String, dynamic> entry) {
     latitude: latitude,
     longitude: longitude,
   );
+}
+
+/// Turns one `logbook_buddies` entry into an [SsiBuddyCode], or null when
+/// it can't be used.
+///
+/// A real entry, again recorded because these names are documented
+/// nowhere:
+///
+/// ```json
+/// {
+///   "master_id": 3902893,
+///   "buddy_master_id": 3902893,
+///   "firstname": "Andreas",
+///   "lastname": "Sautermeister",
+///   "email": "...",
+///   "leader_nr": "",
+///   "dob": "1984-04-10",
+///   "city": "Oberhaching",
+///   "phone": "    ",
+///   "image": "https://my.divessi.com/.../3902893.png",
+///   "deleted": 0
+/// }
+/// ```
+///
+/// Only the four fields a scanned buddy QR code also carries are taken,
+/// plus `leader_nr` - which is that code's `leaderNr`, the SSI Professional
+/// Nr. Date of birth, address, telephone number and photo are deliberately
+/// dropped: they are personal data about third parties, this app has no use
+/// for them, and a family tablet is no place to accumulate them.
+SsiBuddyCode? _buddyFromLogbookEntry(Map<String, dynamic> entry) {
+  // Both id fields held the buddy's own number in the observed data. The
+  // named one is the more specific of the two, so it wins.
+  final memberId = _idOf(entry['buddy_master_id']) ?? _idOf(entry['master_id']);
+  if (memberId == null) return null;
+  // SSI keeps deleted buddies in the answer with a flag.
+  if (entry['deleted'] == 1 || entry['deleted'] == true) return null;
+
+  return SsiBuddyCode(
+    memberId: memberId,
+    firstName: _textOf(entry['firstname']),
+    lastName: _textOf(entry['lastname']),
+    email: _textOf(entry['email']),
+    leaderNumber: _textOf(entry['leader_nr']),
+  );
+}
+
+/// A numeric SSI id as a string, or null when there is no usable number.
+String? _idOf(Object? raw) {
+  final id = switch (raw) {
+    final num value => value.toInt().toString(),
+    final String value => value.trim(),
+    _ => null,
+  };
+  if (id == null || !RegExp(r'^\d+$').hasMatch(id)) return null;
+  return id;
+}
+
+/// A trimmed string, or null when the field is absent or blank.
+///
+/// SSI writes blank fields as empty strings and, in at least one case, as
+/// four spaces - both mean "not filled in", and neither should reach a QR
+/// code as an empty value.
+String? _textOf(Object? raw) {
+  if (raw is! String) return null;
+  final text = raw.trim();
+  return text.isEmpty ? null : text;
 }

@@ -11,6 +11,9 @@ import 'package:ssi_connect/ssi/dive_sites_controller.dart';
 import 'package:ssi_connect/accounts/account_repository.dart';
 import 'package:ssi_connect/accounts/accounts_controller.dart';
 import 'package:ssi_connect/accounts/models/garmin_account.dart';
+import 'package:ssi_connect/ssi/ssi_buddies_controller.dart';
+import 'package:ssi_connect/ssi/ssi_buddy_code.dart';
+import 'package:ssi_connect/ssi/ssi_buddy_repository.dart';
 import 'package:ssi_connect/ssi/ssi_sync_controller.dart';
 import 'package:ssi_connect/ui/settings_screen.dart';
 import 'package:ssi_connect/ui/theme/app_theme.dart';
@@ -50,6 +53,14 @@ class _NoAccounts extends AccountRepository {
   Future<void> remove(String accountId) async {}
 }
 
+class _NoBuddies extends SsiBuddyRepository {
+  @override
+  Future<List<SsiBuddyCode>> loadAll() async => const [];
+
+  @override
+  Future<void> saveAll(List<SsiBuddyCode> buddies) async {}
+}
+
 class _NoDiveSites extends DiveSiteRepository {
   @override
   Future<List<DiveSite>> loadAll() async => const [];
@@ -82,6 +93,9 @@ Future<SettingsController> _pump(
         ),
         ChangeNotifierProvider(
           create: (_) => DiveSitesController(repository: _NoDiveSites()),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => SsiBuddiesController(repository: _NoBuddies()),
         ),
       ],
       child: MaterialApp(

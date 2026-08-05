@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../accounts/accounts_controller.dart';
 import '../l10n/app_strings.dart';
 import '../ssi/dive_sites_controller.dart';
+import '../ssi/ssi_buddies_controller.dart';
 import '../ssi/ssi_sync_controller.dart';
 import 'theme/app_theme.dart';
 import 'widgets/app_card.dart';
@@ -22,6 +23,7 @@ class SsiSitesSection extends StatelessWidget {
     final s = AppStrings.of(context);
     final palette = theme.extension<AppPalette>()!;
     final sites = context.watch<DiveSitesController>();
+    final buddies = context.watch<SsiBuddiesController>();
     final accounts = context.watch<AccountsController>();
     final sync = context.watch<SsiSyncController>();
     final connected = accounts.accounts.where((a) => a.hasSsiLogin).toList();
@@ -29,7 +31,7 @@ class SsiSitesSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        SectionHeader(title: s.diveSites),
+        SectionHeader(title: s.ssiLogbook),
         AppCard(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -37,6 +39,10 @@ class SsiSitesSection extends StatelessWidget {
               Text(
                 s.knownDiveSites(sites.sites.length),
                 style: theme.textTheme.titleMedium,
+              ),
+              Text(
+                s.knownBuddies(buddies.buddies.length),
+                style: theme.textTheme.bodySmall,
               ),
               const SizedBox(height: AppSpacing.md),
 
@@ -76,6 +82,7 @@ class SsiSitesSection extends StatelessWidget {
                       : () => context.read<SsiSyncController>().syncAll(
                           accounts: accounts,
                           sites: sites,
+                          buddies: buddies,
                         ),
                 ),
               ],
@@ -104,6 +111,13 @@ class SsiSitesSection extends StatelessWidget {
                         ),
                   style: theme.textTheme.bodySmall,
                 ),
+                // Only worth a line when something came of it - "0 new
+                // buddies" after every sync is noise.
+                if ((sync.lastBuddyAddedCount ?? 0) > 0)
+                  Text(
+                    s.ssiBuddiesImported(sync.lastBuddyAddedCount!),
+                    style: theme.textTheme.bodySmall,
+                  ),
               ],
             ],
           ),

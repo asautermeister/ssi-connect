@@ -45,6 +45,29 @@ class SsiBuddiesController extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Adds every buddy this device does not know yet, in one write. Returns
+  /// how many were actually new.
+  ///
+  /// Additive, unlike [save]: a rescan is a deliberate correction by the
+  /// person holding the tablet, an import is a bulk operation. If someone
+  /// scanned a buddy and fixed their name, a later import must not quietly
+  /// undo that.
+  Future<int> addAllNew(Iterable<SsiBuddyCode> buddies) async {
+    final known = {for (final buddy in _buddies) buddy.memberId};
+    final added = <SsiBuddyCode>[];
+    for (final buddy in buddies) {
+      // `known` also guards against duplicates inside the incoming list -
+      // two logbooks will name the same shared buddy.
+      if (known.add(buddy.memberId)) added.add(buddy);
+    }
+    if (added.isEmpty) return 0;
+
+    _buddies = _sorted([..._buddies, ...added]);
+    await _repository.saveAll(_buddies);
+    notifyListeners();
+    return added.length;
+  }
+
   Future<void> remove(String memberId) async {
     _buddies = _buddies.where((b) => b.memberId != memberId).toList();
     await _repository.saveAll(_buddies);

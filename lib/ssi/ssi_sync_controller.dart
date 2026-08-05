@@ -5,6 +5,8 @@ import '../accounts/accounts_controller.dart';
 import 'dive_sites_controller.dart';
 import 'ssi_api_client.dart';
 import 'ssi_api_exceptions.dart';
+import 'ssi_buddies_controller.dart';
+import 'ssi_buddy_code.dart';
 
 /// Signing in to SSI, and pulling dive sites out of the connected
 /// logbooks.
@@ -49,6 +51,13 @@ class SsiSyncController extends ChangeNotifier {
   int? _lastAddedCount;
   int? get lastAddedCount => _lastAddedCount;
 
+  /// The same two numbers for the buddies that came with the logbooks.
+  int? _lastBuddyCount;
+  int? get lastBuddyCount => _lastBuddyCount;
+
+  int? _lastBuddyAddedCount;
+  int? get lastBuddyAddedCount => _lastBuddyAddedCount;
+
   Future<void> discardLegacyAccount() =>
       _storage.delete(key: _legacyAccountKey);
 
@@ -77,28 +86,34 @@ class SsiSyncController extends ChangeNotifier {
     }
   }
 
-  /// Pulls the dive sites of every connected account into [sites].
+  /// Pulls the logbooks of every connected account: dive sites into
+  /// [sites], the buddies into [buddies].
   ///
   /// One failing account does not stop the others: a stale token on one
-  /// logbook is no reason to withhold the sites from the rest. Whatever
-  /// failed is reported afterwards.
+  /// logbook is no reason to withhold the rest. Whatever failed is
+  /// reported afterwards.
   Future<bool> syncAll({
     required AccountsController accounts,
     required DiveSitesController sites,
+    required SsiBuddiesController buddies,
   }) async {
     final connected = accounts.accounts.where((a) => a.hasSsiLogin).toList();
     if (connected.isEmpty) return false;
 
     _begin(null);
-    var total = 0;
-    var added = 0;
+    var siteTotal = 0;
+    var siteAdded = 0;
+    var buddyTotal = 0;
+    final harvested = <SsiBuddyCode>[];
     final failures = <String>[];
     try {
       for (final account in connected) {
         try {
-          final imported = await _client.loadLogbookSites(account.ssiSession!);
-          total += imported.length;
-          added += await sites.addAllNew(imported);
+          final logbook = await _client.loadLogbook(account.ssiSession!);
+          siteTotal += logbook.sites.length;
+          siteAdded += await sites.addAllNew(logbook.sites);
+          buddyTotal += logbook.buddies.length;
+          harvested.addAll(logbook.buddies);
         } on SsiApiException catch (e) {
           failures.add('${account.displayName}: ${e.message}');
           // A rejected token would fail the same way every time, and the
@@ -108,13 +123,49 @@ class SsiSyncController extends ChangeNotifier {
           }
         }
       }
-      _lastSiteCount = total;
-      _lastAddedCount = added;
+
+      _lastSiteCount = siteTotal;
+      _lastAddedCount = siteAdded;
+      _lastBuddyCount = buddyTotal;
+      _lastBuddyAddedCount = await _absorbBuddies(harvested, accounts, buddies);
+
       if (failures.isNotEmpty) _error = failures.join('\n');
       return failures.isEmpty;
     } finally {
       _end();
     }
+  }
+
+  /// Files the harvested buddies, keeping the people who already have an
+  /// account here out of the buddy list.
+  ///
+  /// Two family members on each other's buddy lists would otherwise show up
+  /// twice: once under their own account, once as a buddy. The buddy entry
+  /// is still worth having though - it is the only place SSI writes their
+  /// name, which a login does not report. So it goes to the account instead
+  /// of into the list.
+  Future<int> _absorbBuddies(
+    List<SsiBuddyCode> harvested,
+    AccountsController accounts,
+    SsiBuddiesController buddies,
+  ) async {
+    final ownNumbers = {
+      for (final account in accounts.accounts) ?account.ssiMemberId,
+    };
+
+    final strangers = <SsiBuddyCode>[];
+    for (final buddy in harvested) {
+      if (ownNumbers.contains(buddy.memberId)) {
+        await accounts.completeSsiName(
+          buddy.memberId,
+          firstName: buddy.firstName,
+          lastName: buddy.lastName,
+        );
+      } else {
+        strangers.add(buddy);
+      }
+    }
+    return buddies.addAllNew(strangers);
   }
 
   void _begin(String? accountId) {

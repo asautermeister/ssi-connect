@@ -162,6 +162,33 @@ class AccountsController extends ChangeNotifier {
     );
   }
 
+  /// Fills in a name for the account with this SSI member number, but only
+  /// where none is stored yet.
+  ///
+  /// An SSI login reports no name of its own - but the person appears in
+  /// the buddy list of anyone they dive with, and there SSI does write
+  /// `firstname` and `lastname`. So a family whose members are on each
+  /// other's buddy lists gets its names filled in for free.
+  ///
+  /// Never overwrites: a name already on file was scanned or typed by
+  /// somebody, and a stranger's spelling of it does not get to win.
+  Future<void> completeSsiName(
+    String memberId, {
+    String? firstName,
+    String? lastName,
+  }) async {
+    if (firstName == null && lastName == null) return;
+    final account = _accounts
+        .where((a) => a.ssiMemberId == memberId && a.ssiFullName == null)
+        .firstOrNull;
+    if (account == null) return;
+
+    await _updateAccount(
+      account.id,
+      (a) => a.copyWith(ssiFirstName: firstName, ssiLastName: lastName),
+    );
+  }
+
   /// Signs out of SSI. Keeps the member number - it is still this person's
   /// number, and a QR export needs nothing else.
   Future<void> clearSsiSession(String accountId) async {

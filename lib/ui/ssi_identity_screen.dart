@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../accounts/accounts_controller.dart';
 import '../accounts/models/garmin_account.dart';
 import '../ssi/dive_sites_controller.dart';
+import '../ssi/ssi_buddies_controller.dart';
 import '../ssi/ssi_buddy_code.dart';
 import '../ssi/ssi_sync_controller.dart';
 import 'ssi_scan_screen.dart';
@@ -154,6 +155,7 @@ class _Body extends StatelessWidget {
     final sync = context.read<SsiSyncController>();
     final accounts = context.read<AccountsController>();
     final sites = context.read<DiveSitesController>();
+    final buddies = context.read<SsiBuddiesController>();
 
     final credentials = await showDialog<({String email, String password})>(
       context: context,
@@ -169,7 +171,9 @@ class _Body extends StatelessWidget {
       password: credentials.password,
       accounts: accounts,
     );
-    if (ok) await sync.syncAll(accounts: accounts, sites: sites);
+    if (ok) {
+      await sync.syncAll(accounts: accounts, sites: sites, buddies: buddies);
+    }
   }
 
   Future<void> _scan(BuildContext context) async {

@@ -159,7 +159,7 @@ void main() {
     });
   });
 
-  group('SsiApiClient.loadLogbookSites', () {
+  group('SsiApiClient.loadLogbook', () {
     test('reads number, name and position of a real entry', () async {
       final (client, adapter) = _clientAnswering(
         (_) => jsonEncode({
@@ -167,7 +167,7 @@ void main() {
         }),
       );
 
-      final sites = await client.loadLogbookSites(_session);
+      final sites = (await client.loadLogbook(_session)).sites;
 
       expect(sites, hasLength(1));
       expect(sites.single.siteId, '2595');
@@ -193,7 +193,7 @@ void main() {
         }),
       );
 
-      final site = (await client.loadLogbookSites(_session)).single;
+      final site = (await client.loadLogbook(_session)).sites.single;
 
       expect(site.latitude, isNot(closeTo(35.946153, 0.001)));
       expect(site.longitude, isNot(closeTo(14.384604, 0.001)));
@@ -221,7 +221,7 @@ void main() {
         }),
       );
 
-      final sites = await client.loadLogbookSites(_session);
+      final sites = (await client.loadLogbook(_session)).sites;
 
       // A site without a position can never be suggested, and a wrong one
       // would be suggested at the wrong place.
@@ -243,7 +243,7 @@ void main() {
       );
 
       expect(
-        (await client.loadLogbookSites(_session)).single.name,
+        (await client.loadLogbook(_session)).sites.single.name,
         'site:4711',
       );
     });
@@ -256,7 +256,7 @@ void main() {
       );
 
       await expectLater(
-        client.loadLogbookSites(_session),
+        client.loadLogbook(_session),
         throwsA(
           isA<SsiApiException>().having(
             (e) => e.type,
@@ -272,7 +272,134 @@ void main() {
         (_) => jsonEncode({'logbook_sites': []}),
       );
 
-      expect(await client.loadLogbookSites(_session), isEmpty);
+      expect((await client.loadLogbook(_session)).sites, isEmpty);
+    });
+  });
+
+  group('SsiApiClient buddies', () {
+    /// The `logbook_buddies` entry SSI actually returned.
+    const andreas = {
+      'id': 1966429,
+      'master_id': 3902893,
+      'buddy_master_id': 3902893,
+      'firstname': 'Andreas',
+      'lastname': 'Sautermeister',
+      'dob': '1984-04-10',
+      'email': 'someone@example.com',
+      'phone': '    ',
+      'city': 'Oberhaching',
+      'country': 'DEU',
+      'leader_nr': '',
+      'image': 'https://my.divessi.com/data/user_files/pic/3902893.png',
+      'deleted': 0,
+    };
+
+    test('reads the fields a scanned buddy code also carries', () async {
+      final (client, _) = _clientAnswering(
+        (_) => jsonEncode({
+          'logbook_sites': [],
+          'logbook_buddies': [andreas],
+        }),
+      );
+
+      final buddy = (await client.loadLogbook(_session)).buddies.single;
+
+      expect(buddy.memberId, '3902893');
+      expect(buddy.fullName, 'Andreas Sautermeister');
+      expect(buddy.email, 'someone@example.com');
+    });
+
+    test('leaves the personal data of third parties behind', () async {
+      // Date of birth, home town, telephone number and photo are in the
+      // answer and have no use here. A family tablet is no place to
+      // accumulate them, so they never reach storage.
+      final (client, _) = _clientAnswering(
+        (_) => jsonEncode({
+          'logbook_sites': [],
+          'logbook_buddies': [andreas],
+        }),
+      );
+
+      final stored = jsonEncode(
+        (await client.loadLogbook(_session)).buddies.single.toJson(),
+      );
+
+      expect(stored, isNot(contains('1984-04-10')));
+      expect(stored, isNot(contains('Oberhaching')));
+      expect(stored, isNot(contains('divessi.com')));
+      expect(stored, isNot(contains('DEU')));
+    });
+
+    test('an empty professional number is absent, not blank', () async {
+      // `leader_nr` is "" for ordinary members, and SSI writes some blank
+      // fields as spaces. Either would otherwise become an empty value in
+      // the QR payload.
+      final (client, _) = _clientAnswering(
+        (_) => jsonEncode({
+          'logbook_sites': [],
+          'logbook_buddies': [
+            {...andreas, 'leader_nr': '   ', 'email': ''},
+          ],
+        }),
+      );
+
+      final buddy = (await client.loadLogbook(_session)).buddies.single;
+
+      expect(buddy.leaderNumber, isNull);
+      expect(buddy.email, isNull);
+      expect(buddy.isProfessional, isFalse);
+      expect(
+        buddy.toPayload(),
+        'buddy;3902893;firstName:Andreas;'
+        'lastName:Sautermeister',
+      );
+    });
+
+    test('keeps the professional number when there is one', () async {
+      final (client, _) = _clientAnswering(
+        (_) => jsonEncode({
+          'logbook_sites': [],
+          'logbook_buddies': [
+            {...andreas, 'leader_nr': '110890'},
+          ],
+        }),
+      );
+
+      final buddy = (await client.loadLogbook(_session)).buddies.single;
+
+      expect(buddy.leaderNumber, '110890');
+      expect(buddy.isProfessional, isTrue);
+    });
+
+    test('skips deleted buddies and entries without a number', () async {
+      final (client, _) = _clientAnswering(
+        (_) => jsonEncode({
+          'logbook_sites': [],
+          'logbook_buddies': [
+            {...andreas, 'deleted': 1},
+            {'firstname': 'Niemand'},
+            andreas,
+          ],
+        }),
+      );
+
+      expect(
+        (await client.loadLogbook(_session)).buddies.map((b) => b.memberId),
+        ['3902893'],
+      );
+    });
+
+    test('a logbook without buddies is not an error', () async {
+      final (client, _) = _clientAnswering(
+        (_) => jsonEncode({
+          'logbook_sites': [_rasIlHobz],
+        }),
+      );
+
+      final logbook = await client.loadLogbook(_session);
+
+      expect(logbook.buddies, isEmpty);
+      expect(logbook.sites, hasLength(1));
     });
   });
 

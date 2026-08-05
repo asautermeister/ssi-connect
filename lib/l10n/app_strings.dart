@@ -168,7 +168,10 @@ abstract class AppStrings {
   String get ssiAccountHint;
   String get signInWithSsi;
   String get diveSites;
+  String get ssiLogbook;
   String knownDiveSites(int count);
+  String knownBuddies(int count);
+  String ssiBuddiesImported(int added);
   String get noSsiAccountConnected;
   String get ssiSignIn;
   String get ssiSignOut;

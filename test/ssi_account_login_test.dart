@@ -8,6 +8,9 @@ import 'package:ssi_connect/ssi/dive_site_repository.dart';
 import 'package:ssi_connect/ssi/dive_sites_controller.dart';
 import 'package:ssi_connect/ssi/ssi_api_client.dart';
 import 'package:ssi_connect/ssi/ssi_api_exceptions.dart';
+import 'package:ssi_connect/ssi/ssi_buddies_controller.dart';
+import 'package:ssi_connect/ssi/ssi_buddy_code.dart';
+import 'package:ssi_connect/ssi/ssi_buddy_repository.dart';
 import 'package:ssi_connect/ssi/ssi_session.dart';
 import 'package:ssi_connect/ssi/ssi_sync_controller.dart';
 
@@ -64,21 +67,45 @@ class _InMemorySites extends DiveSiteRepository {
 
 /// Answers per token, so two accounts can hold different logbooks.
 class _FakeClient extends SsiApiClient {
-  _FakeClient(this.byToken, {this.rejected = const {}});
+  _FakeClient(
+    this.byToken, {
+    this.buddiesByToken = const {},
+    this.rejected = const {},
+  });
 
   final Map<String, List<DiveSite>> byToken;
+  final Map<String, List<SsiBuddyCode>> buddiesByToken;
   final Set<String> rejected;
 
   @override
-  Future<List<DiveSite>> loadLogbookSites(SsiSession session) async {
+  Future<SsiLogbook> loadLogbook(SsiSession session) async {
     if (rejected.contains(session.token)) {
       throw SsiApiException(
         SsiApiErrorType.invalidCredentials,
         'Sitzung abgelaufen',
       );
     }
-    return byToken[session.token] ?? const [];
+    return (
+      sites: byToken[session.token] ?? const [],
+      buddies: buddiesByToken[session.token] ?? const [],
+    );
   }
+}
+
+class _InMemoryBuddies extends SsiBuddyRepository {
+  List<SsiBuddyCode> stored = const [];
+
+  @override
+  Future<List<SsiBuddyCode>> loadAll() async => stored;
+
+  @override
+  Future<void> saveAll(List<SsiBuddyCode> buddies) async => stored = buddies;
+}
+
+Future<SsiBuddiesController> _emptyBuddies() async {
+  final controller = SsiBuddiesController(repository: _InMemoryBuddies());
+  await controller.loadFromStorage();
+  return controller;
 }
 
 DiveSite _site(String id) =>
@@ -219,7 +246,11 @@ void main() {
         }),
       );
 
-      final ok = await sync.syncAll(accounts: accounts, sites: sites);
+      final ok = await sync.syncAll(
+        accounts: accounts,
+        sites: sites,
+        buddies: await _emptyBuddies(),
+      );
 
       expect(ok, isTrue);
       expect(sites.sites.map((s) => s.siteId).toSet(), {'1', '2', '3'});
@@ -249,7 +280,11 @@ void main() {
         ),
       );
 
-      final ok = await sync.syncAll(accounts: accounts, sites: sites);
+      final ok = await sync.syncAll(
+        accounts: accounts,
+        sites: sites,
+        buddies: await _emptyBuddies(),
+      );
 
       expect(ok, isFalse);
       expect(sync.error, contains('Andreas'));
@@ -269,11 +304,171 @@ void main() {
         client: _FakeClient(const {}, rejected: {'stale'}),
       );
 
-      await sync.syncAll(accounts: accounts, sites: await _emptySites());
+      await sync.syncAll(
+        accounts: accounts,
+        sites: await _emptySites(),
+        buddies: await _emptyBuddies(),
+      );
 
       expect(accounts.accounts.single.hasSsiLogin, isFalse);
       // But the number stays - the token expiring says nothing about it.
       expect(accounts.accounts.single.ssiMemberId, '3837926');
+    });
+
+    test('takes the buddies from the logbook too', () async {
+      final accounts = await _accountsWith([
+        _account(
+          'Jan',
+          ssiSession: const SsiSession(email: 'j@x', token: 'tj'),
+          memberId: '3837926',
+        ),
+      ]);
+      final buddies = await _emptyBuddies();
+      final sync = SsiSyncController(
+        client: _FakeClient(
+          const {},
+          buddiesByToken: {
+            'tj': const [
+              SsiBuddyCode(
+                memberId: '3902893',
+                firstName: 'Andreas',
+                lastName: 'Sautermeister',
+                leaderNumber: '110890',
+              ),
+            ],
+          },
+        ),
+      );
+
+      await sync.syncAll(
+        accounts: accounts,
+        sites: await _emptySites(),
+        buddies: buddies,
+      );
+
+      expect(buddies.buddies.single.memberId, '3902893');
+      // The professional number rides along - it is the same field a
+      // scanned code carries.
+      expect(buddies.buddies.single.leaderNumber, '110890');
+      expect(sync.lastBuddyAddedCount, 1);
+    });
+
+    test('someone who has an account here is not also a buddy', () async {
+      // Two family members on each other's buddy lists would otherwise
+      // appear twice: once under their account, once in the buddy list.
+      final accounts = await _accountsWith([
+        _account(
+          'Jan',
+          ssiSession: const SsiSession(email: 'j@x', token: 'tj'),
+          memberId: '3837926',
+        ),
+        _account('Andreas', memberId: '3902893'),
+      ]);
+      final buddies = await _emptyBuddies();
+      final sync = SsiSyncController(
+        client: _FakeClient(
+          const {},
+          buddiesByToken: {
+            'tj': const [
+              SsiBuddyCode(
+                memberId: '3902893',
+                firstName: 'Andreas',
+                lastName: 'Sautermeister',
+              ),
+            ],
+          },
+        ),
+      );
+
+      await sync.syncAll(
+        accounts: accounts,
+        sites: await _emptySites(),
+        buddies: buddies,
+      );
+
+      expect(buddies.buddies, isEmpty);
+      // Instead the entry gives the account the name that a login does not
+      // report.
+      final andreas = accounts.accounts.firstWhere((a) => a.id == 'Andreas');
+      expect(andreas.ssiFullName, 'Andreas Sautermeister');
+    });
+
+    test('a name already on file is not overwritten', () async {
+      final accounts = await _accountsWith([
+        GarminAccount(
+          id: 'Andreas',
+          email: 'a@example.com',
+          displayName: 'Andreas',
+          session: const GarminSession(
+            accessToken: 'a',
+            refreshToken: 'r',
+            diClientId: 'c',
+          ),
+          ssiMemberId: '3902893',
+          ssiFirstName: 'Andi',
+          ssiSession: const SsiSession(email: 'a@x', token: 'ta'),
+        ),
+        _account(
+          'Jan',
+          ssiSession: const SsiSession(email: 'j@x', token: 'tj'),
+          memberId: '3837926',
+        ),
+      ]);
+      final sync = SsiSyncController(
+        client: _FakeClient(
+          const {},
+          buddiesByToken: {
+            'tj': const [
+              SsiBuddyCode(memberId: '3902893', firstName: 'Andreas'),
+            ],
+          },
+        ),
+      );
+
+      await sync.syncAll(
+        accounts: accounts,
+        sites: await _emptySites(),
+        buddies: await _emptyBuddies(),
+      );
+
+      // Somebody chose "Andi" on this device; a stranger's spelling does
+      // not get to replace it.
+      final andreas = accounts.accounts.firstWhere((a) => a.id == 'Andreas');
+      expect(andreas.ssiFirstName, 'Andi');
+    });
+
+    test('the same buddy in two logbooks is stored once', () async {
+      final accounts = await _accountsWith([
+        _account(
+          'Jan',
+          ssiSession: const SsiSession(email: 'j@x', token: 'tj'),
+        ),
+        _account(
+          'Eva',
+          ssiSession: const SsiSession(email: 'e@x', token: 'te'),
+        ),
+      ]);
+      final buddies = await _emptyBuddies();
+      final sync = SsiSyncController(
+        client: _FakeClient(
+          const {},
+          buddiesByToken: {
+            'tj': const [SsiBuddyCode(memberId: '3902893')],
+            'te': const [SsiBuddyCode(memberId: '3902893')],
+          },
+        ),
+      );
+
+      await sync.syncAll(
+        accounts: accounts,
+        sites: await _emptySites(),
+        buddies: buddies,
+      );
+
+      expect(buddies.buddies, hasLength(1));
+      expect(sync.lastBuddyAddedCount, 1);
+      // Both logbooks named them, and that is what was seen.
+      expect(sync.lastBuddyCount, 2);
     });
 
     test('does nothing when nobody is connected', () async {
@@ -281,7 +476,11 @@ void main() {
       final sync = SsiSyncController(client: _FakeClient(const {}));
 
       expect(
-        await sync.syncAll(accounts: accounts, sites: await _emptySites()),
+        await sync.syncAll(
+          accounts: accounts,
+          sites: await _emptySites(),
+          buddies: await _emptyBuddies(),
+        ),
         isFalse,
       );
       expect(sync.error, isNull);
