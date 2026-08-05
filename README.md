@@ -29,25 +29,26 @@ Kamera der SSI-App scannt.
 - **SSI-Anmeldung pro Account**: wer mag, meldet sich bei seinem Garmin-Account zusätzlich bei
   SSI an. Die SSI-Mitgliedsnummer kommt dann direkt von SSI statt aus einem gescannten
   QR-Code – Scannen und Eintippen bleiben für alle, die kein SSI-Konto haben
-- **Tauchplätze und Buddys aus dem SSI-Logbuch**: dieselbe Anmeldung holt jeden Platz, an
-  dem man laut SSI schon getaucht ist, mit Nummer, Name und Position auf das Gerät – und
-  die Mittaucher gleich mit. Die Plätze gelten geräteweit, die Anmeldungen pro Person –
-  ein Tauchplatz ist ein Ort, und den teilt die Familie. Von den Buddy-Einträgen wird nur
-  übernommen, was auch in einem gescannten Buddy-QR-Code steht (Nummer, Name, E-Mail,
-  SSI Professional Nr.); Geburtsdatum, Wohnort, Telefon und Foto werden verworfen
-  Danach erkennt die App den Platz an der Position des Tauchgangs wieder und schlägt ihn vor;
-  bestätigt landet er als `site:` im QR-Code. Liegen mehrere Plätze im Umkreis, werden alle
+- **Tauchplätze aus dem SSI-Logbuch**: dieselbe Anmeldung holt jeden Platz, an dem man laut
+  SSI schon getaucht ist, mit Nummer, Name und Position auf das Gerät. Danach erkennt die App
+  den Platz an der Position des Tauchgangs wieder und schlägt ihn vor; bestätigt landet er als
+  `site:` im QR-Code. Liegen mehrere Plätze im Umkreis, werden alle nach Entfernung sortiert
   angeboten – vorgeschlagen wird immer, gesetzt nie von allein. Ein Platz lässt sich weiterhin
-  von Hand zuordnen (Nummer eintippen oder die Adresse der Platzseite einfügen)
+  von Hand zuordnen (Nummer eintippen oder die Adresse der Platzseite einfügen).
+  Die Plätze gelten geräteweit, die Anmeldungen pro Person – ein Tauchplatz ist ein Ort, und
+  den teilt die Familie. Unter „Einstellungen → SSI-Logbuch" stehen die bekannten Plätze,
+  die verbundenen Konten und der Zeitpunkt des letzten Abgleichs
 - **Tauchtag am Stück übertragen**: mehrere Tauchgänge auswählen (ein Tippen wählt einen ganzen
   Tauchtag) und als Folge von QR-Codes durchblättern. Das Handy mit der SSI-App bleibt liegen –
   scannen, „Weiter", scannen
 - **SSI Buddy**: eine Liste aller SSI-Codes, die das Gerät kennt – die Accounts mit hinterlegter
-  Nummer, zusätzlich Mittaucher aus dem SSI-Logbuch oder gescannt (bei Profis inklusive
-  SSI Professional Nr.) und unter
-  „Tauchbasen" die Basen selbst. Jeder Eintrag lässt sich wieder als QR-Code anzeigen, damit ein
-  anderes Gerät ihn einlesen kann; der Scanner erkennt selbst, ob ein Buddy- oder ein
-  Basis-Code vor der Kamera ist
+  Nummer, die Mittaucher (aus dem SSI-Logbuch übernommen oder abgescannt, bei Profis inklusive
+  SSI Professional Nr.) und unter „Tauchbasen" die Basen selbst. Jeder Eintrag lässt sich wieder
+  als QR-Code anzeigen, damit ein anderes Gerät ihn einlesen kann; der Scanner erkennt selbst,
+  ob ein Buddy- oder ein Basis-Code vor der Kamera ist. Aus dem Logbuch übernommen wird nur,
+  was auch in einem gescannten Buddy-QR-Code steht – Nummer, Name, E-Mail, SSI Professional
+  Nr.; Geburtsdatum, Wohnort, Telefonnummer und Foto stehen zwar in der Antwort, werden aber
+  verworfen. Wer hier schon einen Account hat, landet nicht zusätzlich als Buddy in der Liste
 - **Deutsch und Englisch**, unter „Einstellungen" umschaltbar oder der Systemsprache folgend
 - **Helles oder dunkles Design**, ebenfalls dort umschaltbar oder der Systemeinstellung
   folgend. Der QR-Code bleibt immer hell – ein dunkler Code ist für Kameras unzuverlässig
@@ -55,16 +56,18 @@ Kamera der SSI-App scannt.
   (z.B. Original-FIT-Export aus Garmin Connect Web)
 - **Offline nutzbar**: die zuletzt geladenen Tauchgänge liegen auf dem Gerät und stehen auch
   ohne Netz zur Verfügung – mit sichtbarem Hinweis, von wann sie sind
-- Zugangsdaten *und* die zwischengespeicherten Tauchgänge liegen verschlüsselt im
+- Zugangsdaten, SSI-Token *und* die zwischengespeicherten Tauchgänge liegen verschlüsselt im
   Schlüsselspeicher des Geräts (Android Keystore / iOS Keychain). Der Zwischenspeicher lässt
   sich pro Account jederzeit löschen und verschwindet automatisch mit dem Account
 
 ## Wie benutzt man es
 
 1. Auf dem Tablet einen oder mehrere Garmin-Accounts hinzufügen
-2. Tauchgang aus der Liste auswählen, Werte in der Detailansicht prüfen
-3. "QR-Code erzeugen" antippen
-4. Mit einem zweiten Gerät (z.B. dem Handy) die SSI-App öffnen, "QR-Code scannen" wählen und
+2. Optional: beim Account unter „SSI-Identität" mit dem SSI-Konto anmelden – das trägt die
+   Mitgliedsnummer ein und holt Tauchplätze und Buddys aus dem Logbuch
+3. Tauchgang aus der Liste auswählen, Werte in der Detailansicht prüfen
+4. "QR-Code erzeugen" antippen
+5. Mit einem zweiten Gerät (z.B. dem Handy) die SSI-App öffnen, "QR-Code scannen" wählen und
    den Code vom Tablet-Bildschirm abscannen
 
 Der QR-Code muss von einem *anderen* Gerät gescannt werden als dem, auf dem er angezeigt wird –
