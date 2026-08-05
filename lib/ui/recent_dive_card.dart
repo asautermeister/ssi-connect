@@ -19,9 +19,18 @@ import 'widgets/dive_type_icon.dart';
 /// Shared by the start screen's short list and the full list behind it, so
 /// the same dive looks the same in both.
 class RecentDiveCard extends StatelessWidget {
-  const RecentDiveCard({super.key, required this.entry});
+  const RecentDiveCard({
+    super.key,
+    required this.entry,
+    this.inSsiLogbook = false,
+  });
 
   final RecentDive entry;
+
+  /// Whether this dive was found in the SSI logbook of the account it
+  /// belongs to. Worked out by the list, which can keep each account's
+  /// dives against that account's logbook.
+  final bool inSsiLogbook;
 
   @override
   Widget build(BuildContext context) {
@@ -55,8 +64,9 @@ class RecentDiveCard extends StatelessWidget {
                         style: theme.textTheme.titleMedium,
                       ),
                     ),
-                    if (context.watch<ExportedDivesController>().isExported(
-                      dive.id,
+                    if (context.watch<ExportedDivesController>().isTransferred(
+                      dive,
+                      inLogbook: inSsiLogbook,
                     )) ...[
                       const SizedBox(width: AppSpacing.sm),
                       const DiveTransferredMark(),

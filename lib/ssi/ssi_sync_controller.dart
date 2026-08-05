@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import '../accounts/accounts_controller.dart';
+import '../dives/exported_dives_controller.dart';
 import 'dive_sites_controller.dart';
 import 'ssi_api_client.dart';
 import 'ssi_api_exceptions.dart';
@@ -110,6 +111,7 @@ class SsiSyncController extends ChangeNotifier {
     required AccountsController accounts,
     required DiveSitesController sites,
     required SsiBuddiesController buddies,
+    required ExportedDivesController exported,
   }) async {
     final connected = accounts.accounts.where((a) => a.hasSsiLogin).toList();
     if (connected.isEmpty) return false;
@@ -128,12 +130,18 @@ class SsiSyncController extends ChangeNotifier {
           siteAdded += await sites.addAllNew(logbook.sites);
           buddyTotal += logbook.buddies.length;
           harvested.addAll(logbook.buddies);
+          // Kept per account: a logbook may only ever be matched against
+          // its own person's dives.
+          await exported.setLogbook(account.id, logbook.dives);
         } on SsiApiException catch (e) {
           failures.add('${account.displayName}: ${e.message}');
           // A rejected token would fail the same way every time, and the
           // message would never change. Drop it and let them sign in again.
           if (e.type == SsiApiErrorType.invalidCredentials) {
             await accounts.clearSsiSession(account.id);
+            // Without a login there is nothing keeping it current, and a
+            // stale logbook would go on ticking dives.
+            await exported.forgetLogbook(account.id);
           }
         }
       }

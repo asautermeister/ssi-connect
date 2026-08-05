@@ -67,8 +67,8 @@ class QrScreen extends StatelessWidget {
       // looking at the moment the SSI app has taken the code.
       footer: DiveTransferredCheckbox(
         label: s.transferredToSsi,
-        value: exported.isExported(dive.id),
-        onChanged: (value) => exported.setExported(dive.id, value),
+        value: exported.isTransferred(dive),
+        onChanged: (value) => exported.setTransferred(dive.id, value),
       ),
     );
   }

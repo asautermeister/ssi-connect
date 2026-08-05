@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../accounts/accounts_controller.dart';
 import '../l10n/app_strings.dart';
+import '../dives/exported_dives_controller.dart';
 import '../ssi/dive_sites_controller.dart';
 import '../ssi/ssi_buddies_controller.dart';
 import '../ssi/ssi_sync_controller.dart';
@@ -93,6 +94,7 @@ class SsiSitesSection extends StatelessWidget {
                           accounts: accounts,
                           sites: sites,
                           buddies: buddies,
+                          exported: context.read<ExportedDivesController>(),
                         ),
                 ),
               ],

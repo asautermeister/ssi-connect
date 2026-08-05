@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../accounts/models/account_color.dart';
 import '../accounts/models/garmin_account.dart';
 import '../dives/dive_loader.dart';
+import '../dives/exported_dives_controller.dart';
 import '../dives/recent_dives_controller.dart';
 import '../garmin/garmin_auth_exceptions.dart';
 import '../models/dive.dart';
@@ -103,6 +104,7 @@ class _DiveListScreenState extends State<DiveListScreen> {
           dives: load.dives,
           diver: widget.account.ssiIdentity,
           accountColor: widget.account.color,
+          accountId: widget.account.id,
           // Only worth saying when the dives on screen aren't current.
           header: load.isFromCache
               ? Padding(
@@ -151,6 +153,7 @@ class DiveList extends StatelessWidget {
     required this.dives,
     this.diver,
     this.accountColor,
+    this.accountId,
     this.header,
   });
 
@@ -163,6 +166,10 @@ class DiveList extends StatelessWidget {
   /// Colour marking whose dives these are. Null for FIT imports.
   final AccountColor? accountColor;
 
+  /// Whose dives these are, so they can be matched against that account's
+  /// SSI logbook. Null for a FIT import, which belongs to nobody.
+  final String? accountId;
+
   /// Optional notice above the list, e.g. that these dives came from the
   /// cache. Scrolls with the list rather than sticking, so it doesn't eat
   /// screen height on a long list.
@@ -174,6 +181,12 @@ class DiveList extends StatelessWidget {
         .map((d) => d.maxDepthMeters ?? 0)
         .fold<double>(0, (a, b) => a > b ? a : b);
     final header = this.header;
+    // Matched once for the whole list rather than per row: a logbook entry
+    // must only be able to account for one dive.
+    final inLogbook = context.watch<ExportedDivesController>().matchedIn(
+      accountId,
+      dives,
+    );
 
     return ListView.separated(
       padding: const EdgeInsets.fromLTRB(
@@ -189,11 +202,13 @@ class DiveList extends StatelessWidget {
           if (index == 0) return header;
           index -= 1;
         }
+        final dive = dives[index];
         return DiveListTile(
-          dive: dives[index],
+          dive: dive,
           maxDepthInList: maxDepth,
           diver: diver,
           accountColor: accountColor,
+          inSsiLogbook: inLogbook.contains(dive.id),
         );
       },
     );

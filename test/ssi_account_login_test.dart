@@ -4,16 +4,21 @@ import 'package:ssi_connect/accounts/account_repository.dart';
 import 'package:ssi_connect/accounts/accounts_controller.dart';
 import 'package:ssi_connect/accounts/models/garmin_account.dart';
 import 'package:ssi_connect/garmin/models/garmin_session.dart';
+import 'package:ssi_connect/models/dive.dart';
 import 'package:ssi_connect/ssi/dive_site.dart';
 import 'package:ssi_connect/ssi/dive_site_repository.dart';
+import 'package:ssi_connect/dives/exported_dives_controller.dart';
 import 'package:ssi_connect/ssi/dive_sites_controller.dart';
 import 'package:ssi_connect/ssi/ssi_api_client.dart';
 import 'package:ssi_connect/ssi/ssi_api_exceptions.dart';
 import 'package:ssi_connect/ssi/ssi_buddies_controller.dart';
 import 'package:ssi_connect/ssi/ssi_buddy_code.dart';
 import 'package:ssi_connect/ssi/ssi_buddy_repository.dart';
+import 'package:ssi_connect/ssi/ssi_logged_dive.dart';
 import 'package:ssi_connect/ssi/ssi_session.dart';
 import 'package:ssi_connect/ssi/ssi_sync_controller.dart';
+
+import 'support/exported_dives.dart';
 
 GarminAccount _account(
   String name, {
@@ -71,11 +76,13 @@ class _FakeClient extends SsiApiClient {
   _FakeClient(
     this.byToken, {
     this.buddiesByToken = const {},
+    this.divesByToken = const {},
     this.rejected = const {},
   });
 
   final Map<String, List<DiveSite>> byToken;
   final Map<String, List<SsiBuddyCode>> buddiesByToken;
+  final Map<String, List<SsiLoggedDive>> divesByToken;
   final Set<String> rejected;
 
   @override
@@ -89,6 +96,7 @@ class _FakeClient extends SsiApiClient {
     return (
       sites: byToken[session.token] ?? const [],
       buddies: buddiesByToken[session.token] ?? const [],
+      dives: divesByToken[session.token] ?? const [],
     );
   }
 }
@@ -148,6 +156,9 @@ class _FakeStorage extends FlutterSecureStorage {
     WindowsOptions? wOptions,
   }) async => values.remove(key);
 }
+
+ExportedDivesController _exported() =>
+    ExportedDivesController(repository: InMemoryExportedDives());
 
 Future<SsiBuddiesController> _emptyBuddies() async {
   final controller = SsiBuddiesController(repository: _InMemoryBuddies());
@@ -298,6 +309,7 @@ void main() {
         accounts: accounts,
         sites: sites,
         buddies: await _emptyBuddies(),
+        exported: _exported(),
       );
 
       expect(ok, isTrue);
@@ -333,6 +345,7 @@ void main() {
         accounts: accounts,
         sites: sites,
         buddies: await _emptyBuddies(),
+        exported: _exported(),
       );
 
       expect(ok, isFalse);
@@ -358,6 +371,7 @@ void main() {
         accounts: accounts,
         sites: await _emptySites(),
         buddies: await _emptyBuddies(),
+        exported: _exported(),
       );
 
       expect(accounts.accounts.single.hasSsiLogin, isFalse);
@@ -395,6 +409,7 @@ void main() {
         accounts: accounts,
         sites: await _emptySites(),
         buddies: buddies,
+        exported: _exported(),
       );
 
       expect(buddies.buddies.single.memberId, '3902893');
@@ -436,6 +451,7 @@ void main() {
         accounts: accounts,
         sites: await _emptySites(),
         buddies: buddies,
+        exported: _exported(),
       );
 
       expect(buddies.buddies, isEmpty);
@@ -482,6 +498,7 @@ void main() {
         accounts: accounts,
         sites: await _emptySites(),
         buddies: await _emptyBuddies(),
+        exported: _exported(),
       );
 
       // Somebody chose "Andi" on this device; a stranger's spelling does
@@ -517,6 +534,7 @@ void main() {
         accounts: accounts,
         sites: await _emptySites(),
         buddies: buddies,
+        exported: _exported(),
       );
 
       expect(buddies.buddies, hasLength(1));
@@ -543,6 +561,7 @@ void main() {
         accounts: accounts,
         sites: await _emptySites(),
         buddies: await _emptyBuddies(),
+        exported: _exported(),
       );
 
       expect(sync.lastSyncAt, isNotNull);
@@ -579,10 +598,58 @@ void main() {
         accounts: accounts,
         sites: await _emptySites(),
         buddies: await _emptyBuddies(),
+        exported: _exported(),
       );
 
       expect(sync.lastSyncAt, isNull);
       expect(storage.values, isEmpty);
+    });
+
+    test("keeps each account's logbook to itself", () async {
+      final accounts = await _accountsWith([
+        _account(
+          'Jan',
+          ssiSession: const SsiSession(email: 'j@x', token: 'tj'),
+        ),
+      ]);
+      final exported = ExportedDivesController(
+        repository: InMemoryExportedDives(),
+      );
+      await exported.loadFromStorage();
+      final sync = SsiSyncController(
+        storage: _FakeStorage(),
+        client: _FakeClient(
+          const {},
+          divesByToken: {
+            'tj': [
+              SsiLoggedDive(
+                dateTime: DateTime(2023, 8, 12, 12, 54),
+                depthMeters: 13,
+              ),
+            ],
+          },
+        ),
+      );
+
+      await sync.syncAll(
+        accounts: accounts,
+        sites: await _emptySites(),
+        buddies: await _emptyBuddies(),
+        exported: exported,
+      );
+
+      final dive = Dive(
+        id: 'd',
+        dateTime: DateTime(2023, 8, 12, 12, 54),
+        maxDepthMeters: 13,
+        avgDepthMeters: null,
+        waterTemperatureCelsius: null,
+        duration: const Duration(minutes: 19),
+        locationName: null,
+      );
+      expect(exported.matchedIn('Jan', [dive]), {'d'});
+      // The same dive under somebody else's account is not theirs to tick.
+      expect(exported.matchedIn('Eva', [dive]), isEmpty);
     });
 
     test('does nothing when nobody is connected', () async {
@@ -597,6 +664,7 @@ void main() {
           accounts: accounts,
           sites: await _emptySites(),
           buddies: await _emptyBuddies(),
+          exported: _exported(),
         ),
         isFalse,
       );

@@ -101,9 +101,9 @@ class _DiveQrBatchScreenState extends State<DiveQrBatchScreen> {
                           // costs a scan too many.
                           footer: DiveTransferredCheckbox(
                             label: s.transferredToSsi,
-                            value: exported.isExported(dive.id),
+                            value: exported.isTransferred(dive),
                             onChanged: (value) =>
-                                exported.setExported(dive.id, value),
+                                exported.setTransferred(dive.id, value),
                           ),
                         );
                       },

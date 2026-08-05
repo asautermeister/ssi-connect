@@ -8,10 +8,15 @@ import '../net/dio_errors.dart';
 import 'dive_site.dart';
 import 'ssi_api_exceptions.dart';
 import 'ssi_buddy_code.dart';
+import 'ssi_logged_dive.dart';
 import 'ssi_session.dart';
 
 /// What one `get_divelog` call yields that this app has a use for.
-typedef SsiLogbook = ({List<DiveSite> sites, List<SsiBuddyCode> buddies});
+typedef SsiLogbook = ({
+  List<DiveSite> sites,
+  List<SsiBuddyCode> buddies,
+  List<SsiLoggedDive> dives,
+});
 
 /// Reads the user's own SSI logbook through the API that SSI's mobile app
 /// uses.
@@ -96,13 +101,16 @@ class SsiApiClient {
     );
   }
 
-  /// The account's logbook, reduced to the two things this app can use:
-  /// the dive sites it has been to, and the buddies on file.
+  /// The account's logbook, reduced to the three things this app can use:
+  /// the dive sites it has been to, the buddies on file, and the dives
+  /// themselves.
   ///
   /// The sites are the point of the integration - those numbers are exactly
   /// what the QR code's `site:` field wants, and they cannot be derived
-  /// from coordinates. The buddies come along in the same answer, and carry
-  /// the same fields a scanned buddy QR code does.
+  /// from coordinates. The buddies come along in the same answer and carry
+  /// the same fields a scanned buddy QR code does. The dives are kept only
+  /// as date, time and depth, which is enough to recognise which of this
+  /// device's dives have already arrived here.
   Future<SsiLogbook> loadLogbook(SsiSession session) async {
     final data = await _post({
       'what': 'get_divelog',
@@ -132,7 +140,13 @@ class SsiApiClient {
       if (buddy != null) buddies.add(buddy);
     }
 
-    return (sites: sites, buddies: buddies);
+    final dives = <SsiLoggedDive>[];
+    for (final entry in _entriesOf(data['logbook_details'])) {
+      final logged = _loggedDiveFromEntry(entry);
+      if (logged != null) dives.add(logged);
+    }
+
+    return (sites: sites, buddies: buddies, dives: dives);
   }
 
   /// SSI hands these back as a list, but has been seen keying them by id
@@ -325,4 +339,48 @@ String? _textOf(Object? raw) {
   if (raw is! String) return null;
   final text = raw.trim();
   return text.isEmpty ? null : text;
+}
+
+/// Turns one `logbook_details` entry into an [SsiLoggedDive], or null when
+/// it cannot be placed in time.
+///
+/// `odin_user_log_datetime` ("2023-08-12 12:54") is the entry SSI itself
+/// composes; the separate `_date` and `_entry_time` fields are the fallback
+/// for an answer that omits it. Neither carries a timezone - this is the
+/// local entry time, which is what makes it comparable with Garmin's
+/// `startTimeLocal`.
+SsiLoggedDive? _loggedDiveFromEntry(Map<String, dynamic> entry) {
+  if (entry['odin_user_log_deleted'] == 1) return null;
+
+  final dateTime =
+      _parseLocal(entry['odin_user_log_datetime']) ??
+      _parseLocal(
+        '${entry['odin_user_log_date']} ${entry['odin_user_log_entry_time']}',
+      );
+  if (dateTime == null) return null;
+
+  return SsiLoggedDive(
+    dateTime: dateTime,
+    depthMeters: (entry['odin_user_log_depth_m'] as num?)?.toDouble(),
+  );
+}
+
+/// "2023-08-12 12:54" as a local DateTime, or null.
+///
+/// [DateTime.parse] wants seconds, and SSI writes minutes; padding is
+/// cheaper than a second date library.
+DateTime? _parseLocal(Object? raw) {
+  if (raw is! String) return null;
+  final text = raw.trim();
+  final match = RegExp(
+    r'^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})',
+  ).firstMatch(text);
+  if (match == null) return null;
+  return DateTime(
+    int.parse(match.group(1)!),
+    int.parse(match.group(2)!),
+    int.parse(match.group(3)!),
+    int.parse(match.group(4)!),
+    int.parse(match.group(5)!),
+  );
 }

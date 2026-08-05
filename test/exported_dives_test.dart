@@ -25,7 +25,7 @@ Dive _dive(String id) => Dive(
 Future<ExportedDivesController> _pump(
   WidgetTester tester,
   Widget child, {
-  Set<String> exported = const {},
+  Map<String, bool> exported = const {},
 }) async {
   tester.view.physicalSize = const Size(1000, 2000);
   tester.view.devicePixelRatio = 1.0;
@@ -64,34 +64,34 @@ void main() {
       final controller = ExportedDivesController(repository: repository);
       await controller.loadFromStorage();
 
-      await controller.setExported('a1', true);
+      await controller.setTransferred('a1', true);
 
-      expect(controller.isExported('a1'), isTrue);
-      expect(repository.stored, {'a1'});
+      expect(controller.isTransferred(_dive('a1')), isTrue);
+      expect(repository.stored, {'a1': true});
     });
 
     test('can be taken back', () async {
       // Ticking the wrong dive must not need a trip through the settings to
       // undo.
-      final repository = InMemoryExportedDives({'a1'});
+      final repository = InMemoryExportedDives({'a1': true});
       final controller = ExportedDivesController(repository: repository);
       await controller.loadFromStorage();
 
-      await controller.setExported('a1', false);
+      await controller.setTransferred('a1', false);
 
-      expect(controller.isExported('a1'), isFalse);
-      expect(repository.stored, isEmpty);
+      expect(controller.isTransferred(_dive('a1')), isFalse);
+      expect(repository.stored, {'a1': false});
     });
 
     test('setting what is already set changes nothing', () async {
       final controller = ExportedDivesController(
-        repository: InMemoryExportedDives({'a1'}),
+        repository: InMemoryExportedDives({'a1': true}),
       );
       await controller.loadFromStorage();
 
       var notifications = 0;
       controller.addListener(() => notifications++);
-      await controller.setExported('a1', true);
+      await controller.setTransferred('a1', true);
 
       expect(notifications, 0);
     });
@@ -100,12 +100,12 @@ void main() {
       final repository = InMemoryExportedDives();
       final first = ExportedDivesController(repository: repository);
       await first.loadFromStorage();
-      await first.setExported('a1', true);
+      await first.setTransferred('a1', true);
 
       final second = ExportedDivesController(repository: repository);
       await second.loadFromStorage();
 
-      expect(second.isExported('a1'), isTrue);
+      expect(second.isTransferred(_dive('a1')), isTrue);
     });
   });
 
@@ -113,12 +113,12 @@ void main() {
     testWidgets('is off until it is set, and sticks', (tester) async {
       final controller = await _pump(tester, QrScreen(dive: _dive('a1')));
 
-      expect(controller.isExported('a1'), isFalse);
+      expect(controller.isTransferred(_dive('a1')), isFalse);
 
       await tester.tap(find.text('In SSI übernommen'));
       await tester.pumpAndSettle();
 
-      expect(controller.isExported('a1'), isTrue);
+      expect(controller.isTransferred(_dive('a1')), isTrue);
     });
 
     testWidgets('showing a code does not tick it', (tester) async {
@@ -126,7 +126,7 @@ void main() {
       // that ticks itself is exactly the one that would then be skipped.
       final controller = await _pump(tester, QrScreen(dive: _dive('a1')));
 
-      expect(controller.isExported('a1'), isFalse);
+      expect(controller.isTransferred(_dive('a1')), isFalse);
       expect(find.byType(DiveTransferredCheckbox), findsOneWidget);
     });
   });
@@ -141,7 +141,7 @@ void main() {
             DiveListTile(dive: _dive('a2'), maxDepthInList: 28),
           ],
         ),
-        exported: {'a1'},
+        exported: const {'a1': true},
       );
 
       expect(find.byType(DiveTransferredMark), findsOneWidget);
@@ -155,7 +155,7 @@ void main() {
 
       expect(find.byType(DiveTransferredMark), findsNothing);
 
-      await controller.setExported('a1', true);
+      await controller.setTransferred('a1', true);
       await tester.pumpAndSettle();
 
       expect(find.byType(DiveTransferredMark), findsOneWidget);
