@@ -15,6 +15,7 @@ class QrScanSurface extends StatelessWidget {
     required this.payload,
     required this.caption,
     required this.hint,
+    this.footer,
   });
 
   final String payload;
@@ -25,6 +26,11 @@ class QrScanSurface extends StatelessWidget {
 
   /// What to do with it, below the code.
   final String hint;
+
+  /// Optional control under the hint - the "carried over into SSI" tick
+  /// belongs here, where the person is looking the moment the SSI app has
+  /// swallowed the code.
+  final Widget? footer;
 
   @override
   Widget build(BuildContext context) {
@@ -62,15 +68,88 @@ class QrScanSurface extends StatelessWidget {
             AppSpacing.xl,
             AppSpacing.xl,
           ),
-          child: Text(
-            hint,
-            textAlign: TextAlign.center,
-            style: theme.textTheme.bodySmall?.copyWith(color: palette.inkMuted),
+          child: Column(
+            children: [
+              Text(
+                hint,
+                textAlign: TextAlign.center,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: palette.inkMuted,
+                ),
+              ),
+              if (footer case final footer?) ...[
+                const SizedBox(height: AppSpacing.sm),
+                footer,
+              ],
+            ],
           ),
         ),
       ],
     );
   }
+}
+
+/// "Carried over into SSI", as a control that sits under a QR code.
+///
+/// A checkbox rather than a button: it says what the state *is*, and it can
+/// be taken back. Someone who ticks the wrong dive should not have to go
+/// looking for where to undo it.
+class DiveTransferredCheckbox extends StatelessWidget {
+  const DiveTransferredCheckbox({
+    super.key,
+    required this.label,
+    required this.value,
+    required this.onChanged,
+  });
+
+  final String label;
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return InkWell(
+      onTap: () => onChanged(!value),
+      borderRadius: BorderRadius.circular(AppRadius.card),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.md,
+          vertical: AppSpacing.sm,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              value ? Icons.check_circle : Icons.circle_outlined,
+              size: 22,
+              color: value ? _transferredGreen : theme.colorScheme.outline,
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            Text(label, style: theme.textTheme.titleSmall),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// The one green in the app. Deliberately not the accent colour: this says
+/// "done", and it has to read that way on the white scan surface as well as
+/// in a dark dive list.
+const _transferredGreen = Color(0xFF2E7D32);
+
+/// The tick as it appears next to a dive in a list - same colour, same
+/// icon, no label, so the QR screen and the list say the same thing.
+class DiveTransferredMark extends StatelessWidget {
+  const DiveTransferredMark({super.key, this.size = 16});
+
+  final double size;
+
+  @override
+  Widget build(BuildContext context) =>
+      Icon(Icons.check_circle, size: size, color: _transferredGreen);
 }
 
 /// Full-screen QR code for another device's camera.
@@ -87,12 +166,14 @@ class QrDisplayScreen extends StatelessWidget {
     required this.payload,
     required this.caption,
     required this.hint,
+    this.footer,
   });
 
   final String title;
   final String payload;
   final String caption;
   final String hint;
+  final Widget? footer;
 
   @override
   Widget build(BuildContext context) {
@@ -107,6 +188,7 @@ class QrDisplayScreen extends StatelessWidget {
               payload: payload,
               caption: caption,
               hint: hint,
+              footer: footer,
             ),
           ),
         ),

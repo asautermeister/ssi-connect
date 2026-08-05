@@ -7,6 +7,8 @@ import 'package:ssi_connect/models/dive_type.dart';
 import 'package:ssi_connect/ui/dive_list_tile.dart';
 import 'package:ssi_connect/ui/theme/app_theme.dart';
 import 'package:ssi_connect/ui/widgets/dive_type_icon.dart';
+import 'support/exported_dives.dart';
+import 'package:provider/provider.dart';
 
 Dive _dive({
   double? maxDepth,
@@ -31,17 +33,20 @@ Dive _dive({
 
 Future<void> _pump(WidgetTester tester, Widget child) async {
   await tester.pumpWidget(
-    MaterialApp(
-      locale: const Locale('de'),
-      localizationsDelegates: const [
-        AppStrings.delegate,
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-      ],
-      supportedLocales: AppStrings.supportedLocales,
-      theme: AppTheme.light(),
-      home: Scaffold(body: child),
+    MultiProvider(
+      providers: [exportedDivesProvider()],
+      child: MaterialApp(
+        locale: const Locale('de'),
+        localizationsDelegates: const [
+          AppStrings.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: AppStrings.supportedLocales,
+        theme: AppTheme.light(),
+        home: Scaffold(body: child),
+      ),
     ),
   );
   // The texts are loaded by a delegate, so the first frame is still empty.

@@ -197,6 +197,7 @@ abstract class AppStrings {
   String get scanWithSsiApp;
   String get qrHintSingle;
   String get qrHintBatch;
+  String get transferredToSsi;
   String get back;
   String get next;
   String get done;

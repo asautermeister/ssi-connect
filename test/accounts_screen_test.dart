@@ -23,6 +23,7 @@ import 'package:ssi_connect/ssi/ssi_sync_controller.dart';
 import 'package:ssi_connect/ui/accounts_screen.dart';
 import 'package:ssi_connect/ui/theme/app_theme.dart';
 import 'package:ssi_connect/ui/widgets/app_card.dart';
+import 'support/exported_dives.dart';
 
 class _InMemoryAccounts extends AccountRepository {
   _InMemoryAccounts(this.stored);
@@ -142,6 +143,7 @@ Future<void> _pump(
         ChangeNotifierProvider.value(value: accountsController),
         ChangeNotifierProvider.value(value: buddies),
         ChangeNotifierProvider.value(value: recent),
+        exportedDivesProvider(),
         // The SSI identity screen offers signing in to SSI, which needs
         // both of these; the sites land device-wide rather than on the
         // account.

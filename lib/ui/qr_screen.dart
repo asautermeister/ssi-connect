@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../l10n/app_strings.dart';
 
+import '../dives/exported_dives_controller.dart';
 import '../models/dive.dart';
 import '../ssi/dive_site.dart';
 import '../ssi/ssi_buddy_code.dart';
@@ -51,6 +53,8 @@ class QrScreen extends StatelessWidget {
       );
     }
 
+    final exported = context.watch<ExportedDivesController>();
+
     return QrDisplayScreen(
       title: s.scanWithSsiApp,
       payload: payload,
@@ -59,6 +63,13 @@ class QrScreen extends StatelessWidget {
           '${Fmt.meters(dive.maxDepthMeters)} m · '
           '${Fmt.minutes(dive.duration)} min',
       hint: s.qrHintSingle,
+      // Ticked here rather than on the way out: this is the screen you are
+      // looking at the moment the SSI app has taken the code.
+      footer: DiveTransferredCheckbox(
+        label: s.transferredToSsi,
+        value: exported.isExported(dive.id),
+        onChanged: (value) => exported.setExported(dive.id, value),
+      ),
     );
   }
 }

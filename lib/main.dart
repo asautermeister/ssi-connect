@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import 'accounts/accounts_controller.dart';
 import 'dives/dive_loader.dart';
+import 'dives/exported_dives_controller.dart';
 import 'l10n/app_strings.dart';
 import 'dives/recent_dives_controller.dart';
 import 'settings/settings_controller.dart';
@@ -50,6 +51,9 @@ class SsiConnectApp extends StatelessWidget {
           create: (_) => SsiSyncController()..initialize(),
         ),
         ChangeNotifierProvider(create: (_) => RecentDivesController()),
+        ChangeNotifierProvider(
+          create: (_) => ExportedDivesController()..loadFromStorage(),
+        ),
         // Session-only: the diagnostic tools stay hidden until someone
         // taps the version in the info screen, and a restart hides them
         // again.
