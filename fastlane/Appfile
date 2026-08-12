@@ -1,0 +1,10 @@
+# Identität der App. Einzige Quelle für Bundle-ID und Team-IDs - das
+# Fastfile liest sie hier aus, statt sie noch einmal zu definieren.
+app_identifier("de.gebirgsbaerbel.ssiconnect") # The bundle identifier of your app
+# apple_id not needed - using App Store Connect API key authentication
+
+itc_team_id("1377414") # App Store Connect Team ID
+team_id("6FCF4TD33F") # Developer Portal Team ID
+
+# For more information about the Appfile, see:
+#     https://docs.fastlane.tools/advanced/#appfile

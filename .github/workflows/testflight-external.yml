@@ -1,0 +1,49 @@
+name: Deploy to TestFlight (External)
+
+on:
+  workflow_dispatch:
+    inputs:
+      changelog:
+        description: "What to test (shown to external testers)"
+        required: true
+        type: string
+
+env:
+  TESTFLIGHT_GROUPS: "Taucher"
+  # Gleiche Version wie in release.yml - sonst baut TestFlight mit einem
+  # anderen Flutter als die Release-Artefakte.
+  FLUTTER_VERSION: '3.44.8'
+
+jobs:
+  deploy:
+    name: Build and Upload to TestFlight (External)
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Die Lane ruft `flutter build ios --config-only` auf, um Version und
+      # Build-Nummer nach Generated.xcconfig zu schreiben. Ohne Flutter auf
+      # dem Runner bricht sie mit "command not found" ab.
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - run: flutter pub get
+
+      - name: Install Fastlane
+        run: brew install fastlane
+
+      - name: Build and Upload to TestFlight
+        env:
+          APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          APP_STORE_CONNECT_KEY_CONTENT: ${{ secrets.APP_STORE_CONNECT_KEY_CONTENT }}
+          MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+          MATCH_GIT_BASIC_AUTHORIZATION: ${{ secrets.MATCH_GIT_BASIC_AUTHORIZATION }}
+          TESTFLIGHT_GROUPS: ${{ env.TESTFLIGHT_GROUPS }}
+          BETA_CHANGELOG: ${{ inputs.changelog }}
+        run: fastlane beta_external
