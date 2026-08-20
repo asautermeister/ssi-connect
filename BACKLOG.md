@@ -75,6 +75,44 @@ liegt die Ursache woanders, und die nächsten Verdächtigen wären
 setzbar ist, gehört es in der README zu den Feldern, die bewusst leer
 bleiben – neben Wetter, Einstieg, Strömung und Sicht.
 
+## Zu prüfen
+
+### Garmins Tauchgangsnummern
+
+*Merkposten – das genaue Symptom steht noch aus.*
+
+Es gibt zwei Nummern, und sie kommen aus völlig verschiedenen Quellen:
+
+**`Dive.diveNumber`** – die laufende Tauchgangsnummer des Tauchers, auf
+dem Abzeichen als `# 42` zu sehen. Sie kommt von Garmin, und die Stelle,
+die sie liest, hält den Vorbehalt selbst fest
+(`lib/garmin/models/garmin_activity.dart`):
+
+> „whether the activity-list endpoint passes it through – and under which
+> name – is unconfirmed"
+
+Gelesen werden vier Kandidaten: `diveNumber`, `diveNum`,
+`summaryDTO.diveNumber`, `summaryDTO.diveNum`. Trifft keiner, bleibt das
+Feld leer und die Anzeige blendet es aus. Genau das ist der wahrscheinliche
+Fall, den es zu prüfen gilt: erscheint das `#` überhaupt, und wenn ja,
+stimmt die Zahl mit der Uhr überein?
+
+**`Dive.diveNumberOfDay`** – die Nummer innerhalb des Tauchtags („2. TG"),
+von der App selbst berechnet (`assignDiveNumbersOfDay`), nicht von Garmin.
+Wenn diese falsch ist, liegt es an der Gruppierung nach Kalendertag – etwa
+bei einem Nachttauchgang über Mitternacht.
+
+**Prüfweg.** Im Diagnose-Werkzeug (Info → Version dreimal antippen →
+„API-Protokoll") steht eine `PROBE`-Zeile, die die tatsächlichen
+Feldnamen einer Garmin-Antwort auflistet. Damit lässt sich in einem Schritt
+klären, ob Garmin überhaupt eine Nummer mitschickt und unter welchem Namen.
+
+**Neue Vergleichsquelle.** Seit dem Logbuch-Abgleich liegt auch SSIs eigene
+Zählung vor: `odin_user_log_nr` in `logbook_details` (im Beispiel `1` und
+`2`). Damit ließe sich die Anzeige gegen etwas Echtes halten – und, falls
+Garmin gar keine Nummer liefert, wäre das eine mögliche Ersatzquelle für
+Tauchgänge, die schon in SSI stehen.
+
 ## Ideen
 
 ### Tauchplätze zwischen Geräten teilen
