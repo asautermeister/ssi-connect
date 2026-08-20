@@ -115,6 +115,24 @@ Tauchgänge, die schon in SSI stehen.
 
 ## Ideen
 
+### Fortschrittsbalken für den Tauchplatz-Abgleich
+
+Der Abgleich zeigt heute einen `LinearProgressIndicator` ohne Wert – er
+läuft also nur hin und her und sagt nichts darüber, wie weit er ist. Bei
+mehreren verbundenen Konten und einem großen Logbuch dauert das lange
+genug, dass man sich fragt, ob noch etwas passiert.
+
+Ein Teil der Verkabelung liegt schon da: `SsiSyncController` hat
+`busyAccountId`, gedacht genau dafür, dass eine Zeile ihren eigenen
+Fortschritt zeigt. `syncAll` setzt das Feld aber auf `null` und arbeitet
+die Konten stumm ab – benutzt wird es bisher nur beim Anmelden.
+
+Naheliegend wäre, `syncAll` das gerade bearbeitete Konto melden zu lassen
+und daraus „Konto 2 von 3" plus einen Balken mit Wert zu bauen. Feiner
+ginge es auch – ein Logbuch kommt in einem Aufruf, also ließe sich der
+Fortschritt innerhalb eines Kontos nur schätzen, nicht messen. Über die
+Konten zu zählen ist ehrlich und reicht.
+
 ### Tauchplätze zwischen Geräten teilen
 
 Ein Tauchplatz ließe sich als QR-Code anzeigen und von einem zweiten
