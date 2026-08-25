@@ -149,6 +149,48 @@ Tauchgänge, die schon in SSI stehen.
 
 ## Ideen
 
+### Den SSI-Bereich neu ordnen, und den Abgleich aus den Einstellungen holen
+
+Der SSI-Teil ist heute auf drei Orte verteilt, ohne dass einer davon der
+offensichtliche wäre:
+
+* die **Anmeldung** beim jeweiligen Account („SSI-Identität"),
+* der **Abgleich** samt Zahlen und Zeitstempel unter „Einstellungen →
+  SSI-Logbuch",
+* die **Buddy-Liste** als eigener Eintrag auf der Startseite.
+
+Der Abgleich in den Einstellungen ist dabei der klarste Fehlgriff: er ist
+keine Einstellung, sondern das Abholen von Daten. Er gehört dorthin, wo
+ohnehin Daten geholt werden – an den normalen Tauchgangs-Abruf, mit
+demselben Zwischenspeicher-Verhalten wie dort: erst zeigen, was da ist,
+dann im Hintergrund auffrischen.
+
+**Was dafür schon liegt.** `RecentDivesController` macht das für Garmin
+bereits vor (Cache zuerst, dann Aktualisierung, sichtbarer Stand-Hinweis).
+Und `SsiSyncController` speichert seit dem Zeitstempel-Eintrag bereits
+`lastSyncAt` dauerhaft – das ist genau die Angabe, an der sich entscheiden
+lässt, ob ein Abgleich fällig ist.
+
+**Beim Bauen zu klären:**
+
+1. **Wie oft.** Ein Logbuch ändert sich selten; bei jedem App-Start
+   abzugleichen wäre Verschwendung und würde die Startseite ausbremsen.
+   Naheliegend: höchstens einmal am Tag, plus beim Herunterziehen zum
+   Aktualisieren.
+2. **Ein Fehlschlag darf die Tauchgangsliste nicht anfassen.** Garmin-Abruf
+   und SSI-Abgleich sind unabhängig. Schlägt SSI fehl, muss die Liste
+   normal aussehen – der Hinweis gehört an eine ruhige Stelle, so wie es
+   der Offline-Hinweis heute vormacht.
+3. **Was in den Einstellungen bleibt.** Die Zahlen und der Zeitpunkt des
+   letzten Abgleichs sind dort weiterhin richtig aufgehoben; ein
+   „Jetzt abgleichen" darf als Notausgang bleiben, nur eben nicht als
+   einziger Weg.
+
+**Nebeneffekt, der es lohnender macht als es klingt.** Der automatische
+Übernahme-Haken hängt daran, wie aktuell das Logbuch ist. Solange der
+Abgleich ein Knopf in den Einstellungen ist, den man vergisst, sind die
+grünen Haken älter als die Tauchgänge daneben.
+
 ### Tauchgangs-Position auf einer OSM-Karte in der Detailansicht
 
 Die Koordinaten liegen schon vor (`Dive.latitude`/`longitude`, aus Garmins
