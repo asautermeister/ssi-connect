@@ -75,6 +75,40 @@ liegt die Ursache woanders, und die nächsten Verdächtigen wären
 setzbar ist, gehört es in der README zu den Feldern, die bewusst leer
 bleiben – neben Wetter, Einstieg, Strömung und Sicht.
 
+### Der zugeordnete Tauchplatz wird nicht gespeichert
+
+Nichts sieht kaputt aus, aber eine ausdrückliche Entscheidung geht
+verloren: der Platz, den man einem Tauchgang zuordnet, lebt nur im State
+der Detailansicht (`DiveDetailScreen`, `DiveSite? _site`). Es gibt keine
+Ablage pro Tauchgang.
+
+**Zwei Folgen, die zweite wiegt schwerer:**
+
+1. **Bildschirm verlassen, zurückkommen – weg.** In der Praxis kaum zu
+   merken, weil der Umkreis-Vorschlag wieder dasteht und ein Tipp genügt.
+   Ärgerlich wird es bei einem Platz, den man von Hand eingetragen und
+   nicht über den Vorschlag bestätigt hat.
+2. **Der Tauchtag am Stück überträgt überhaupt keinen Platz.**
+   `DiveQrBatchScreen` ruft den Payload-Builder ohne `site` auf, kann es
+   auch gar nicht anders – der Platz steht nirgends, wo dieser Bildschirm
+   ihn herbekäme. Ausgerechnet der Weg, der für den Bootstag gebaut wurde,
+   liefert also `site:` nie mit.
+
+**Gemeinsame Wurzel, eine Behebung.** Eine Zuordnung `Tauchgangs-ID →
+Platznummer` im verschlüsselten Speicher, wie sie für den
+Übernahme-Haken schon existiert (`ExportedDivesRepository` ist die
+Vorlage). Die Detailansicht liest und schreibt daraus, der Tauchtag-Export
+liest nur.
+
+**Beim Bauen aufpassen:** Der Umkreis-Vorschlag bleibt ein Vorschlag. Ein
+gespeicherter Platz gewinnt gegen ihn, und ein von Hand entfernter darf
+nicht beim nächsten Öffnen wieder auftauchen – dieselbe Vorrang-Regel wie
+beim Übernahme-Haken.
+
+**Nebeneffekt, wenn es liegt:** Damit wäre auch ein Filter „ohne
+Tauchplatz" auf der Tauchgangs-Liste möglich, der heute nicht geht, weil
+niemand weiß, welche Tauchgänge einen haben.
+
 ## Zu prüfen
 
 ### Garmins Tauchgangsnummern
