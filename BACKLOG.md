@@ -115,6 +115,40 @@ Tauchgänge, die schon in SSI stehen.
 
 ## Ideen
 
+### Tauchgangs-Position auf einer OSM-Karte in der Detailansicht
+
+Die Koordinaten liegen schon vor (`Dive.latitude`/`longitude`, aus Garmins
+Oberflächen-Fix) und stehen heute nur als Zahlenpaar im Dialog „Tauchplatz
+zuordnen". Eine kleine Karte in der Detailansicht wäre anschaulicher – und
+besonders nützlich beim Umkreis-Vorschlag: Tauchgang und vorgeschlagener
+Platz nebeneinander auf einer Karte beantworten die Frage „ist das der
+richtige Platz?" schneller als eine Entfernung in Metern.
+
+Der übliche Weg in Flutter ist `flutter_map` mit OSM-Kacheln – im
+Gegensatz zu Google Maps ohne API-Schlüssel, was für ein sideload-
+verteiltes Projekt der passendere Weg ist.
+
+**Drei Punkte, die vorher geklärt sein wollen:**
+
+1. **Es wäre der erste Dritte, der etwas von uns erfährt.** Bisher spricht
+   die App ausschließlich mit Garmin und SSI. Eine Kachel anzufordern
+   verrät dem Kachel-Server, wo dieser Tauchgang war – das ist derselbe
+   Grund, aus dem die Umkreis-Suche über SSIs Website verworfen wurde. Kein
+   Ausschlusskriterium, aber eine bewusste Entscheidung und ein Fall für
+   die README.
+2. **OSMs öffentliche Kachel-Server haben eine Nutzungsrichtlinie**, die
+   Apps ohne Absprache ausdrücklich nicht vorsieht. Für eine verteilte App
+   gehört also entweder ein Anbieter mit passenden Bedingungen dazu oder
+   eine Rückfrage – der Kartenhinweis („© OpenStreetMap-Mitwirkende")
+   ohnehin.
+3. **Offline.** Die App ist bewusst ohne Netz benutzbar; eine Karte ist es
+   nicht. Sie braucht denselben ruhigen Umgang damit wie der Rest – ein
+   Platzhalter statt eines Fehlers, und die Koordinaten weiterhin als Text,
+   damit ohne Netz nichts fehlt.
+
+Nur für Tauchgänge mit Position sinnvoll – ohne Fix bleibt es beim heutigen
+Hinweis.
+
 ### Fortschrittsbalken für den Tauchplatz-Abgleich
 
 Der Abgleich zeigt heute einen `LinearProgressIndicator` ohne Wert – er
