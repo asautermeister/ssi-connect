@@ -167,6 +167,15 @@ class AppStringsDe extends AppStrings {
   @override
   String get exportSeveral => 'Mehrere exportieren';
   @override
+  String get filterAll => 'Alle';
+  @override
+  String get filterOpen => 'Noch offen';
+  @override
+  String get filterTransferred => 'Übernommen';
+  @override
+  String get noDivesForFilter =>
+      'Keine Tauchgänge, auf die dieser Filter passt.';
+  @override
   String get apiLog => 'API-Protokoll';
   @override
   String get divesLoadFailed => 'Tauchgänge konnten nicht geladen werden.';

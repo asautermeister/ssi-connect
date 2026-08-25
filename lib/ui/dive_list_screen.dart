@@ -35,6 +35,10 @@ class DiveListScreen extends StatefulWidget {
 }
 
 class _DiveListScreenState extends State<DiveListScreen> {
+  /// View state, not a preference: a filter that outlived the screen would
+  /// hide dives on the next visit without saying why.
+  _DiveFilter _filter = _DiveFilter.all;
+
   void _refresh() {
     context.read<RecentDivesController>().load(
       accounts: [widget.account],
@@ -98,25 +102,65 @@ class _DiveListScreenState extends State<DiveListScreen> {
 
   Widget _body(AccountDives load, AppStrings s) {
     if (load.dives.isNotEmpty) {
-      return RefreshIndicator(
-        onRefresh: () async => _refresh(),
-        child: DiveList(
-          dives: load.dives,
-          diver: widget.account.ssiIdentity,
-          accountColor: widget.account.color,
-          accountId: widget.account.id,
-          // Only worth saying when the dives on screen aren't current.
-          header: load.isFromCache
-              ? Padding(
-                  padding: const EdgeInsets.only(bottom: AppSpacing.md),
-                  child: OfflineBanner(
-                    isOffline: load.isOffline,
-                    fetchedAt: load.fetchedAt,
-                    onRetry: _refresh,
+      // Matched over *all* dives, before filtering: the matching is
+      // one-to-one, so doing it on a subset could hand a logbook entry to a
+      // different dive than the full list would.
+      final inLogbook = context.watch<ExportedDivesController>().matchedIn(
+        widget.account.id,
+        load.dives,
+      );
+      final exported = context.watch<ExportedDivesController>();
+      final visible = [
+        for (final dive in load.dives)
+          if (_filter.accepts(
+            exported.isTransferred(
+              dive,
+              inLogbook: inLogbook.contains(dive.id),
+            ),
+          ))
+            dive,
+      ];
+
+      return Column(
+        children: [
+          _FilterBar(
+            selected: _filter,
+            onChanged: (filter) => setState(() => _filter = filter),
+          ),
+          Expanded(
+            child: visible.isEmpty
+                // Not an error state: the list is empty because of a choice
+                // that is visible right above it, and one tap undoes it.
+                ? ErrorState(
+                    icon: Icons.filter_alt_off_outlined,
+                    message: s.noDivesForFilter,
+                  )
+                : RefreshIndicator(
+                    onRefresh: () async => _refresh(),
+                    child: DiveList(
+                      dives: visible,
+                      diver: widget.account.ssiIdentity,
+                      accountColor: widget.account.color,
+                      accountId: widget.account.id,
+                      inLogbook: inLogbook,
+                      // Only worth saying when the dives on screen aren't
+                      // current.
+                      header: load.isFromCache
+                          ? Padding(
+                              padding: const EdgeInsets.only(
+                                bottom: AppSpacing.md,
+                              ),
+                              child: OfflineBanner(
+                                isOffline: load.isOffline,
+                                fetchedAt: load.fetchedAt,
+                                onRetry: _refresh,
+                              ),
+                            )
+                          : null,
+                    ),
                   ),
-                )
-              : null,
-        ),
+          ),
+        ],
       );
     }
 
@@ -145,6 +189,70 @@ class _DiveListScreenState extends State<DiveListScreen> {
   }
 }
 
+/// What the list is narrowed to.
+///
+/// One axis, because it is the one this screen exists for: which dives
+/// still have to go across to SSI. Everything else the list could be cut
+/// by - dive type, year, depth - answers a question nobody asks with a
+/// tablet in their hand on a boat.
+enum _DiveFilter {
+  all,
+  open,
+  transferred;
+
+  bool accepts(bool isTransferred) => switch (this) {
+    _DiveFilter.all => true,
+    _DiveFilter.open => !isTransferred,
+    _DiveFilter.transferred => isTransferred,
+  };
+
+  String label(AppStrings s) => switch (this) {
+    _DiveFilter.all => s.filterAll,
+    _DiveFilter.open => s.filterOpen,
+    _DiveFilter.transferred => s.filterTransferred,
+  };
+}
+
+/// The three choices, side by side above the list.
+///
+/// Always visible once there are dives, rather than appearing only when
+/// something is filterable: a control that comes and goes is harder to
+/// find again than one that is simply there.
+class _FilterBar extends StatelessWidget {
+  const _FilterBar({required this.selected, required this.onChanged});
+
+  final _DiveFilter selected;
+  final ValueChanged<_DiveFilter> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final s = AppStrings.of(context);
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        AppSpacing.lg,
+        AppSpacing.lg,
+        0,
+      ),
+      child: Wrap(
+        spacing: AppSpacing.sm,
+        runSpacing: AppSpacing.sm,
+        children: [
+          for (final filter in _DiveFilter.values)
+            FilterChip(
+              label: Text(filter.label(s)),
+              selected: filter == selected,
+              // Tapping the active chip keeps it active instead of
+              // clearing to no filter at all - there is no such state.
+              onSelected: (_) => onChanged(filter),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
 /// Shared list body, so Garmin-loaded and FIT-imported dives render
 /// identically. Computes the shared depth scale the cards' meters use.
 class DiveList extends StatelessWidget {
@@ -155,6 +263,7 @@ class DiveList extends StatelessWidget {
     this.accountColor,
     this.accountId,
     this.header,
+    this.inLogbook,
   });
 
   final List<Dive> dives;
@@ -175,6 +284,15 @@ class DiveList extends StatelessWidget {
   /// screen height on a long list.
   final Widget? header;
 
+  /// Which dives are in the account's SSI logbook, when the caller has
+  /// already worked it out.
+  ///
+  /// Passed in rather than recomputed whenever the list on screen is a
+  /// filtered subset: the matching is one-to-one, so running it again over
+  /// half the dives could hand an entry to a different dive than the full
+  /// list did. Null means "nothing filtered, work it out here".
+  final Set<String>? inLogbook;
+
   @override
   Widget build(BuildContext context) {
     final maxDepth = dives
@@ -183,10 +301,9 @@ class DiveList extends StatelessWidget {
     final header = this.header;
     // Matched once for the whole list rather than per row: a logbook entry
     // must only be able to account for one dive.
-    final inLogbook = context.watch<ExportedDivesController>().matchedIn(
-      accountId,
-      dives,
-    );
+    final inLogbook =
+        this.inLogbook ??
+        context.watch<ExportedDivesController>().matchedIn(accountId, dives);
 
     return ListView.separated(
       padding: const EdgeInsets.fromLTRB(

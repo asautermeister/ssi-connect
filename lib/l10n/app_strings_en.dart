@@ -163,6 +163,14 @@ class AppStringsEn extends AppStrings {
   @override
   String get exportSeveral => 'Export several';
   @override
+  String get filterAll => 'All';
+  @override
+  String get filterOpen => 'Still to do';
+  @override
+  String get filterTransferred => 'Carried over';
+  @override
+  String get noDivesForFilter => 'No dives match this filter.';
+  @override
   String get apiLog => 'API log';
   @override
   String get divesLoadFailed => 'Dives could not be loaded.';
