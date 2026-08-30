@@ -10,6 +10,7 @@ import '../dives/exported_dives_controller.dart';
 import '../dives/recent_dives_controller.dart';
 import '../garmin/garmin_auth_exceptions.dart';
 import '../models/dive.dart';
+import '../models/dive_type.dart';
 import '../ssi/ssi_buddy_code.dart';
 import 'debug_log_screen.dart';
 import 'developer_mode.dart';
@@ -113,7 +114,8 @@ class _DiveListScreenState extends State<DiveListScreen> {
       final visible = [
         for (final dive in load.dives)
           if (_filter.accepts(
-            exported.isTransferred(
+            dive,
+            isTransferred: exported.isTransferred(
               dive,
               inLogbook: inLogbook.contains(dive.id),
             ),
@@ -191,29 +193,43 @@ class _DiveListScreenState extends State<DiveListScreen> {
 
 /// What the list is narrowed to.
 ///
-/// One axis, because it is the one this screen exists for: which dives
-/// still have to go across to SSI. Everything else the list could be cut
-/// by - dive type, year, depth - answers a question nobody asks with a
-/// tablet in their hand on a boat.
+/// Two kinds of question, in the order they get asked: what still has to go
+/// across to SSI, and then which sort of diving it was. There is no
+/// "already transferred" - that is what the green tick on the card says,
+/// and a filter for it would only ever be used to admire finished work.
 enum _DiveFilter {
   all,
   open,
-  transferred;
+  rec,
+  tech;
 
-  bool accepts(bool isTransferred) => switch (this) {
+  bool accepts(Dive dive, {required bool isTransferred}) => switch (this) {
     _DiveFilter.all => true,
-    _DiveFilter.open => !isTransferred,
-    _DiveFilter.transferred => isTransferred,
+    // Freediving is logged in SSI differently and is not what this list is
+    // being worked through for, so it stays out of the working set.
+    _DiveFilter.open => !isTransferred && dive.type != DiveType.apnea,
+    _DiveFilter.rec => _recreational.contains(dive.type),
+    _DiveFilter.tech => _technical.contains(dive.type),
   };
 
   String label(AppStrings s) => switch (this) {
     _DiveFilter.all => s.filterAll,
     _DiveFilter.open => s.filterOpen,
-    _DiveFilter.transferred => s.filterTransferred,
+    _DiveFilter.rec => s.filterRec,
+    _DiveFilter.tech => s.filterTech,
   };
+
+  /// [DiveType.scuba] counts as recreational, and that is a decision rather
+  /// than an oversight: it is the fallback for an open-circuit dive whose
+  /// gas setup Garmin did not name. Leaving it out would drop exactly those
+  /// dives out of *both* filters, and a dive nobody can find is worse than
+  /// one filed a little generously. It can never be a rebreather or a
+  /// multi-gas dive - those Garmin does name.
+  static const _recreational = {DiveType.singleGas, DiveType.scuba};
+  static const _technical = {DiveType.multiGas, DiveType.rebreather};
 }
 
-/// The three choices, side by side above the list.
+/// The choices, side by side above the list.
 ///
 /// Always visible once there are dives, rather than appearing only when
 /// something is filterable: a control that comes and goes is harder to

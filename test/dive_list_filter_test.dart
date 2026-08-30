@@ -12,6 +12,7 @@ import 'package:ssi_connect/dives/recent_dives_controller.dart';
 import 'package:ssi_connect/garmin/models/garmin_session.dart';
 import 'package:ssi_connect/l10n/app_strings.dart';
 import 'package:ssi_connect/models/dive.dart';
+import 'package:ssi_connect/models/dive_type.dart';
 import 'package:ssi_connect/ssi/dive_site.dart';
 import 'package:ssi_connect/ssi/dive_site_repository.dart';
 import 'package:ssi_connect/ssi/dive_sites_controller.dart';
@@ -34,7 +35,7 @@ final _account = GarminAccount(
   ),
 );
 
-Dive _dive(String id, DateTime at) => Dive(
+Dive _dive(String id, DateTime at, {DiveType type = DiveType.scuba}) => Dive(
   id: id,
   dateTime: at,
   maxDepthMeters: 28,
@@ -42,6 +43,7 @@ Dive _dive(String id, DateTime at) => Dive(
   waterTemperatureCelsius: null,
   duration: const Duration(minutes: 54),
   locationName: null,
+  type: type,
 );
 
 class _Accounts extends AccountRepository {
@@ -162,21 +164,79 @@ void main() {
       expect(find.text('Fr, 07.11.2025'), findsOneWidget);
     });
 
-    testWidgets('"Übernommen" shows only those', (tester) async {
+    testWidgets('"Noch offen" leaves freediving out', (tester) async {
+      // Apnoe goes into SSI a different way, so it is not part of what
+      // this list is being worked through for.
       await _pump(
         tester,
         dives: [
-          _dive('a', DateTime(2025, 11, 8, 9)),
-          _dive('b', DateTime(2025, 11, 7, 9)),
+          _dive('a', DateTime(2025, 11, 8, 9), type: DiveType.apnea),
+          _dive('b', DateTime(2025, 11, 7, 9), type: DiveType.singleGas),
         ],
-        transferred: const {'a': true},
       );
 
-      await tester.tap(find.text('Übernommen'));
+      await tester.tap(find.text('Noch offen'));
       await tester.pumpAndSettle();
 
       expect(find.byType(DiveListTile), findsOneWidget);
+      expect(find.text('Fr, 07.11.2025'), findsOneWidget);
+    });
+
+    testWidgets('"Rec" shows single-gas and unnamed open circuit', (
+      tester,
+    ) async {
+      // scuba is Garmin's fallback for an open-circuit dive whose gas setup
+      // it did not name - it belongs here rather than nowhere.
+      await _pump(
+        tester,
+        dives: [
+          _dive('a', DateTime(2025, 11, 8, 9), type: DiveType.singleGas),
+          _dive('b', DateTime(2025, 11, 7, 9), type: DiveType.scuba),
+          _dive('c', DateTime(2025, 11, 6, 9), type: DiveType.multiGas),
+          _dive('d', DateTime(2025, 11, 5, 9), type: DiveType.apnea),
+        ],
+      );
+
+      await tester.tap(find.text('Rec'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(DiveListTile), findsNWidgets(2));
       expect(find.text('Sa, 08.11.2025'), findsOneWidget);
+      expect(find.text('Fr, 07.11.2025'), findsOneWidget);
+    });
+
+    testWidgets('"Tech" shows multi-gas and rebreather', (tester) async {
+      await _pump(
+        tester,
+        dives: [
+          _dive('a', DateTime(2025, 11, 8, 9), type: DiveType.multiGas),
+          _dive('b', DateTime(2025, 11, 7, 9), type: DiveType.rebreather),
+          _dive('c', DateTime(2025, 11, 6, 9), type: DiveType.singleGas),
+        ],
+      );
+
+      await tester.tap(find.text('Tech'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(DiveListTile), findsNWidgets(2));
+      expect(find.text('Do, 06.11.2025'), findsNothing);
+    });
+
+    testWidgets('"Rec" and "Tech" ignore whether a dive has gone across', (
+      tester,
+    ) async {
+      // They answer "what sort of diving was that", not "what is left to
+      // do" - a transferred dive is still a Rec dive.
+      await _pump(
+        tester,
+        dives: [_dive('a', DateTime(2025, 11, 8, 9), type: DiveType.singleGas)],
+        transferred: const {'a': true},
+      );
+
+      await tester.tap(find.text('Rec'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(DiveListTile), findsOneWidget);
     });
 
     testWidgets('counts a dive found in the SSI logbook as done', (
@@ -205,9 +265,12 @@ void main() {
     testWidgets('an empty result says so and is one tap from undone', (
       tester,
     ) async {
-      await _pump(tester, dives: [_dive('a', DateTime(2025, 11, 8, 9))]);
+      await _pump(
+        tester,
+        dives: [_dive('a', DateTime(2025, 11, 8, 9), type: DiveType.singleGas)],
+      );
 
-      await tester.tap(find.text('Übernommen'));
+      await tester.tap(find.text('Tech'));
       await tester.pumpAndSettle();
       expect(find.textContaining('Keine Tauchgänge'), findsOneWidget);
 

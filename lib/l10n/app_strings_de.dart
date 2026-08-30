@@ -171,7 +171,9 @@ class AppStringsDe extends AppStrings {
   @override
   String get filterOpen => 'Noch offen';
   @override
-  String get filterTransferred => 'Übernommen';
+  String get filterRec => 'Rec';
+  @override
+  String get filterTech => 'Tech';
   @override
   String get noDivesForFilter =>
       'Keine Tauchgänge, auf die dieser Filter passt.';
