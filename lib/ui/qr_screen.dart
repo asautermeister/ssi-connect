@@ -88,7 +88,13 @@ class QrScreen extends StatelessWidget {
 /// camera scanners, and half a card in light theme is less confusing than a
 /// code that cannot be read.
 class DiveQrCard extends StatelessWidget {
-  const DiveQrCard({super.key, required this.dive, this.diver, this.site});
+  const DiveQrCard({
+    super.key,
+    required this.dive,
+    this.diver,
+    this.site,
+    this.inLogbook = false,
+  });
 
   final Dive dive;
   final SsiBuddyCode? diver;
@@ -97,6 +103,11 @@ class DiveQrCard extends StatelessWidget {
   /// has to reach the code - which it does, because this widget is rebuilt
   /// with the page that owns the choice.
   final DiveSite? site;
+
+  /// Whether SSI's logbook already has this dive. Passed in for the same
+  /// reason the detail page takes it: the match is one-to-one across an
+  /// account's dives and cannot be decided from one of them.
+  final bool inLogbook;
 
   @override
   Widget build(BuildContext context) {
@@ -160,7 +171,7 @@ class DiveQrCard extends StatelessWidget {
               // the moment the SSI app has swallowed it.
               DiveTransferredCheckbox(
                 label: s.transferredToSsi,
-                value: exported.isTransferred(dive),
+                value: exported.isTransferred(dive, inLogbook: inLogbook),
                 onChanged: (value) => exported.setTransferred(dive.id, value),
               ),
               // Still a way to the full screen. A card in a scrolling list

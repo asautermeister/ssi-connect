@@ -62,7 +62,8 @@ Kamera der SSI-App scannt.
   den teilt die Familie. Unter „Einstellungen → SSI-Logbuch" stehen die bekannten Plätze,
   die verbundenen Konten und der Zeitpunkt des letzten Abgleichs
 - **„In SSI übernommen"**: unter dem QR-Code lässt sich abhaken, dass der Tauchgang drüben
-  angekommen ist; in der Liste steht dann ein grüner Haken neben dem Datum. Wer sein SSI-Konto
+  angekommen ist; in der Liste steht dann ein grüner Haken neben dem Datum, in der
+  Detailansicht neben der Art des Tauchgangs. Wer sein SSI-Konto
   verbunden hat, bekommt den Haken zusätzlich **automatisch** – der Abgleich liest die
   Tauchgänge aus dem Logbuch und erkennt sie an Datum, Uhrzeit und Tiefe wieder. Der Haken von
   Hand hat immer Vorrang, in beide Richtungen. Nie abgeleitet wird er aus dem Export selbst:

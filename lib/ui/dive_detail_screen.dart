@@ -3,12 +3,14 @@ import 'package:provider/provider.dart';
 
 import '../l10n/app_strings.dart';
 
+import '../dives/exported_dives_controller.dart';
 import '../models/dive.dart';
 import '../ssi/dive_site.dart';
 import '../ssi/dive_sites_controller.dart';
 import '../ssi/ssi_buddy_code.dart';
 import 'dive_site_section.dart';
 import 'format.dart';
+import 'qr_display_screen.dart';
 import 'qr_screen.dart';
 import 'theme/app_theme.dart';
 import 'widgets/app_card.dart';
@@ -18,7 +20,12 @@ import 'widgets/stat_tile.dart';
 /// A dive together with the SSI member whose it is, so a page knows who to
 /// attribute the export to. The diver is null for a FIT import, which
 /// belongs to no account.
-typedef DetailDive = ({Dive dive, SsiBuddyCode? diver});
+///
+/// [inLogbook] travels with it because the page cannot work it out: the
+/// match against SSI's logbook is one-to-one across a whole account's
+/// dives, so only the list that holds them all can decide it. Without it
+/// the tick would appear in the list and quietly vanish here.
+typedef DetailDive = ({Dive dive, SsiBuddyCode? diver, bool inLogbook});
 
 /// One dive in full, with the neighbours a swipe away.
 ///
@@ -31,8 +38,15 @@ class DiveDetailScreen extends StatefulWidget {
   const DiveDetailScreen({super.key, required this.dives, this.index = 0});
 
   /// One dive on its own, with nothing to swipe to.
-  DiveDetailScreen.single({Key? key, required Dive dive, SsiBuddyCode? diver})
-    : this(key: key, dives: [(dive: dive, diver: diver)]);
+  DiveDetailScreen.single({
+    Key? key,
+    required Dive dive,
+    SsiBuddyCode? diver,
+    bool inLogbook = false,
+  }) : this(
+         key: key,
+         dives: [(dive: dive, diver: diver, inLogbook: inLogbook)],
+       );
 
   /// The dives to page through, in the order the list showed them.
   final List<DetailDive> dives;
@@ -189,6 +203,10 @@ class _DiveDetailPageState extends State<_DiveDetailPage> {
     final palette = theme.extension<AppPalette>()!;
     final siteController = context.watch<DiveSitesController>();
     final site = _siteFor(siteController);
+    final transferred = context.watch<ExportedDivesController>().isTransferred(
+      dive,
+      inLogbook: widget.entry.inLogbook,
+    );
 
     return ListView(
       controller: _scroll,
@@ -217,9 +235,24 @@ class _DiveDetailPageState extends State<_DiveDetailPage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          dive.type.label(s),
-                          style: theme.textTheme.titleMedium,
+                        Row(
+                          children: [
+                            Flexible(
+                              child: Text(
+                                dive.type.label(s),
+                                style: theme.textTheme.titleMedium,
+                              ),
+                            ),
+                            // The same tick the lists show, in the same
+                            // green, beside the card's heading: this page
+                            // is where one decides whether a dive still has
+                            // to go across, and that should not have to be
+                            // scrolled for.
+                            if (transferred) ...[
+                              const SizedBox(width: AppSpacing.sm),
+                              const DiveTransferredMark(size: 18),
+                            ],
+                          ],
                         ),
                         Text(
                           // The full date, not just the weekday: this line
@@ -391,7 +424,12 @@ class _DiveDetailPageState extends State<_DiveDetailPage> {
         // Rebuilt on every build, so assigning a site further up changes
         // the code immediately; scanning a code that predates the decision
         // is the failure worth designing against.
-        DiveQrCard(dive: dive, diver: diver, site: site),
+        DiveQrCard(
+          dive: dive,
+          diver: diver,
+          site: site,
+          inLogbook: widget.entry.inLogbook,
+        ),
       ],
     );
   }

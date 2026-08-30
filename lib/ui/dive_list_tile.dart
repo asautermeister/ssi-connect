@@ -27,6 +27,7 @@ class DiveListTile extends StatelessWidget {
     this.accountColor,
     this.inSsiLogbook = false,
     this.siblings = const [],
+    this.siblingsInLogbook = const {},
   });
 
   final Dive dive;
@@ -35,6 +36,11 @@ class DiveListTile extends StatelessWidget {
   /// The dives this one is listed among, so the detail view can be swiped
   /// from one to the next. Empty means "just this one".
   final List<Dive> siblings;
+
+  /// Which of [siblings] SSI's logbook already has, by dive id. Worked out
+  /// once for the whole list, because the match is one-to-one and a single
+  /// dive cannot decide it.
+  final Set<String> siblingsInLogbook;
 
   /// Colour of the account these dives belong to, drawn as a bar on the
   /// left edge. Null for FIT imports, which have no account.
@@ -55,9 +61,22 @@ class DiveListTile extends StatelessWidget {
     // By id rather than by identity - a dive that has been through a
     // cache round trip is a different object with the same content.
     final index = siblings.indexWhere((sibling) => sibling.id == dive.id);
-    if (index < 0) return DiveDetailScreen.single(dive: dive, diver: diver);
+    if (index < 0) {
+      return DiveDetailScreen.single(
+        dive: dive,
+        diver: diver,
+        inLogbook: inSsiLogbook,
+      );
+    }
     return DiveDetailScreen(
-      dives: [for (final sibling in siblings) (dive: sibling, diver: diver)],
+      dives: [
+        for (final sibling in siblings)
+          (
+            dive: sibling,
+            diver: diver,
+            inLogbook: siblingsInLogbook.contains(sibling.id),
+          ),
+      ],
       index: index,
     );
   }

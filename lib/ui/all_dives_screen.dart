@@ -80,6 +80,7 @@ class _AllDivesScreenState extends State<AllDivesScreen>
                           inSsiLogbook: inLogbook.contains(entry.dive.id),
                           // What is on screen, filter and all.
                           siblings: visible,
+                          siblingsInLogbook: inLogbook,
                         ),
                         const SizedBox(height: AppSpacing.md),
                       ],

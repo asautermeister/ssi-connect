@@ -9,6 +9,7 @@ import 'package:ssi_connect/ssi/dive_site.dart';
 import 'package:ssi_connect/ssi/dive_site_repository.dart';
 import 'package:ssi_connect/ssi/dive_sites_controller.dart';
 import 'package:ssi_connect/ui/dive_detail_screen.dart';
+import 'package:ssi_connect/ui/qr_display_screen.dart';
 import 'package:ssi_connect/ui/qr_screen.dart';
 import 'package:ssi_connect/ui/theme/app_theme.dart';
 import 'package:ssi_connect/ui/widgets/dive_map.dart';
@@ -132,7 +133,10 @@ Future<void> _pump(
         home: siblings.isEmpty
             ? DiveDetailScreen.single(dive: dive)
             : DiveDetailScreen(
-                dives: [for (final d in siblings) (dive: d, diver: null)],
+                dives: [
+                  for (final d in siblings)
+                    (dive: d, diver: null, inLogbook: false),
+                ],
                 index: siblings.indexOf(dive),
               ),
       ),
@@ -143,6 +147,22 @@ Future<void> _pump(
 
 void main() {
   group('the dive site of a dive', () {
+    testWidgets('a transferred dive is ticked next to its type', (
+      tester,
+    ) async {
+      // The same tick the lists carry, in the same green. Ticking it under
+      // the code has to reach the heading, or the page would disagree with
+      // itself.
+      await _pump(tester, dive: _diveAt());
+
+      expect(find.byType(DiveTransferredMark), findsNothing);
+
+      await tester.tap(find.text('In SSI übernommen'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(DiveTransferredMark), findsOneWidget);
+    });
+
     testWidgets('a known site at the position is taken, not offered', (
       tester,
     ) async {

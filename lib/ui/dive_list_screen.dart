@@ -241,6 +241,7 @@ class DiveList extends StatelessWidget {
           // land on the dive that was next in the list one was reading, not
           // on one the filter had just hidden.
           siblings: dives,
+          siblingsInLogbook: inLogbook,
         );
       },
     );

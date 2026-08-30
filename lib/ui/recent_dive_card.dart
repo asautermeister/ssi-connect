@@ -24,6 +24,7 @@ class RecentDiveCard extends StatelessWidget {
     required this.entry,
     this.inSsiLogbook = false,
     this.siblings = const [],
+    this.siblingsInLogbook = const {},
   });
 
   final RecentDive entry;
@@ -31,6 +32,10 @@ class RecentDiveCard extends StatelessWidget {
   /// The dives this one is listed among, so the detail view can be swiped
   /// from one to the next. Empty means "just this one".
   final List<RecentDive> siblings;
+
+  /// Which of [siblings] SSI's logbook already has, by dive id - worked out
+  /// once for the whole list, since the match is one-to-one.
+  final Set<String> siblingsInLogbook;
 
   /// Whether this dive was found in the SSI logbook of the account it
   /// belongs to. Worked out by the list, which can keep each account's
@@ -61,12 +66,17 @@ class RecentDiveCard extends StatelessWidget {
       return DiveDetailScreen.single(
         dive: entry.dive,
         diver: entry.account.ssiIdentity,
+        inLogbook: inSsiLogbook,
       );
     }
     return DiveDetailScreen(
       dives: [
         for (final sibling in mine)
-          (dive: sibling.dive, diver: sibling.account.ssiIdentity),
+          (
+            dive: sibling.dive,
+            diver: sibling.account.ssiIdentity,
+            inLogbook: siblingsInLogbook.contains(sibling.dive.id),
+          ),
       ],
       index: index,
     );

@@ -183,6 +183,7 @@ class _RecentDives extends StatelessWidget {
               // no reason the screen ever gave. The card narrows this to
               // the diver whose dive was tapped.
               siblings: controller.merged(accounts),
+              siblingsInLogbook: inLogbook,
             ),
             const SizedBox(height: AppSpacing.md),
           ],
