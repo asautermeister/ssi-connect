@@ -21,6 +21,7 @@ import 'package:ssi_connect/ssi/ssi_buddy_code.dart';
 import 'package:ssi_connect/ssi/ssi_buddy_repository.dart';
 import 'package:ssi_connect/ssi/ssi_sync_controller.dart';
 import 'package:ssi_connect/ui/accounts_screen.dart';
+import 'package:ssi_connect/ui/dive_detail_screen.dart';
 import 'package:ssi_connect/ui/theme/app_theme.dart';
 import 'package:ssi_connect/ui/widgets/app_card.dart';
 import 'support/exported_dives.dart';
@@ -216,6 +217,38 @@ void main() {
       expect(find.text('Gerätetauchgang'), findsNWidgets(2));
       expect(find.text('QR-Code für SSI'), findsOneWidget);
       expect(find.text('Werte'), findsOneWidget);
+    });
+
+    testWidgets('a recent dive opens with the whole account to swipe', (
+      tester,
+    ) async {
+      // The five on show are a preview of the account's dives, so swiping
+      // must not stop at them - and must not collapse to one either. It did
+      // exactly that until the sibling was matched by dive id: the five and
+      // the full list are separate reads, and RecentDive is built fresh
+      // each time, so nothing was ever identical.
+      await _pump(
+        tester,
+        accounts: [_account('Andreas'), _account('Marie')],
+        dives: {
+          'Andreas': [
+            for (var i = 0; i < 8; i++)
+              _dive('a\$i', DateTime(2025, 11, 20).subtract(Duration(days: i))),
+          ],
+          'Marie': [_dive('m1', DateTime(2025, 11, 19))],
+        },
+      );
+
+      await tester.tap(find.text('Do, 20.11.2025'));
+      await tester.pumpAndSettle();
+
+      final screen = tester.widget<DiveDetailScreen>(
+        find.byType(DiveDetailScreen),
+      );
+      // All eight of Andreas' dives, not the five on screen - and not
+      // Marie's, which is a different logbook.
+      expect(screen.dives, hasLength(8));
+      expect(screen.index, 0);
     });
 
     testWidgets('the account card names its most recent dive', (tester) async {

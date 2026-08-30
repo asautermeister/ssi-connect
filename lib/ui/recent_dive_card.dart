@@ -50,7 +50,13 @@ class RecentDiveCard extends StatelessWidget {
       for (final sibling in siblings)
         if (sibling.account.id == entry.account.id) sibling,
     ];
-    final index = mine.indexOf(entry);
+    // Found by the dive's id, not by identity. RecentDive is built fresh
+    // on every read, so the entry this card was given and the entry of the
+    // same dive in `siblings` are equal in every way that matters and
+    // identical in none - which quietly reduced the whole list to one dive
+    // when the two came from different calls, as they do on the start
+    // screen: the five on show and the full list are separate reads.
+    final index = mine.indexWhere((s) => s.dive.id == entry.dive.id);
     if (index < 0) {
       return DiveDetailScreen.single(
         dive: entry.dive,

@@ -136,11 +136,26 @@ class _DiveDetailPageState extends State<_DiveDetailPage> {
   /// Scrolled to the end rather than to the widget: a long list only builds
   /// what is near the viewport, so the card one is jumping to may not exist
   /// yet to be scrolled to. The bottom is where it is either way.
-  void _toTheCode() => _scroll.animateTo(
-    _scroll.position.maxScrollExtent,
-    duration: const Duration(milliseconds: 350),
-    curve: Curves.easeOutCubic,
-  );
+  ///
+  /// And the bottom moves while one travels towards it. The map and the
+  /// code below the fold have no measured height until they are laid out,
+  /// so the end of the list is further down once they are - which left the
+  /// code half on screen. Hence the follow-up hops: short, and only while
+  /// the end keeps receding.
+  Future<void> _toTheCode() async {
+    var target = _scroll.position.maxScrollExtent;
+    for (var hop = 0; hop < 4; hop++) {
+      await _scroll.animateTo(
+        target,
+        duration: Duration(milliseconds: hop == 0 ? 350 : 120),
+        curve: Curves.easeOutCubic,
+      );
+      if (!mounted) return;
+      final end = _scroll.position.maxScrollExtent;
+      if ((end - target).abs() < 1) return;
+      target = end;
+    }
+  }
 
   /// Chosen for this dive only, and only for this visit. The pairing of
   /// position to site number is what persists; which dive got which site

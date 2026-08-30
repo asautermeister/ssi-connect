@@ -52,7 +52,9 @@ class DiveListTile extends StatelessWidget {
   /// This dive, opened among the ones it is listed with. Falls back to the
   /// dive on its own when the caller did not say what it is listed among.
   DiveDetailScreen _detailScreen() {
-    final index = siblings.indexOf(dive);
+    // By id rather than by identity - a dive that has been through a
+    // cache round trip is a different object with the same content.
+    final index = siblings.indexWhere((sibling) => sibling.id == dive.id);
     if (index < 0) return DiveDetailScreen.single(dive: dive, diver: diver);
     return DiveDetailScreen(
       dives: [for (final sibling in siblings) (dive: sibling, diver: diver)],
