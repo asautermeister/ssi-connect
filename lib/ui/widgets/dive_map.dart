@@ -16,9 +16,11 @@ import '../theme/app_theme.dart';
 /// SSI.** Asking for a map tile tells the tile server roughly where this
 /// dive was - the same objection that ruled out SSI's own web search as a
 /// site lookup. It is a deliberate exception, kept as small as it can be:
-/// tiles are fetched only for a dive whose detail view is actually open,
-/// never in a list, never in the background, and never with anything
-/// attached that would say whose dive it is.
+/// tiles are fetched only for a dive whose detail view is actually open -
+/// which since the detail view became swipeable includes the one being
+/// swiped to, because the page builds as it comes in. Still only dives
+/// somebody is actually looking at: never a list, never the background,
+/// and never with anything attached that would say whose dive it is.
 ///
 /// Offline it degrades to an empty grid rather than an error - the map is
 /// an extra, and the coordinates are written out underneath it either way,
