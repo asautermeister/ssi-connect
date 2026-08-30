@@ -58,15 +58,25 @@ class _DiveDetailScreenState extends State<DiveDetailScreen> {
   Widget build(BuildContext context) {
     final s = AppStrings.of(context);
     final dives = widget.dives;
+    // Garmin's running number for the diver, which is what a diver calls a
+    // dive. Null when Garmin did not send one - the number of the day then
+    // has to do, as before.
+    final diveNumber = dives[_current].dive.diveNumber;
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(s.diveOfDayTitle(dives[_current].dive.diveNumberOfDay)),
+        title: Text(
+          diveNumber == null
+              ? s.diveOfDayTitle(dives[_current].dive.diveNumberOfDay)
+              : s.diveNumberTitle(diveNumber),
+        ),
         actions: [
-          // Which of how many, because the title cannot say it: two dives
-          // of the same day are both "1. Tauchgang", and a swipe that lands
-          // on an identical heading looks like nothing happened.
-          if (dives.length > 1)
+          // Only while the title cannot tell the pages apart. Garmin's
+          // running number is unique, so it says on its own that the swipe
+          // arrived somewhere; the dive of the day does not - two dives on
+          // the same day are both "1. Tauchgang", and a swipe landing on an
+          // identical heading looks like nothing happened.
+          if (dives.length > 1 && diveNumber == null)
             Padding(
               padding: const EdgeInsets.only(right: AppSpacing.lg),
               child: Center(
@@ -83,6 +93,10 @@ class _DiveDetailScreenState extends State<DiveDetailScreen> {
       // state cannot hand one dive's answer to the next.
       body: PageView.builder(
         controller: _pages,
+        // The lists run newest first, so without this the newer dive would
+        // sit to the left. Reversed, the pages lie the way the numbers do:
+        // the earlier dive to the left, the later one to the right.
+        reverse: true,
         itemCount: dives.length,
         onPageChanged: (index) => setState(() => _current = index),
         itemBuilder: (_, index) => _DiveDetailPage(entry: dives[index]),
@@ -216,15 +230,6 @@ class _DiveDetailPageState extends State<_DiveDetailPage> {
           }),
         ),
 
-        SectionHeader(title: s.qrForSsi),
-        // On the page rather than behind a button. The code is the point
-        // of the app, and the two taps it used to take were spent on a
-        // screen that showed nothing the page could not. It is rebuilt
-        // from `site` on every build, so assigning a dive site a few
-        // centimetres further up changes the code here immediately -
-        // otherwise one would scan a code that predates the decision.
-        DiveQrCard(dive: dive, diver: diver, site: site),
-
         SectionHeader(title: s.values),
         AppCard(
           padding: const EdgeInsets.all(AppSpacing.xl),
@@ -321,6 +326,15 @@ class _DiveDetailPageState extends State<_DiveDetailPage> {
             ],
           ),
         ),
+
+        SectionHeader(title: s.qrForSsi),
+        // Last on the page, after the values: the code is what one leaves
+        // with, and everything above it is what one checks first - the
+        // site it is filed at included, which is part of the payload.
+        // Rebuilt on every build, so assigning a site further up changes
+        // the code immediately; scanning a code that predates the decision
+        // is the failure worth designing against.
+        DiveQrCard(dive: dive, diver: diver, site: site),
       ],
     );
   }

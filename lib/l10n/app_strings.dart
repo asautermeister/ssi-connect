@@ -137,6 +137,7 @@ abstract class AppStrings {
   // ------------------------------------------------------------ dive detail
 
   String diveOfDayTitle(int number);
+  String diveNumberTitle(int number);
   String get values;
   String get duration;
   String get avgDepth;

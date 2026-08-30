@@ -37,10 +37,20 @@ class RecentDiveCard extends StatelessWidget {
   /// dives against that account's logbook.
   final bool inSsiLogbook;
 
-  /// This dive, opened among the ones it is listed with. Each carries its
-  /// own account's SSI identity - a merged list is several people's dives.
+  /// This dive, opened among the ones it is listed with - but only this
+  /// diver's.
+  ///
+  /// These lists are merged across accounts, and swiping through a merged
+  /// list would hand somebody else's dive the SSI number of whoever was
+  /// tapped, or at best jump between people mid-swipe. "Previous dive"
+  /// means the diver's previous dive; the family shares a tablet, not a
+  /// logbook.
   DiveDetailScreen _detailScreen() {
-    final index = siblings.indexOf(entry);
+    final mine = [
+      for (final sibling in siblings)
+        if (sibling.account.id == entry.account.id) sibling,
+    ];
+    final index = mine.indexOf(entry);
     if (index < 0) {
       return DiveDetailScreen.single(
         dive: entry.dive,
@@ -49,7 +59,7 @@ class RecentDiveCard extends StatelessWidget {
     }
     return DiveDetailScreen(
       dives: [
-        for (final sibling in siblings)
+        for (final sibling in mine)
           (dive: sibling.dive, diver: sibling.account.ssiIdentity),
       ],
       index: index,

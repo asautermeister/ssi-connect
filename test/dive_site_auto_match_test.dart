@@ -367,11 +367,15 @@ void main() {
       expect(find.byType(DiveMap), findsNothing);
     });
 
-    testWidgets('the neighbours are one swipe away', (tester) async {
+    testWidgets('the earlier dive is to the left, the later to the right', (
+      tester,
+    ) async {
       // Working through a dive day means one dive after another, and going
-      // back to the list between each answers nothing.
-      final first = _diveAt(latitude: 36.0186, longitude: 14.2798);
-      final second = Dive(
+      // back to the list between each answers nothing. The lists run newest
+      // first, so the page order is reversed - otherwise swiping would run
+      // against the numbers.
+      final morning = _diveAt(latitude: 36.0186, longitude: 14.2798);
+      final afternoon = Dive(
         id: 'b',
         dateTime: DateTime(2025, 11, 8, 14),
         maxDepthMeters: 18,
@@ -382,22 +386,43 @@ void main() {
         diveNumberOfDay: 2,
       );
 
-      await _pump(tester, dive: first, siblings: [first, second]);
+      await _pump(tester, dive: morning, siblings: [afternoon, morning]);
 
       expect(find.text('1. Tauchgang'), findsOneWidget);
-      expect(find.text('1 von 2'), findsOneWidget);
 
+      // Dragging left brings in what lies to the right: the later dive.
       await tester.drag(find.text('Werte'), const Offset(-600, 0));
       await tester.pumpAndSettle();
-
       expect(find.text('2. Tauchgang'), findsOneWidget);
-      expect(find.text('2 von 2'), findsOneWidget);
       expect(find.text('18,0'), findsOneWidget);
 
+      // And back the other way.
       await tester.drag(find.text('Werte'), const Offset(600, 0));
       await tester.pumpAndSettle();
-
       expect(find.text('1. Tauchgang'), findsOneWidget);
+    });
+
+    testWidgets("the heading is Garmin's dive number when there is one", (
+      tester,
+    ) async {
+      // What a diver calls a dive. The dive of the day only says which one
+      // of that day it was, which two dives can share.
+      await _pump(
+        tester,
+        dive: Dive(
+          id: 'a',
+          dateTime: DateTime(2025, 11, 8, 9),
+          maxDepthMeters: 28,
+          avgDepthMeters: null,
+          waterTemperatureCelsius: null,
+          duration: const Duration(minutes: 54),
+          locationName: null,
+          diveNumber: 260,
+        ),
+      );
+
+      expect(find.text('Tauchgang #260'), findsOneWidget);
+      expect(find.text('1. Tauchgang'), findsNothing);
     });
   });
 }

@@ -205,6 +205,9 @@ class AppStringsDe extends AppStrings {
   @override
   String diveOfDayTitle(int number) => '$number. Tauchgang';
   @override
+  String diveNumberTitle(int number) => 'Tauchgang #$number';
+
+  @override
   String get values => 'Werte';
   @override
   String get duration => 'Dauer';
