@@ -117,6 +117,13 @@ abstract class AppStrings {
   String get loadOlderDives;
   String get noOlderDives;
   String get exportSeveral;
+  String get filterDives;
+  String get filterAll;
+  String get filterOpen;
+  String get filterScuba;
+  String get filterRec;
+  String get filterTech;
+  String get noDivesForFilter;
   String get apiLog;
   String get divesLoadFailed;
   String get importFitInstead;

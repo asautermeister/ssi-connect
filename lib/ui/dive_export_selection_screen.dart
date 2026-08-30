@@ -13,6 +13,12 @@ import 'widgets/dive_type_icon.dart';
 
 /// Picks the dives to export in one run.
 ///
+/// **Currently unreachable.** The way in - a second icon in the dive
+/// list's app bar - was taken out again: the selection turned out to be
+/// awkward to use, and the app bar was needed for the filter. The screens
+/// are kept rather than deleted because what comes back is a different way
+/// *in*, not a different batch export; see BACKLOG.md.
+///
 /// Grouped by day, and the day header selects the whole day at once -
 /// that is the case this exists for: coming back from a boat with three
 /// dives and wanting all three in SSI.

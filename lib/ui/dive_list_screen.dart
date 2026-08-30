@@ -13,10 +13,10 @@ import '../models/dive.dart';
 import '../ssi/ssi_buddy_code.dart';
 import 'debug_log_screen.dart';
 import 'developer_mode.dart';
-import 'dive_export_selection_screen.dart';
 import 'dive_list_tile.dart';
 import 'fit_import_flow.dart';
 import 'theme/app_theme.dart';
+import 'widgets/dive_filter.dart';
 import 'widgets/error_state.dart';
 import 'widgets/offline_banner.dart';
 
@@ -34,7 +34,8 @@ class DiveListScreen extends StatefulWidget {
   State<DiveListScreen> createState() => _DiveListScreenState();
 }
 
-class _DiveListScreenState extends State<DiveListScreen> {
+class _DiveListScreenState extends State<DiveListScreen>
+    with DiveFilterState<DiveListScreen> {
   void _refresh() {
     context.read<RecentDivesController>().load(
       accounts: [widget.account],
@@ -64,22 +65,7 @@ class _DiveListScreenState extends State<DiveListScreen> {
       appBar: AppBar(
         title: Text(widget.account.displayName),
         actions: [
-          // Hidden while there is nothing to pick from - an empty
-          // selection list would only be able to say "keine Tauchgänge",
-          // which the screen behind it already says.
-          if (load.dives.isNotEmpty)
-            IconButton(
-              icon: const Icon(Icons.checklist_rtl),
-              tooltip: s.exportSeveral,
-              onPressed: () => Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => DiveExportSelectionScreen(
-                    dives: load.dives,
-                    diver: widget.account.ssiIdentity,
-                  ),
-                ),
-              ),
-            ),
+          if (load.dives.isNotEmpty) buildFilterButton(s),
           // Only once the diagnostic tools have been unlocked in the info
           // screen - otherwise this is a bug icon on a screen about diving.
           if (context.watch<DeveloperMode>().enabled)
@@ -98,25 +84,58 @@ class _DiveListScreenState extends State<DiveListScreen> {
 
   Widget _body(AccountDives load, AppStrings s) {
     if (load.dives.isNotEmpty) {
-      return RefreshIndicator(
-        onRefresh: () async => _refresh(),
-        child: DiveList(
-          dives: load.dives,
-          diver: widget.account.ssiIdentity,
-          accountColor: widget.account.color,
-          accountId: widget.account.id,
-          // Only worth saying when the dives on screen aren't current.
-          header: load.isFromCache
-              ? Padding(
-                  padding: const EdgeInsets.only(bottom: AppSpacing.md),
-                  child: OfflineBanner(
-                    isOffline: load.isOffline,
-                    fetchedAt: load.fetchedAt,
-                    onRetry: _refresh,
+      // Matched over *all* dives, before filtering: the matching is
+      // one-to-one, so doing it on a subset could hand a logbook entry to a
+      // different dive than the full list would.
+      final inLogbook = context.watch<ExportedDivesController>().matchedIn(
+        widget.account.id,
+        load.dives,
+      );
+      final exported = context.watch<ExportedDivesController>();
+      final visible = [
+        for (final dive in load.dives)
+          if (filter.accepts(
+            dive,
+            isTransferred: exported.isTransferred(
+              dive,
+              inLogbook: inLogbook.contains(dive.id),
+            ),
+          ))
+            dive,
+      ];
+
+      return Column(
+        children: [
+          buildFilterBar(),
+          Expanded(
+            child: visible.isEmpty
+                ? buildNoMatchState(s)
+                : RefreshIndicator(
+                    onRefresh: () async => _refresh(),
+                    child: DiveList(
+                      dives: visible,
+                      diver: widget.account.ssiIdentity,
+                      accountColor: widget.account.color,
+                      accountId: widget.account.id,
+                      inLogbook: inLogbook,
+                      // Only worth saying when the dives on screen aren't
+                      // current.
+                      header: load.isFromCache
+                          ? Padding(
+                              padding: const EdgeInsets.only(
+                                bottom: AppSpacing.md,
+                              ),
+                              child: OfflineBanner(
+                                isOffline: load.isOffline,
+                                fetchedAt: load.fetchedAt,
+                                onRetry: _refresh,
+                              ),
+                            )
+                          : null,
+                    ),
                   ),
-                )
-              : null,
-        ),
+          ),
+        ],
       );
     }
 
@@ -155,6 +174,7 @@ class DiveList extends StatelessWidget {
     this.accountColor,
     this.accountId,
     this.header,
+    this.inLogbook,
   });
 
   final List<Dive> dives;
@@ -175,6 +195,15 @@ class DiveList extends StatelessWidget {
   /// screen height on a long list.
   final Widget? header;
 
+  /// Which dives are in the account's SSI logbook, when the caller has
+  /// already worked it out.
+  ///
+  /// Passed in rather than recomputed whenever the list on screen is a
+  /// filtered subset: the matching is one-to-one, so running it again over
+  /// half the dives could hand an entry to a different dive than the full
+  /// list did. Null means "nothing filtered, work it out here".
+  final Set<String>? inLogbook;
+
   @override
   Widget build(BuildContext context) {
     final maxDepth = dives
@@ -183,10 +212,9 @@ class DiveList extends StatelessWidget {
     final header = this.header;
     // Matched once for the whole list rather than per row: a logbook entry
     // must only be able to account for one dive.
-    final inLogbook = context.watch<ExportedDivesController>().matchedIn(
-      accountId,
-      dives,
-    );
+    final inLogbook =
+        this.inLogbook ??
+        context.watch<ExportedDivesController>().matchedIn(accountId, dives);
 
     return ListView.separated(
       padding: const EdgeInsets.fromLTRB(

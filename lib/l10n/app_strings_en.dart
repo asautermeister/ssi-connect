@@ -162,6 +162,22 @@ class AppStringsEn extends AppStrings {
   String get noOlderDives => 'No older dives left at Garmin.';
   @override
   String get exportSeveral => 'Export several';
+
+  @override
+  String get filterDives => 'Filter dives';
+  @override
+  String get filterAll => 'All';
+  @override
+  String get filterOpen => 'Still to do';
+  @override
+  String get filterScuba => 'Scuba';
+
+  @override
+  String get filterRec => 'Rec';
+  @override
+  String get filterTech => 'Tech';
+  @override
+  String get noDivesForFilter => 'No dives match this filter.';
   @override
   String get apiLog => 'API log';
   @override

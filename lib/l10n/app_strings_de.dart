@@ -166,6 +166,23 @@ class AppStringsDe extends AppStrings {
   String get noOlderDives => 'Keine älteren Tauchgänge mehr bei Garmin.';
   @override
   String get exportSeveral => 'Mehrere exportieren';
+
+  @override
+  String get filterDives => 'Tauchgänge filtern';
+  @override
+  String get filterAll => 'Alle';
+  @override
+  String get filterOpen => 'Noch offen';
+  @override
+  String get filterScuba => 'Scuba';
+
+  @override
+  String get filterRec => 'Rec';
+  @override
+  String get filterTech => 'Tech';
+  @override
+  String get noDivesForFilter =>
+      'Keine Tauchgänge, auf die dieser Filter passt.';
   @override
   String get apiLog => 'API-Protokoll';
   @override
