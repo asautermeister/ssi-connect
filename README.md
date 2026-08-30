@@ -47,7 +47,8 @@ Kamera der SSI-App scannt.
   weiterhin von Hand zuordnen (Nummer eintippen oder die Adresse der Platzseite einfügen).
   Eine **Karte** in der Detailansicht zeigt Tauchgang und zugeordneten Platz nebeneinander –
   die Frage „ist das der richtige Platz?" beantwortet ein Blick auf die Küstenlinie schneller
-  als eine Zahl in Metern.
+  als eine Zahl in Metern. Bis zu drei weitere bekannte Plätze im Umkreis von 15 km stehen
+  als hellere Pins dabei; ein Tipp darauf ordnet den Tauchgang diesem Platz zu.
   Die Plätze gelten geräteweit, die Anmeldungen pro Person – ein Tauchplatz ist ein Ort, und
   den teilt die Familie. Unter „Einstellungen → SSI-Logbuch" stehen die bekannten Plätze,
   die verbundenen Konten und der Zeitpunkt des letzten Abgleichs

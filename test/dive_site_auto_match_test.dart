@@ -30,6 +30,16 @@ const _neighbour = DiveSite(
   longitude: 14.2798,
 );
 
+/// About 55 m from the dive used for the tap test - close enough to be
+/// inside the opening frame, which is what a pin has to be to be tapped at
+/// all.
+const _closeNeighbour = DiveSite(
+  siteId: '2601',
+  name: 'Ghar Lapsi',
+  latitude: 36.0191,
+  longitude: 14.2798,
+);
+
 /// Progressively further along the same coast: roughly 1.1 km, 2.2 km and
 /// 3.3 km from the dive used below, so the cut at three has something to
 /// cut.
@@ -259,6 +269,33 @@ void main() {
 
       final map = tester.widget<DiveMap>(find.byType(DiveMap));
       expect(map.otherSites, isEmpty);
+    });
+
+    testWidgets('tapping a neighbour files the dive there', (tester) async {
+      // The neighbour has to be inside the opening frame to be painted at
+      // all, let alone tapped - see the note about viewport culling above.
+      await _pump(
+        tester,
+        dive: _diveAt(latitude: 36.0186, longitude: 14.2798),
+        known: const [_neighbour, _closeNeighbour],
+      );
+
+      // Xatt l-Ahmar is on the dive and gets taken; Ghar Lapsi is the
+      // neighbour 55 m away.
+      expect(find.textContaining('site:2596'), findsOneWidget);
+      expect(find.text('Ghar Lapsi'), findsOneWidget);
+
+      await tester.tap(find.text('Ghar Lapsi'));
+      await tester.pumpAndSettle();
+
+      // Filed there now - and it counts as chosen, not matched, so the
+      // button stops claiming the app filled it in.
+      expect(find.textContaining('site:2601'), findsOneWidget);
+      expect(find.text('Tauchplatz ändern'), findsOneWidget);
+      expect(
+        find.text('Tauchplatz automatisch übernommen – Zuordnung ändern'),
+        findsNothing,
+      );
     });
 
     testWidgets('the map can be moved, and found again', (tester) async {

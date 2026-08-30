@@ -113,6 +113,12 @@ class DiveSiteSection extends StatelessWidget {
                       match.site.siteId != selected?.siteId)
                     match.site,
               ].take(DiveMap.otherSitesShown).toList(),
+              // Tapping a neighbour files the dive there. No confirmation
+              // step: the card's heading right above the map changes to
+              // that name and the pin turns dark, so the result is in view
+              // the moment it happens - and one more tap picks another.
+              // The site is already known, so there is nothing to store.
+              onSiteTap: onChanged,
             ),
             const SizedBox(height: AppSpacing.sm),
             // Kept as text under the map: without a network there are no

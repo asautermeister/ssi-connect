@@ -30,6 +30,7 @@ class DiveMap extends StatefulWidget {
     required this.longitude,
     this.site,
     this.otherSites = const [],
+    this.onSiteTap,
   });
 
   final double latitude;
@@ -45,6 +46,14 @@ class DiveMap extends StatefulWidget {
   /// and how many, is the caller's decision; see [otherSitesRadiusMetres]
   /// and [otherSitesShown].
   final List<DiveSite> otherSites;
+
+  /// Called when one of [otherSites] is tapped, with that site.
+  ///
+  /// The pin already names the place; tapping it is the shortest way there
+  /// is to say "that one" - shorter than the picker, and from the one view
+  /// that shows why it is the right answer. Only the neighbours respond:
+  /// the dive's own pin is where you already are.
+  final ValueChanged<DiveSite>? onSiteTap;
 
   /// Close enough that two markers would sit on top of each other. Below
   /// this the site marker is left out: two pins in the same spot say less
@@ -102,6 +111,20 @@ class _DiveMapState extends State<DiveMap> {
           padding: const EdgeInsets.all(32),
           maxZoom: DiveMap._fitMaxZoom,
         );
+
+  /// Wraps a neighbour's marker so tapping it assigns that site. Left
+  /// alone when nobody is listening, so the map stays usable as a picture.
+  Widget _tappable(DiveSite site, Widget child) {
+    final onSiteTap = widget.onSiteTap;
+    if (onSiteTap == null) return child;
+    return GestureDetector(
+      // Opaque, so the whole marker box answers rather than only the
+      // pixels the icon happens to paint.
+      behavior: HitTestBehavior.opaque,
+      onTap: () => onSiteTap(site),
+      child: child,
+    );
+  }
 
   void _recentre(LatLng dive, LatLng? sitePoint) {
     final fit = _fitFor(dive, sitePoint);
@@ -179,10 +202,13 @@ class _DiveMapState extends State<DiveMap> {
                         width: 30,
                         height: 30,
                         alignment: Alignment.topCenter,
-                        child: const _MapPin(
-                          icon: Icons.place,
-                          colour: DiveMap._otherSiteColour,
-                          size: 30,
+                        child: _tappable(
+                          other,
+                          const _MapPin(
+                            icon: Icons.place,
+                            colour: DiveMap._otherSiteColour,
+                            size: 30,
+                          ),
                         ),
                       ),
                       Marker(
@@ -190,7 +216,12 @@ class _DiveMapState extends State<DiveMap> {
                         width: 140,
                         height: 24,
                         alignment: Alignment.bottomCenter,
-                        child: _MapLabel(text: other.name, muted: true),
+                        // The name is part of the same target: a 30-pixel
+                        // disc is a small thing to hit on a boat.
+                        child: _tappable(
+                          other,
+                          _MapLabel(text: other.name, muted: true),
+                        ),
                       ),
                     ],
                     if (sitePoint != null) ...[
@@ -202,9 +233,11 @@ class _DiveMapState extends State<DiveMap> {
                         // the marker sits above the point rather than on
                         // it - otherwise the pin points somewhere else.
                         alignment: Alignment.topCenter,
-                        child: const _MapPin(
-                          icon: Icons.place,
-                          colour: DiveMap._siteColour,
+                        child: const IgnorePointer(
+                          child: _MapPin(
+                            icon: Icons.place,
+                            colour: DiveMap._siteColour,
+                          ),
                         ),
                       ),
                       Marker(
@@ -214,16 +247,24 @@ class _DiveMapState extends State<DiveMap> {
                         // Below the point, so the label reads as belonging
                         // to the pin above it without covering it.
                         alignment: Alignment.bottomCenter,
-                        child: _MapLabel(text: site!.name),
+                        child: IgnorePointer(
+                          child: _MapLabel(text: site!.name),
+                        ),
                       ),
                     ],
                     Marker(
                       point: dive,
                       width: 34,
                       height: 34,
-                      child: const _MapPin(
-                        icon: Icons.scuba_diving,
-                        colour: DiveMap._diverColour,
+                      // Drawn last, so it is on top of everything - which
+                      // would also make it swallow taps meant for a
+                      // neighbour's label underneath. Nothing here is
+                      // interactive, so nothing here takes a pointer.
+                      child: const IgnorePointer(
+                        child: _MapPin(
+                          icon: Icons.scuba_diving,
+                          colour: DiveMap._diverColour,
+                        ),
                       ),
                     ),
                   ],
