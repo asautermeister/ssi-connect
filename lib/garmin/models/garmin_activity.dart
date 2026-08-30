@@ -74,14 +74,23 @@ class GarminActivity {
     return rounded > 1 ? rounded : null;
   }
 
-  /// The diver's running dive number, if Garmin ships one.
+  /// The diver's running dive number, as Garmin counts it.
   ///
   /// The Descent watches keep a lifetime counter and the FIT dive_summary
-  /// carries it, but whether the activity-list endpoint passes it through -
-  /// and under which name - is unconfirmed. So this reads only keys that
-  /// unambiguously mean "dive number" and returns null otherwise: the UI
-  /// then hides the field rather than showing a number that might be
+  /// carries it. Whether the activity-list endpoint passes it through - and
+  /// under which name - was unconfirmed for a while, so this reads only
+  /// keys that unambiguously mean "dive number" and returns null otherwise:
+  /// the UI then hides the field rather than showing a number that might be
   /// something else. The PROBE log entry lists the real candidates.
+  ///
+  /// **It can disagree with the watch, and that is not a fault here.** The
+  /// number counts the dives in the Garmin account, so deleting one in
+  /// Garmin Connect shifts every dive after it down by one, while the watch
+  /// keeps counting from its own total. Nothing in this app can put that
+  /// right: the deleted dives are gone, and there is no record of how many
+  /// there were. Passed through as Garmin reports it rather than corrected
+  /// by a guess - an invented offset would be wrong for everyone whose
+  /// logbook is intact.
   int? get diveNumber {
     final value = _numAny([
       'diveNumber',

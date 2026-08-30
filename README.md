@@ -102,6 +102,11 @@ deshalb ist die App als Tablet-/Zweitgerät-App gedacht und nicht als Handy-App 
   kennt ihn der nächste Abgleich. SSIs Web-Suche (`rest.divessi.com`) wäre die vollständigere
   Quelle, wurde aber geprüft und verworfen – sie steht hinter einer WAF, ihr API-Key hängt an
   einer Browser-Session, und sie antwortet mit HTML statt mit Daten.
+- **Die laufende Tauchgangsnummer (`# 42`) ist Garmins Zählung, nicht die der Uhr.** Sie zählt
+  die Tauchgänge im Garmin-Account: wer dort einen löscht, verschiebt alle nachfolgenden um
+  eins nach unten, während die Uhr von ihrer eigenen Gesamtzahl weiterzählt. Die App reicht
+  die Zahl durch, wie Garmin sie meldet – die gelöschten Tauchgänge sind weg, und ein
+  geschätzter Versatz wäre für jeden falsch, dessen Logbuch vollständig ist.
 - Vom SSI-Konto wird **nur der Sitzungs-Token** gespeichert, nie das Passwort. Läuft der Token ab,
   fragt die App erneut nach der Anmeldung.
 - **Buddies lassen sich nicht mit einem Tauchgang übertragen.** SSIs Import-Format hat kein
