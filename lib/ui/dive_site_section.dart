@@ -7,6 +7,7 @@ import '../ssi/dive_site.dart';
 import '../ssi/dive_sites_controller.dart';
 import 'theme/app_theme.dart';
 import 'widgets/app_card.dart';
+import 'widgets/dive_map.dart';
 
 /// The dive site of one dive: which one it is, or a way to say so.
 ///
@@ -89,6 +90,28 @@ class DiveSiteSection extends StatelessWidget {
                 style: theme.textTheme.bodySmall?.copyWith(
                   fontFamily: 'monospace',
                 ),
+              ),
+            ),
+          ],
+
+          // Only for a dive that has a position - a map centred on nothing
+          // would be a picture of the sea somewhere.
+          if (dive.hasPosition) ...[
+            const SizedBox(height: AppSpacing.md),
+            DiveMap(
+              latitude: dive.latitude!,
+              longitude: dive.longitude!,
+              site: selected,
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            // Kept as text under the map: without a network there are no
+            // tiles, and the position must still be readable.
+            Text(
+              '${dive.latitude!.toStringAsFixed(5)}, '
+              '${dive.longitude!.toStringAsFixed(5)}',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: palette.inkMuted,
+                fontFamily: 'monospace',
               ),
             ),
           ],

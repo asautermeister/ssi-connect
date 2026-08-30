@@ -156,6 +156,7 @@ abstract class AppStrings {
   String get diveSiteNumberHint;
   String get diveSiteName;
   String get siteAdoptedChange;
+  String get osmAttribution;
   String moreSitesNearby(int count);
   String get searchDiveSite;
   String get noSiteMatches;

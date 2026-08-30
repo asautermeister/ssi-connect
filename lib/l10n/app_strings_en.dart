@@ -241,6 +241,9 @@ class AppStringsEn extends AppStrings {
   String get siteAdoptedChange => 'Dive site adopted automatically - change';
 
   @override
+  String get osmAttribution => '© OpenStreetMap contributors';
+
+  @override
   String moreSitesNearby(int count) =>
       count == 1 ? '1 more site nearby' : '$count more nearby';
   @override
@@ -500,8 +503,10 @@ class AppStringsEn extends AppStrings {
       "are stored encrypted in this device's keystore.";
   @override
   String get yourDataNoThirdParty =>
-      'No data is passed to third parties. The only outbound connection goes '
-      'to Garmin, to fetch your own dives.';
+      'Outbound connections go where your own data already is: to Garmin, and '
+      'to SSI if you sign in. Plus the map: it loads its tiles from '
+      'OpenStreetMap, which thereby learns where this dive was. That happens '
+      'only while you have a dive open, and without saying who you are.';
   @override
   String get yourDataNoServer =>
       'There is no server and no account with us. Removing the app deletes '

@@ -9,6 +9,7 @@ import 'package:ssi_connect/ssi/dive_site_repository.dart';
 import 'package:ssi_connect/ssi/dive_sites_controller.dart';
 import 'package:ssi_connect/ui/dive_detail_screen.dart';
 import 'package:ssi_connect/ui/theme/app_theme.dart';
+import 'package:ssi_connect/ui/widgets/dive_map.dart';
 
 /// Ras il-Hobz, from the SSI logbook.
 const _site = DiveSite(
@@ -143,6 +144,27 @@ void main() {
 
       expect(find.text('Noch kein Tauchplatz zugeordnet'), findsOneWidget);
       expect(find.textContaining('Ohne Position'), findsOneWidget);
+    });
+
+    testWidgets('the position is drawn, credited, and also written out', (
+      tester,
+    ) async {
+      await _pump(tester, dive: _diveAt(latitude: 36.0167, longitude: 14.2799));
+
+      expect(find.byType(DiveMap), findsOneWidget);
+      // OpenStreetMap asks for the credit, and it is the honest place to
+      // say who drew the map.
+      expect(find.text('© OpenStreetMap-Mitwirkende'), findsOneWidget);
+      // Without a network there are no tiles, so the numbers stay too.
+      expect(find.text('36.01670, 14.27990'), findsOneWidget);
+    });
+
+    testWidgets('no position, no map and nothing requested', (tester) async {
+      // The map is the only thing in the app that talks to a third party.
+      // A dive without a fix must not produce a request at all.
+      await _pump(tester, dive: _diveAt());
+
+      expect(find.byType(DiveMap), findsNothing);
     });
   });
 }

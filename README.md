@@ -45,6 +45,9 @@ Kamera der SSI-App scannt.
   Umkreis, wird darauf hingewiesen – Plätze liegen an derselben Küste dicht beieinander, und
   SSI meldet nie, dass ein Tauchgang am falschen Ort abgelegt wurde. Ein Platz lässt sich
   weiterhin von Hand zuordnen (Nummer eintippen oder die Adresse der Platzseite einfügen).
+  Eine **Karte** in der Detailansicht zeigt Tauchgang und zugeordneten Platz nebeneinander –
+  die Frage „ist das der richtige Platz?" beantwortet ein Blick auf die Küstenlinie schneller
+  als eine Zahl in Metern.
   Die Plätze gelten geräteweit, die Anmeldungen pro Person – ein Tauchplatz ist ein Ort, und
   den teilt die Familie. Unter „Einstellungen → SSI-Logbuch" stehen die bekannten Plätze,
   die verbundenen Konten und der Zeitpunkt des letzten Abgleichs
@@ -116,6 +119,15 @@ deshalb ist die App als Tablet-/Zweitgerät-App gedacht und nicht als Handy-App 
   Feld dafür – die Auswahl unter dem QR-Code wurde deshalb wieder entfernt, statt sie
   funktionsfähig aussehen zu lassen. Die Buddy-Liste bleibt und kann jeden Eintrag als
   QR-Code zeigen, sodass ihn ein anderes Gerät scannen kann.
+- **Die Karte ist die einzige Stelle, an der ein Dritter etwas erfährt.** Sonst spricht die App
+  nur mit Garmin und SSI. Eine Kachel anzufordern verrät dem Kachelserver, wo dieser Tauchgang
+  war – bewusst in Kauf genommen und so klein wie möglich gehalten: nur für den Tauchgang, der
+  gerade geöffnet ist, nie in einer Liste, nie im Hintergrund, und ohne Angabe, wessen Tauchgang
+  es ist. Die Kacheln kommen von [OpenStreetMap](https://www.openstreetmap.org/copyright); deren
+  [Nutzungsrichtlinie](https://operations.osmfoundation.org/policies/tiles) sieht Apps ohne
+  Absprache eigentlich nicht vor – bei der Nutzung im Familienkreis ist das Aufkommen
+  vernachlässigbar, für eine weitere Verbreitung wäre ein eigener Kachel-Anbieter der richtige
+  Schritt.
 - Diese App steht in keiner Verbindung zu Garmin Ltd. oder Scuba Schools International (SSI).
 
 ## Entwicklung

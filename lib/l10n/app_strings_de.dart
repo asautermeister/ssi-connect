@@ -247,6 +247,9 @@ class AppStringsDe extends AppStrings {
       'Tauchplatz automatisch übernommen – Zuordnung ändern';
 
   @override
+  String get osmAttribution => '© OpenStreetMap-Mitwirkende';
+
+  @override
   String moreSitesNearby(int count) => count == 1
       ? '1 weiterer Platz in der Nähe'
       : '$count weitere in der Nähe';
@@ -516,8 +519,11 @@ class AppStringsDe extends AppStrings {
       'Tauchgänge liegen verschlüsselt im Schlüsselspeicher dieses Geräts.';
   @override
   String get yourDataNoThirdParty =>
-      'Es werden keine Daten an Dritte übertragen. Die einzige Verbindung '
-      'nach außen geht zu Garmin, um deine eigenen Tauchgänge abzurufen.';
+      'Verbindungen nach außen gehen dorthin, wo deine eigenen Daten liegen: '
+      'zu Garmin und, wenn du dich anmeldest, zu SSI. Dazu kommt die Karte: '
+      'sie lädt ihre Kacheln von OpenStreetMap, das dabei erfährt, wo dieser '
+      'Tauchgang war. Das passiert nur, während du einen Tauchgang geöffnet '
+      'hast, und ohne Angabe, wer du bist.';
   @override
   String get yourDataNoServer =>
       'Es gibt keinen Server und kein Konto bei uns. Die App entfernen '
