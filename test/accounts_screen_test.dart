@@ -211,7 +211,9 @@ void main() {
       await tester.tap(find.text('Fr, 07.11.2025'));
       await tester.pumpAndSettle();
 
-      expect(find.text('1. Tauchgang'), findsOneWidget);
+      // Garmin sent no running number for this one, so the heading names
+      // the kind of dive instead - which the card below repeats, hence two.
+      expect(find.text('Gerätetauchgang'), findsNWidgets(2));
       expect(find.text('QR-Code für SSI'), findsOneWidget);
       expect(find.text('Werte'), findsOneWidget);
     });

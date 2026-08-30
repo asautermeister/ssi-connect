@@ -33,11 +33,13 @@ Kamera der SSI-App scannt.
 - **Detailansicht** mit allen geladenen Werten (Tiefe, Dauer, Wassertemperatur, ...) und dem
   **QR-Code am Ende der Seite**, statt hinter einem weiteren Knopf: erst prüfen, dann scannen.
   Ein Tauchplatz, den man weiter oben zuordnet, ändert den Code sofort. Für schwierige Kameras
-  lässt er sich weiterhin bildschirmfüllend anzeigen. Überschrift ist Garmins laufende
-  Tauchgangsnummer („Tauchgang #260")
-- **Wischen zum nächsten Tauchgang**: links der frühere, rechts der spätere – und immer
-  innerhalb der Tauchgänge derselben Person, auch wenn man aus einer gemeinsamen Liste kommt.
-  Einen Tauchtag arbeitet man am Stück durch, nicht über den Umweg der Liste
+  lässt er sich weiterhin bildschirmfüllend anzeigen; das QR-Symbol oben im ersten Block
+  springt direkt dorthin. Überschrift ist Garmins laufende Tauchgangsnummer („Tauchgang #260"),
+  und wo Garmin keine liefert, die Art des Tauchgangs („Apnoe-Tauchgang")
+- **Wischen zum nächsten Tauchgang**: links der frühere, rechts der spätere – durch alle
+  geladenen Tauchgänge derselben Person, auch wenn man aus einer gemeinsamen Liste kommt oder
+  von den fünf auf der Startseite. Einen Tauchtag arbeitet man am Stück durch, nicht über den
+  Umweg der Liste
 - **QR-Code-Export** im Format, das der SSI-QR-Scanner beim Anlegen eines Tauchgangs erwartet –
   inklusive der SSI-Mitgliedsnummer, wenn für den Account eine hinterlegt ist
 - **SSI-Anmeldung pro Account**: wer mag, meldet sich bei seinem Garmin-Account zusätzlich bei

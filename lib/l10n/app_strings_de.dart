@@ -662,6 +662,10 @@ class AppStringsDe extends AppStrings {
   @override
   String get diveTypeScuba => 'Gerätetauchgang';
   @override
+  String diveTypeTitle(String type) => '$type-Tauchgang';
+  @override
+  String get diveTypeScubaTitle => 'Gerätetauchgang';
+  @override
   String get waterFresh => 'Süßwasser';
   @override
   String get waterSalt => 'Salzwasser';

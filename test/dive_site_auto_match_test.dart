@@ -388,18 +388,21 @@ void main() {
 
       await _pump(tester, dive: morning, siblings: [afternoon, morning]);
 
-      expect(find.text('1. Tauchgang'), findsOneWidget);
+      // Neither carries a Garmin number, so both headings read the same -
+      // which is what the page counter in the app bar is there for.
+      expect(find.text('1 von 2'), findsOneWidget);
+      expect(find.text('28,0'), findsOneWidget);
 
       // Dragging left brings in what lies to the right: the later dive.
       await tester.drag(find.text('Werte'), const Offset(-600, 0));
       await tester.pumpAndSettle();
-      expect(find.text('2. Tauchgang'), findsOneWidget);
+      expect(find.text('2 von 2'), findsOneWidget);
       expect(find.text('18,0'), findsOneWidget);
 
       // And back the other way.
       await tester.drag(find.text('Werte'), const Offset(600, 0));
       await tester.pumpAndSettle();
-      expect(find.text('1. Tauchgang'), findsOneWidget);
+      expect(find.text('28,0'), findsOneWidget);
     });
 
     testWidgets('the dive is dated in full, not just by weekday', (
@@ -431,7 +434,8 @@ void main() {
       );
 
       expect(find.text('Tauchgang #260'), findsOneWidget);
-      expect(find.text('1. Tauchgang'), findsNothing);
+      // The type is still named in the card - what changes is the heading.
+      expect(find.text('Gerätetauchgang'), findsOneWidget);
     });
   });
 }

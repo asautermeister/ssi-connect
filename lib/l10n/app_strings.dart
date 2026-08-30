@@ -345,6 +345,10 @@ abstract class AppStrings {
   String get diveTypeMultiGas;
   String get diveTypeRebreather;
   String get diveTypeScuba;
+
+  /// A dive named by its type, for a heading: "Apnoe-Tauchgang".
+  String diveTypeTitle(String type);
+  String get diveTypeScubaTitle;
   String get waterFresh;
   String get waterSalt;
   List<String> get colourNames;

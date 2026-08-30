@@ -41,6 +41,16 @@ enum DiveType {
     }
   }
 
+  /// The type as a heading, for a dive Garmin gave no running number.
+  ///
+  /// [scuba] is used as it stands: "Gerätetauchgang" and "Scuba dive" are
+  /// already complete, and the others are qualifiers that need the noun
+  /// after them - "Apnoe" on its own is a discipline, not a dive.
+  String title(AppStrings s) => switch (this) {
+    DiveType.scuba => s.diveTypeScubaTitle,
+    _ => s.diveTypeTitle(label(s)),
+  };
+
   /// Short German label, used as the icon's accessibility description and
   /// in the detail view - the icon never carries the meaning alone.
   /// Takes the texts rather than reading them from a `BuildContext`: an

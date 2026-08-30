@@ -67,21 +67,29 @@ class _DiveDetailScreenState extends State<DiveDetailScreen> {
       appBar: AppBar(
         title: Text(
           diveNumber == null
-              ? s.diveOfDayTitle(dives[_current].dive.diveNumberOfDay)
+              // No number from Garmin, so the next most useful thing about
+              // the dive: what kind it was. The dive of the day says only
+              // which of that day's it was, which is no help on a page that
+              // already carries the date.
+              ? dives[_current].dive.type.title(s)
               : s.diveNumberTitle(diveNumber),
         ),
         actions: [
           // Only while the title cannot tell the pages apart. Garmin's
           // running number is unique, so it says on its own that the swipe
-          // arrived somewhere; the dive of the day does not - two dives on
-          // the same day are both "1. Tauchgang", and a swipe landing on an
-          // identical heading looks like nothing happened.
+          // arrived somewhere; the type does not - two dives of the same
+          // kind carry the same heading, and a swipe landing on an
+          // identical one looks like nothing happened.
           if (dives.length > 1 && diveNumber == null)
             Padding(
               padding: const EdgeInsets.only(right: AppSpacing.lg),
               child: Center(
                 child: Text(
-                  s.pageOf(_current + 1, dives.length),
+                  // Counted the way the pages lie, not the way the list is
+                  // ordered: the list runs newest first and the pages run
+                  // the other way, so counting the index would have the
+                  // number fall as one swipes right.
+                  s.pageOf(dives.length - _current, dives.length),
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
               ),
@@ -115,6 +123,25 @@ class _DiveDetailPage extends StatefulWidget {
 }
 
 class _DiveDetailPageState extends State<_DiveDetailPage> {
+  final _scroll = ScrollController();
+
+  @override
+  void dispose() {
+    _scroll.dispose();
+    super.dispose();
+  }
+
+  /// Down to the code, which is the last thing on the page.
+  ///
+  /// Scrolled to the end rather than to the widget: a long list only builds
+  /// what is near the viewport, so the card one is jumping to may not exist
+  /// yet to be scrolled to. The bottom is where it is either way.
+  void _toTheCode() => _scroll.animateTo(
+    _scroll.position.maxScrollExtent,
+    duration: const Duration(milliseconds: 350),
+    curve: Curves.easeOutCubic,
+  );
+
   /// Chosen for this dive only, and only for this visit. The pairing of
   /// position to site number is what persists; which dive got which site
   /// is not stored, because the dives themselves are only a cache.
@@ -149,6 +176,7 @@ class _DiveDetailPageState extends State<_DiveDetailPage> {
     final site = _siteFor(siteController);
 
     return ListView(
+      controller: _scroll,
       padding: const EdgeInsets.fromLTRB(
         AppSpacing.lg,
         0,
@@ -189,6 +217,15 @@ class _DiveDetailPageState extends State<_DiveDetailPage> {
                         ),
                       ],
                     ),
+                  ),
+                  // The code is the point of the app and the bottom of a
+                  // long page. From up here it is one tap rather than a
+                  // scroll past everything one has already checked.
+                  IconButton(
+                    icon: const Icon(Icons.qr_code_2),
+                    tooltip: s.qrForSsi,
+                    visualDensity: VisualDensity.compact,
+                    onPressed: _toTheCode,
                   ),
                 ],
               ),

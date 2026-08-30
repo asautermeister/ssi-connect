@@ -177,9 +177,12 @@ class _RecentDives extends StatelessWidget {
             RecentDiveCard(
               entry: entry,
               inSsiLogbook: inLogbook.contains(entry.dive.id),
-              // The five on the start screen, not every loaded dive:
-              // swiping should stay inside the list one tapped into.
-              siblings: recent,
+              // Every loaded dive, not the five on show. These five are a
+              // preview of the account's dives, not a list in their own
+              // right - swiping out of them after the fifth would stop for
+              // no reason the screen ever gave. The card narrows this to
+              // the diver whose dive was tapped.
+              siblings: controller.merged(accounts),
             ),
             const SizedBox(height: AppSpacing.md),
           ],

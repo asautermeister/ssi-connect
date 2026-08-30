@@ -642,6 +642,10 @@ class AppStringsEn extends AppStrings {
   @override
   String get diveTypeScuba => 'Scuba';
   @override
+  String diveTypeTitle(String type) => '\$type dive';
+  @override
+  String get diveTypeScubaTitle => 'Scuba dive';
+  @override
   String get waterFresh => 'Fresh water';
   @override
   String get waterSalt => 'Salt water';
