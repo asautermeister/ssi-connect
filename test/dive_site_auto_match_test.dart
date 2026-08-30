@@ -160,6 +160,25 @@ void main() {
       expect(find.text('36.01670, 14.27990'), findsOneWidget);
     });
 
+    testWidgets('the site pin carries its name', (tester) async {
+      // Roughly 200 m north of the site, so the two are far enough apart to
+      // be drawn separately.
+      await _pump(tester, dive: _diveAt(latitude: 36.0186, longitude: 14.2798));
+
+      // Twice on screen: the card's heading, and the pin on the map.
+      expect(find.text('Ras il-Hobz'), findsNWidgets(2));
+    });
+
+    testWidgets('one pin, not two, when the dive is on the site', (
+      tester,
+    ) async {
+      // Fourteen metres apart - two pins would sit on top of each other and
+      // say less than one.
+      await _pump(tester, dive: _diveAt(latitude: 36.0167, longitude: 14.2799));
+
+      expect(find.text('Ras il-Hobz'), findsOneWidget);
+    });
+
     testWidgets('the map can be moved, and found again', (tester) async {
       await _pump(tester, dive: _diveAt(latitude: 36.0167, longitude: 14.2799));
 

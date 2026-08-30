@@ -48,6 +48,16 @@ class DiveMap extends StatefulWidget {
   /// question "is that the right place?" is answered with.
   static const _soloZoom = 16.0;
 
+  /// Marker colours do not follow the app theme, and that is deliberate:
+  /// OpenStreetMap's standard tiles are light in both themes, so a marker
+  /// tinted for a dark interface would be a pale icon on a pale map. These
+  /// are chosen against the tiles instead - deep orange and dark red carry
+  /// on beige land and blue water alike, and each sits on a white disc so
+  /// there is contrast even over a dark harbour.
+  static const _diverColour = Color(0xFFE65100);
+  static const _siteColour = Color(0xFFB3261E);
+  static const _lineColour = Color(0xCC37474F);
+
   /// The tightest the automatic framing goes. Without it, a site matched
   /// twenty metres away would open zoomed so far in that the coast is off
   /// screen - technically the best fit, and useless.
@@ -84,7 +94,6 @@ class _DiveMapState extends State<DiveMap> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final s = AppStrings.of(context);
-    final palette = theme.extension<AppPalette>()!;
     final latitude = widget.latitude;
     final longitude = widget.longitude;
     final dive = LatLng(latitude, longitude);
@@ -135,31 +144,43 @@ class _DiveMapState extends State<DiveMap> {
                       Polyline(
                         points: [dive, sitePoint],
                         strokeWidth: 2,
-                        color: palette.inkMuted.withValues(alpha: 0.8),
+                        color: DiveMap._lineColour,
                       ),
                     ],
                   ),
                 MarkerLayer(
                   markers: [
-                    if (sitePoint != null)
+                    if (sitePoint != null) ...[
                       Marker(
                         point: sitePoint,
-                        width: 32,
-                        height: 32,
-                        child: Icon(
-                          Icons.place,
-                          color: palette.inkMuted,
-                          size: 28,
+                        width: 34,
+                        height: 34,
+                        // The tip of the teardrop is its bottom edge, so
+                        // the marker sits above the point rather than on
+                        // it - otherwise the pin points somewhere else.
+                        alignment: Alignment.topCenter,
+                        child: const _MapPin(
+                          icon: Icons.place,
+                          colour: DiveMap._siteColour,
                         ),
                       ),
+                      Marker(
+                        point: sitePoint,
+                        width: 160,
+                        height: 26,
+                        // Below the point, so the label reads as belonging
+                        // to the pin above it without covering it.
+                        alignment: Alignment.bottomCenter,
+                        child: _MapLabel(text: site!.name),
+                      ),
+                    ],
                     Marker(
                       point: dive,
-                      width: 32,
-                      height: 32,
-                      child: Icon(
-                        Icons.scuba_diving,
-                        color: theme.colorScheme.primary,
-                        size: 26,
+                      width: 34,
+                      height: 34,
+                      child: const _MapPin(
+                        icon: Icons.scuba_diving,
+                        colour: DiveMap._diverColour,
                       ),
                     ),
                   ],
@@ -202,4 +223,61 @@ class _DiveMapState extends State<DiveMap> {
       ),
     );
   }
+}
+
+/// One marker: a coloured icon on a white disc, so it reads over water,
+/// land and the dark blur of a harbour alike.
+class _MapPin extends StatelessWidget {
+  const _MapPin({required this.icon, required this.colour});
+
+  final IconData icon;
+  final Color colour;
+
+  @override
+  Widget build(BuildContext context) => DecoratedBox(
+    decoration: const BoxDecoration(
+      color: Colors.white,
+      shape: BoxShape.circle,
+      boxShadow: [
+        BoxShadow(
+          color: Color(0x33000000),
+          blurRadius: 3,
+          offset: Offset(0, 1),
+        ),
+      ],
+    ),
+    child: Center(child: Icon(icon, color: colour, size: 22)),
+  );
+}
+
+/// The site's name under its pin.
+///
+/// On its own background rather than straight onto the map: place names are
+/// already printed on the tiles, and text over text is unreadable. Clipped
+/// to one line - the map says where, the card above says what.
+class _MapLabel extends StatelessWidget {
+  const _MapLabel({required this.text});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) => Center(
+    child: Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.9),
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Text(
+        text,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: const TextStyle(
+          color: Color(0xFF1A1C1E),
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    ),
+  );
 }
