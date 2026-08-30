@@ -250,6 +250,9 @@ class AppStringsDe extends AppStrings {
   String get osmAttribution => '© OpenStreetMap-Mitwirkende';
 
   @override
+  String get centreOnDive => 'Auf den Tauchgang zentrieren';
+
+  @override
   String moreSitesNearby(int count) => count == 1
       ? '1 weiterer Platz in der Nähe'
       : '$count weitere in der Nähe';

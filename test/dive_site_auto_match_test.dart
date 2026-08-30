@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
@@ -157,6 +158,32 @@ void main() {
       expect(find.text('© OpenStreetMap-Mitwirkende'), findsOneWidget);
       // Without a network there are no tiles, so the numbers stay too.
       expect(find.text('36.01670, 14.27990'), findsOneWidget);
+    });
+
+    testWidgets('the map can be moved, and found again', (tester) async {
+      await _pump(tester, dive: _diveAt(latitude: 36.0167, longitude: 14.2799));
+
+      final map = find.byType(DiveMap);
+      final before = tester.widget<FlutterMap>(
+        find.descendant(of: map, matching: find.byType(FlutterMap)),
+      );
+      expect(
+        before.options.interactionOptions.flags & InteractiveFlag.drag,
+        isNot(0),
+        reason: 'a map that cannot be panned is a picture',
+      );
+      // Rotation stays off - disorienting on a map this small, and easy to
+      // trigger by accident while pinching.
+      expect(
+        before.options.interactionOptions.flags & InteractiveFlag.rotate,
+        0,
+      );
+
+      // Panning has no edges, so the way back has to be on screen rather
+      // than only in the gesture the user just lost their place with.
+      expect(find.byIcon(Icons.my_location), findsOneWidget);
+      await tester.tap(find.byIcon(Icons.my_location));
+      await tester.pumpAndSettle();
     });
 
     testWidgets('no position, no map and nothing requested', (tester) async {

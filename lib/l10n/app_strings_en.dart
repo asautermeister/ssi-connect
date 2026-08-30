@@ -244,6 +244,9 @@ class AppStringsEn extends AppStrings {
   String get osmAttribution => '© OpenStreetMap contributors';
 
   @override
+  String get centreOnDive => 'Centre on the dive';
+
+  @override
   String moreSitesNearby(int count) =>
       count == 1 ? '1 more site nearby' : '$count more nearby';
   @override
