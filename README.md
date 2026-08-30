@@ -23,10 +23,12 @@ Kamera der SSI-App scannt.
 - **Farbe je Account**, als Balken am linken Rand der Tauchgänge – auf einem Familien-Tablet
   ist so auf einen Blick klar, wessen Tauchgang das ist (der Name steht zusätzlich dabei)
 - **Tauchgangs-Liste** pro Account: Datum, max. Tiefe, Tauchgangs-Nummer des Tages – mit
-  Filter „Alle / Noch offen / Scuba / Rec / Tech". „Noch offen" beantwortet die Frage, die man
-  vor dieser Liste tatsächlich hat: was muss noch nach SSI? (Apnoe bleibt dabei außen vor, die
-  läuft bei SSI anders.) Die übrigen trennen nach Art des Tauchens: „Scuba" alles außer Apnoe,
-  „Rec" davon Single Gas, „Tech" Multi-Gas und CCR
+  Filter hinter dem Trichter-Symbol oben rechts: „Alle / Noch offen / Scuba / Rec / Tech".
+  „Noch offen" beantwortet die Frage, die man vor dieser Liste tatsächlich hat: was muss noch
+  nach SSI? (Apnoe bleibt dabei außen vor, die läuft bei SSI anders.) Die übrigen trennen nach
+  Art des Tauchens: „Scuba" alles außer Apnoe, „Rec" davon Single Gas, „Tech" Multi-Gas und
+  CCR. Eingeklappt, solange man ihn nicht braucht – auf dem Handy ist die Zeile sonst zwei
+  Tauchgänge wert; ist gefiltert und die Zeile zu, sitzt ein Punkt am Symbol
 - **Detailansicht** mit allen geladenen Werten (Tiefe, Dauer, Wassertemperatur, ...)
 - **QR-Code-Export** im Format, das der SSI-QR-Scanner beim Anlegen eines Tauchgangs erwartet –
   inklusive der SSI-Mitgliedsnummer, wenn für den Account eine hinterlegt ist
@@ -42,9 +44,6 @@ Kamera der SSI-App scannt.
   Die Plätze gelten geräteweit, die Anmeldungen pro Person – ein Tauchplatz ist ein Ort, und
   den teilt die Familie. Unter „Einstellungen → SSI-Logbuch" stehen die bekannten Plätze,
   die verbundenen Konten und der Zeitpunkt des letzten Abgleichs
-- **Tauchtag am Stück übertragen**: mehrere Tauchgänge auswählen (ein Tippen wählt einen ganzen
-  Tauchtag) und als Folge von QR-Codes durchblättern. Das Handy mit der SSI-App bleibt liegen –
-  scannen, „Weiter", scannen
 - **„In SSI übernommen"**: unter dem QR-Code lässt sich abhaken, dass der Tauchgang drüben
   angekommen ist; in der Liste steht dann ein grüner Haken neben dem Datum. Wer sein SSI-Konto
   verbunden hat, bekommt den Haken zusätzlich **automatisch** – der Abgleich liest die

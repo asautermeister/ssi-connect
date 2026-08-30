@@ -14,7 +14,6 @@ import '../models/dive_type.dart';
 import '../ssi/ssi_buddy_code.dart';
 import 'debug_log_screen.dart';
 import 'developer_mode.dart';
-import 'dive_export_selection_screen.dart';
 import 'dive_list_tile.dart';
 import 'fit_import_flow.dart';
 import 'theme/app_theme.dart';
@@ -39,6 +38,11 @@ class _DiveListScreenState extends State<DiveListScreen> {
   /// View state, not a preference: a filter that outlived the screen would
   /// hide dives on the next visit without saying why.
   _DiveFilter _filter = _DiveFilter.all;
+
+  /// Whether the filter chips are on screen. Closed to begin with - the
+  /// row costs a good deal of a phone screen, and most visits here are to
+  /// look at the list rather than to narrow it.
+  bool _showFilters = false;
 
   void _refresh() {
     context.read<RecentDivesController>().load(
@@ -69,21 +73,21 @@ class _DiveListScreenState extends State<DiveListScreen> {
       appBar: AppBar(
         title: Text(widget.account.displayName),
         actions: [
-          // Hidden while there is nothing to pick from - an empty
-          // selection list would only be able to say "keine Tauchgänge",
-          // which the screen behind it already says.
+          // Hidden while there is nothing to narrow - a filter row above an
+          // empty list would only be able to produce the same empty list.
           if (load.dives.isNotEmpty)
             IconButton(
-              icon: const Icon(Icons.checklist_rtl),
-              tooltip: s.exportSeveral,
-              onPressed: () => Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => DiveExportSelectionScreen(
-                    dives: load.dives,
-                    diver: widget.account.ssiIdentity,
-                  ),
-                ),
+              // The dot is what keeps hiding the row honest: a narrowed
+              // list otherwise looks exactly like a short one, and the
+              // control that explains it is off screen.
+              icon: Badge(
+                isLabelVisible: !_showFilters && _filter != _DiveFilter.all,
+                smallSize: 8,
+                child: const Icon(Icons.filter_list),
               ),
+              tooltip: s.filterDives,
+              isSelected: _showFilters,
+              onPressed: () => setState(() => _showFilters = !_showFilters),
             ),
           // Only once the diagnostic tools have been unlocked in the info
           // screen - otherwise this is a bug icon on a screen about diving.
@@ -125,17 +129,22 @@ class _DiveListScreenState extends State<DiveListScreen> {
 
       return Column(
         children: [
-          _FilterBar(
-            selected: _filter,
-            onChanged: (filter) => setState(() => _filter = filter),
-          ),
+          if (_showFilters)
+            _FilterBar(
+              selected: _filter,
+              onChanged: (filter) => setState(() => _filter = filter),
+            ),
           Expanded(
             child: visible.isEmpty
-                // Not an error state: the list is empty because of a choice
-                // that is visible right above it, and one tap undoes it.
+                // Not an error state: the list is empty because of a
+                // choice, and the way back out is offered right here -
+                // the chips that made it may be hidden.
                 ? ErrorState(
                     icon: Icons.filter_alt_off_outlined,
                     message: s.noDivesForFilter,
+                    secondaryLabel: s.showAll,
+                    onSecondary: () =>
+                        setState(() => _filter = _DiveFilter.all),
                   )
                 : RefreshIndicator(
                     onRefresh: () async => _refresh(),
@@ -239,9 +248,11 @@ enum _DiveFilter {
 
 /// The choices, side by side above the list.
 ///
-/// Always visible once there are dives, rather than appearing only when
-/// something is filterable: a control that comes and goes is harder to
-/// find again than one that is simply there.
+/// Shown on request rather than permanently: the row is worth a couple of
+/// dives' worth of height, which on a phone is most of what the screen has
+/// to give. It is opened from the funnel in the app bar - the same gesture
+/// as everywhere else, so it does not have to be discovered so much as
+/// recognised.
 class _FilterBar extends StatelessWidget {
   const _FilterBar({required this.selected, required this.onChanged});
 

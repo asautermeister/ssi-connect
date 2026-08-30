@@ -80,6 +80,33 @@ Tauchgänge, die schon in SSI stehen.
 
 ## Ideen
 
+### Das Übertragen mehrerer Tauchgänge neu zugänglich machen
+
+Der Weg dorthin ist ausgebaut – das Auswahl-Symbol in der Tauchgangs-Liste
+war umständlich zu bedienen, und an dieser Stelle sitzt jetzt der Filter.
+Die Funktion selbst steht noch: `DiveExportSelectionScreen` und
+`DiveQrBatchScreen` sind unverändert da, mit Tests, nur ohne Einstieg. Was
+neu gedacht werden muss, ist der Zugang, nicht der Export.
+
+**Warum der alte Weg nicht getaugt hat.** Er begann mit einer Frage, die
+man an dieser Stelle nicht hat: „welche Tauchgänge?" – auf einem
+Bildschirm, der die Liste noch einmal zeigt, diesmal mit Kästchen.
+Naheliegender wäre der umgekehrte Weg: aus dem Tauchtag heraus, den man
+ohnehin gerade ansieht.
+
+**Denkbare Einstiege:**
+
+* Langes Drücken auf einen Tauchgang schaltet die Liste in einen
+  Auswahl-Modus – das gewohnte Muster für „mehrere davon".
+* Ein „ganzen Tauchtag übertragen" in der Detailansicht, wo der Tauchtag
+  schon feststeht.
+
+**Nicht vergessen:** Der Tauchtag-Export überträgt keinen Tauchplatz
+(siehe „Der zugeordnete Tauchplatz wird nicht gespeichert"). Solange das
+so ist, liefert ausgerechnet der Weg für den Bootstag weniger als der
+einzelne QR-Code – das gehört behoben, bevor der Einstieg wieder
+prominent wird.
+
 ### Den SSI-Bereich neu ordnen, und den Abgleich aus den Einstellungen holen
 
 Der SSI-Teil ist heute auf drei Orte verteilt, ohne dass einer davon der

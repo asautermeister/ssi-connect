@@ -162,6 +162,9 @@ class AppStringsEn extends AppStrings {
   String get noOlderDives => 'No older dives left at Garmin.';
   @override
   String get exportSeveral => 'Export several';
+
+  @override
+  String get filterDives => 'Filter dives';
   @override
   String get filterAll => 'All';
   @override

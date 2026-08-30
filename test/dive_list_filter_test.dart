@@ -131,9 +131,17 @@ Future<void> _pump(
   await tester.pumpAndSettle();
 }
 
+/// Opens the filter row. It starts closed, so every chip tap needs this
+/// first - which is the point of the funnel, and worth stating once here
+/// rather than looking like ceremony in every test.
+Future<void> _openFilters(WidgetTester tester) async {
+  await tester.tap(find.byIcon(Icons.filter_list));
+  await tester.pumpAndSettle();
+}
+
 void main() {
   group('the filter on the dive list', () {
-    testWidgets('starts on "Alle" and shows everything', (tester) async {
+    testWidgets('is out of the way until the funnel is tapped', (tester) async {
       await _pump(
         tester,
         dives: [
@@ -143,8 +151,19 @@ void main() {
         transferred: const {'a': true},
       );
 
-      expect(find.text('Alle'), findsOneWidget);
+      // The row costs height a phone hasn't got to spare, and the list is
+      // what one comes here for. Nothing is filtered meanwhile.
+      expect(find.text('Alle'), findsNothing);
       expect(find.byType(DiveListTile), findsNWidgets(2));
+
+      await _openFilters(tester);
+      expect(find.text('Alle'), findsOneWidget);
+      expect(find.text('Noch offen'), findsOneWidget);
+      expect(find.byType(DiveListTile), findsNWidgets(2));
+
+      // And it closes again on the same button.
+      await _openFilters(tester);
+      expect(find.text('Alle'), findsNothing);
     });
 
     testWidgets('"Noch offen" hides what has gone across', (tester) async {
@@ -157,6 +176,7 @@ void main() {
         transferred: const {'a': true},
       );
 
+      await _openFilters(tester);
       await tester.tap(find.text('Noch offen'));
       await tester.pumpAndSettle();
 
@@ -175,6 +195,7 @@ void main() {
         ],
       );
 
+      await _openFilters(tester);
       await tester.tap(find.text('Noch offen'));
       await tester.pumpAndSettle();
 
@@ -195,6 +216,7 @@ void main() {
         transferred: const {'a': true},
       );
 
+      await _openFilters(tester);
       await tester.tap(find.text('Scuba'));
       await tester.pumpAndSettle();
 
@@ -217,6 +239,7 @@ void main() {
         ],
       );
 
+      await _openFilters(tester);
       await tester.tap(find.text('Rec'));
       await tester.pumpAndSettle();
 
@@ -235,6 +258,7 @@ void main() {
         ],
       );
 
+      await _openFilters(tester);
       await tester.tap(find.text('Tech'));
       await tester.pumpAndSettle();
 
@@ -253,6 +277,7 @@ void main() {
         transferred: const {'a': true},
       );
 
+      await _openFilters(tester);
       await tester.tap(find.text('Rec'));
       await tester.pumpAndSettle();
 
@@ -275,6 +300,7 @@ void main() {
         ],
       );
 
+      await _openFilters(tester);
       await tester.tap(find.text('Noch offen'));
       await tester.pumpAndSettle();
 
@@ -290,36 +316,73 @@ void main() {
         dives: [_dive('a', DateTime(2025, 11, 8, 9), type: DiveType.singleGas)],
       );
 
+      await _openFilters(tester);
       await tester.tap(find.text('Tech'));
       await tester.pumpAndSettle();
       expect(find.textContaining('Keine Tauchgänge'), findsOneWidget);
 
-      // The filter bar stays put, so getting back is one tap rather than a
+      // The filter row stays put, so getting back is one tap rather than a
       // trip out of the screen.
       await tester.tap(find.text('Alle'));
       await tester.pumpAndSettle();
       expect(find.byType(DiveListTile), findsOneWidget);
     });
 
-    testWidgets('the export selection still sees every dive', (tester) async {
-      // Filtering narrows what is on screen, not what the screen can do -
-      // "Mehrere exportieren" would otherwise silently offer less.
+    testWidgets('a closed row with a filter on it is marked', (tester) async {
+      // The one thing hiding the row could get wrong: a narrowed list
+      // looks exactly like a short one, and the control that would explain
+      // it is off screen. So the funnel carries a dot.
+      Finder dot() => find.descendant(
+        of: find.byType(Badge),
+        matching: find.byIcon(Icons.filter_list),
+      );
+      bool dotVisible() =>
+          tester.widget<Badge>(find.byType(Badge)).isLabelVisible;
+
       await _pump(
         tester,
         dives: [
-          _dive('a', DateTime(2025, 11, 8, 9)),
-          _dive('b', DateTime(2025, 11, 7, 9)),
+          _dive('a', DateTime(2025, 11, 8, 9), type: DiveType.singleGas),
+          _dive('b', DateTime(2025, 11, 7, 9), type: DiveType.multiGas),
         ],
-        transferred: const {'a': true},
       );
 
-      await tester.tap(find.text('Noch offen'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.byIcon(Icons.checklist_rtl));
+      expect(dot(), findsOneWidget);
+      expect(dotVisible(), isFalse, reason: 'nothing is filtered yet');
+
+      await _openFilters(tester);
+      await tester.tap(find.text('Tech'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Sa, 08.11.2025 · 1 TG'), findsOneWidget);
-      expect(find.text('Fr, 07.11.2025 · 1 TG'), findsOneWidget);
+      // Still open, so the chips say it themselves.
+      expect(dotVisible(), isFalse);
+
+      await _openFilters(tester);
+      expect(find.text('Tech'), findsNothing);
+      expect(find.byType(DiveListTile), findsOneWidget);
+      expect(dotVisible(), isTrue, reason: 'the list is still narrowed');
+    });
+
+    testWidgets('an empty result offers the way out on its own', (
+      tester,
+    ) async {
+      // With the chips hidden there is nothing above the empty list to tap,
+      // so the empty state has to carry the way back itself.
+      await _pump(
+        tester,
+        dives: [_dive('a', DateTime(2025, 11, 8, 9), type: DiveType.singleGas)],
+      );
+
+      await _openFilters(tester);
+      await tester.tap(find.text('Tech'));
+      await tester.pumpAndSettle();
+      await _openFilters(tester);
+
+      expect(find.textContaining('Keine Tauchgänge'), findsOneWidget);
+      await tester.tap(find.text('Alle anzeigen'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(DiveListTile), findsOneWidget);
     });
   });
 }
