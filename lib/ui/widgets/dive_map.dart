@@ -29,6 +29,7 @@ class DiveMap extends StatefulWidget {
     required this.latitude,
     required this.longitude,
     this.site,
+    this.otherSites = const [],
   });
 
   final double latitude;
@@ -37,6 +38,13 @@ class DiveMap extends StatefulWidget {
   /// The site this dive is filed at, drawn as a second marker when it is
   /// somewhere else. Null while none is assigned.
   final DiveSite? site;
+
+  /// Other known sites worth showing for orientation, nearest first. Drawn
+  /// in a lighter red, under the two markers that matter, and never framed
+  /// by the opening view - they are context, not the subject. Which ones,
+  /// and how many, is the caller's decision; see [otherSitesRadiusMetres]
+  /// and [otherSitesShown].
+  final List<DiveSite> otherSites;
 
   /// Close enough that two markers would sit on top of each other. Below
   /// this the site marker is left out: two pins in the same spot say less
@@ -55,8 +63,22 @@ class DiveMap extends StatefulWidget {
   /// on beige land and blue water alike, and each sits on a white disc so
   /// there is contrast even over a dark harbour.
   static const _diverColour = Color(0xFFE65100);
-  static const _siteColour = Color(0xFFB3261E);
+  static const _siteColour = Color(0xFF7F1416);
+  static const _otherSiteColour = Color(0xFFE0736C);
   static const _lineColour = Color(0xCC37474F);
+
+  /// How far a site may be and still be worth drawing for orientation.
+  ///
+  /// Fifteen kilometres is about as far as one goes by boat for a dive, so
+  /// a site inside it is plausibly the same trip. Beyond that the pins say
+  /// nothing about where this dive was, and at the zoom the map opens on
+  /// they would be off screen anyway - drawn only to be found by someone
+  /// zooming out far enough to have lost the point.
+  static const otherSitesRadiusMetres = 15000.0;
+
+  /// Enough to show the neighbourhood, few enough that the map does not
+  /// turn into a field of pins on a coast that has been dived a lot.
+  static const otherSitesShown = 3;
 
   /// The tightest the automatic framing goes. Without it, a site matched
   /// twenty metres away would open zoomed so far in that the coast is off
@@ -150,6 +172,27 @@ class _DiveMapState extends State<DiveMap> {
                   ),
                 MarkerLayer(
                   markers: [
+                    // First, so they end up under everything that matters.
+                    for (final other in widget.otherSites) ...[
+                      Marker(
+                        point: LatLng(other.latitude, other.longitude),
+                        width: 30,
+                        height: 30,
+                        alignment: Alignment.topCenter,
+                        child: const _MapPin(
+                          icon: Icons.place,
+                          colour: DiveMap._otherSiteColour,
+                          size: 30,
+                        ),
+                      ),
+                      Marker(
+                        point: LatLng(other.latitude, other.longitude),
+                        width: 140,
+                        height: 24,
+                        alignment: Alignment.bottomCenter,
+                        child: _MapLabel(text: other.name, muted: true),
+                      ),
+                    ],
                     if (sitePoint != null) ...[
                       Marker(
                         point: sitePoint,
@@ -228,10 +271,14 @@ class _DiveMapState extends State<DiveMap> {
 /// One marker: a coloured icon on a white disc, so it reads over water,
 /// land and the dark blur of a harbour alike.
 class _MapPin extends StatelessWidget {
-  const _MapPin({required this.icon, required this.colour});
+  const _MapPin({required this.icon, required this.colour, this.size = 34});
 
   final IconData icon;
   final Color colour;
+
+  /// The disc's diameter. The neighbours are drawn a little smaller, so
+  /// which pin is the point of the map stays readable at a glance.
+  final double size;
 
   @override
   Widget build(BuildContext context) => DecoratedBox(
@@ -246,7 +293,9 @@ class _MapPin extends StatelessWidget {
         ),
       ],
     ),
-    child: Center(child: Icon(icon, color: colour, size: 22)),
+    child: Center(
+      child: Icon(icon, color: colour, size: size * 0.65),
+    ),
   );
 }
 
@@ -256,26 +305,31 @@ class _MapPin extends StatelessWidget {
 /// already printed on the tiles, and text over text is unreadable. Clipped
 /// to one line - the map says where, the card above says what.
 class _MapLabel extends StatelessWidget {
-  const _MapLabel({required this.text});
+  const _MapLabel({required this.text, this.muted = false});
 
   final String text;
+
+  /// Quieter, for a site that is only there for orientation - so the name
+  /// of the site this dive is actually filed at still reads as the one
+  /// that counts.
+  final bool muted;
 
   @override
   Widget build(BuildContext context) => Center(
     child: Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.9),
+        color: Colors.white.withValues(alpha: muted ? 0.75 : 0.9),
         borderRadius: BorderRadius.circular(4),
       ),
       child: Text(
         text,
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
-        style: const TextStyle(
-          color: Color(0xFF1A1C1E),
-          fontSize: 11,
-          fontWeight: FontWeight.w600,
+        style: TextStyle(
+          color: muted ? const Color(0xFF5A5F63) : const Color(0xFF1A1C1E),
+          fontSize: muted ? 10 : 11,
+          fontWeight: muted ? FontWeight.w500 : FontWeight.w600,
         ),
       ),
     ),

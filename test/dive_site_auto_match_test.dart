@@ -30,6 +30,37 @@ const _neighbour = DiveSite(
   longitude: 14.2798,
 );
 
+/// Progressively further along the same coast: roughly 1.1 km, 2.2 km and
+/// 3.3 km from the dive used below, so the cut at three has something to
+/// cut.
+const _acrossTheIsland = DiveSite(
+  siteId: '2597',
+  name: 'Mgarr ix-Xini',
+  latitude: 36.0300,
+  longitude: 14.2798,
+);
+const _fourth = DiveSite(
+  siteId: '2598',
+  name: 'Dwejra',
+  latitude: 36.0400,
+  longitude: 14.2798,
+);
+const _fifth = DiveSite(
+  siteId: '2599',
+  name: 'Fungus Rock',
+  latitude: 36.0500,
+  longitude: 14.2798,
+);
+
+/// About 20 km north - past the point where a site says anything about
+/// where this dive was.
+const _tooFarAway = DiveSite(
+  siteId: '2600',
+  name: 'Marsalforn',
+  latitude: 36.2000,
+  longitude: 14.2798,
+);
+
 Dive _diveAt({double? latitude, double? longitude}) => Dive(
   id: 'a',
   dateTime: DateTime(2025, 11, 8, 9),
@@ -112,7 +143,9 @@ void main() {
       await tester.tap(find.text('Entfernen'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Ras il-Hobz'), findsNothing);
+      // Gone as the dive's site. It may well still be on the map as a
+      // neighbour - it is a known site nearby, which is a different claim.
+      expect(find.textContaining('site:2595'), findsNothing);
       expect(find.text('Noch kein Tauchplatz zugeordnet'), findsOneWidget);
       expect(find.text('Tauchplatz zuordnen'), findsOneWidget);
     });
@@ -177,6 +210,55 @@ void main() {
       await _pump(tester, dive: _diveAt(latitude: 36.0167, longitude: 14.2799));
 
       expect(find.text('Ras il-Hobz'), findsOneWidget);
+    });
+
+    testWidgets('the nearest few other sites go on the map, up to a point', (
+      tester,
+    ) async {
+      // Read off the map rather than off the screen: flutter_map only
+      // builds the markers inside the current viewport, so at the zoom the
+      // map opens on, a site a few hundred metres away is real but not yet
+      // painted. What is being checked here is which sites were handed to
+      // it, which is the decision this code makes.
+      //
+      // Nearest is Xatt l-Ahmar at about 160 m, so that is the one taken;
+      // the rest line up behind it at roughly 0.4, 1.1, 2.2 and 3.3 km.
+      await _pump(
+        tester,
+        dive: _diveAt(latitude: 36.0200, longitude: 14.2798),
+        known: const [
+          _site,
+          _neighbour,
+          _acrossTheIsland,
+          _fourth,
+          _fifth,
+          _tooFarAway,
+        ],
+      );
+
+      final map = tester.widget<DiveMap>(find.byType(DiveMap));
+      final names = [for (final site in map.otherSites) site.name];
+
+      // Three at most, nearest first, so a well-dived coast does not turn
+      // the map into a field of pins. The assigned site is not among them:
+      // it has its own, darker pin, and drawing it twice would say there
+      // are two places there.
+      expect(names, ['Ras il-Hobz', 'Mgarr ix-Xini', 'Dwejra']);
+      expect(map.site?.name, 'Xatt l-Ahmar');
+    });
+
+    testWidgets('nothing beyond 15 km, even with room to spare', (
+      tester,
+    ) async {
+      // A site that far off says nothing about where this dive was.
+      await _pump(
+        tester,
+        dive: _diveAt(latitude: 36.0200, longitude: 14.2798),
+        known: const [_neighbour, _tooFarAway],
+      );
+
+      final map = tester.widget<DiveMap>(find.byType(DiveMap));
+      expect(map.otherSites, isEmpty);
     });
 
     testWidgets('the map can be moved, and found again', (tester) async {

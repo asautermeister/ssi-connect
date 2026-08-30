@@ -102,6 +102,17 @@ class DiveSiteSection extends StatelessWidget {
               latitude: dive.latitude!,
               longitude: dive.longitude!,
               site: selected,
+              // The neighbourhood, for orientation. Ranked by distance, so
+              // taking the first few after the cut-off takes the nearest.
+              // The assigned site is left out - it already has its own,
+              // darker pin, and drawing it twice would say there are two
+              // places there.
+              otherSites: [
+                for (final match in sites.rankedByDistanceFrom(dive))
+                  if (match.distanceMetres <= DiveMap.otherSitesRadiusMetres &&
+                      match.site.siteId != selected?.siteId)
+                    match.site,
+              ].take(DiveMap.otherSitesShown).toList(),
             ),
             const SizedBox(height: AppSpacing.sm),
             // Kept as text under the map: without a network there are no
