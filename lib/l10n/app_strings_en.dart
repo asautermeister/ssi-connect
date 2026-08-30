@@ -350,6 +350,9 @@ class AppStringsEn extends AppStrings {
   @override
   String get transferredToSsi => 'Carried over into SSI';
   @override
+  String get qrFullScreen => 'Show large';
+
+  @override
   String get qrHintBatch =>
       'In the SSI app, add a dive and choose "Scan QR code", then continue '
       'here.';

@@ -360,6 +360,9 @@ class AppStringsDe extends AppStrings {
   @override
   String get transferredToSsi => 'In SSI übernommen';
   @override
+  String get qrFullScreen => 'Groß anzeigen';
+
+  @override
   String get qrHintBatch =>
       'In der SSI-App einen Tauchgang hinzufügen und „QR-Code scannen" '
       'wählen, danach hier weiter.';

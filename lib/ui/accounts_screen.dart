@@ -177,6 +177,9 @@ class _RecentDives extends StatelessWidget {
             RecentDiveCard(
               entry: entry,
               inSsiLogbook: inLogbook.contains(entry.dive.id),
+              // The five on the start screen, not every loaded dive:
+              // swiping should stay inside the list one tapped into.
+              siblings: recent,
             ),
             const SizedBox(height: AppSpacing.md),
           ],

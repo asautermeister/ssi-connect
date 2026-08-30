@@ -9,8 +9,11 @@ import 'package:ssi_connect/ssi/dive_site.dart';
 import 'package:ssi_connect/ssi/dive_site_repository.dart';
 import 'package:ssi_connect/ssi/dive_sites_controller.dart';
 import 'package:ssi_connect/ui/dive_detail_screen.dart';
+import 'package:ssi_connect/ui/qr_screen.dart';
 import 'package:ssi_connect/ui/theme/app_theme.dart';
 import 'package:ssi_connect/ui/widgets/dive_map.dart';
+
+import 'support/exported_dives.dart';
 
 /// Ras il-Hobz, from the SSI logbook.
 const _site = DiveSite(
@@ -99,6 +102,7 @@ Future<void> _pump(
   WidgetTester tester, {
   required Dive dive,
   List<DiveSite> known = const [_site],
+  List<Dive> siblings = const [],
 }) async {
   tester.view.physicalSize = const Size(1100, 2200);
   tester.view.devicePixelRatio = 1.0;
@@ -109,7 +113,12 @@ Future<void> _pump(
 
   await tester.pumpWidget(
     MultiProvider(
-      providers: [ChangeNotifierProvider.value(value: sites)],
+      providers: [
+        ChangeNotifierProvider.value(value: sites),
+        // The page now carries the QR code, which asks whether this dive
+        // has already gone across.
+        exportedDivesProvider(),
+      ],
       child: MaterialApp(
         locale: const Locale('de'),
         localizationsDelegates: const [
@@ -120,7 +129,12 @@ Future<void> _pump(
         ],
         supportedLocales: AppStrings.supportedLocales,
         theme: AppTheme.light(),
-        home: DiveDetailScreen(dive: dive),
+        home: siblings.isEmpty
+            ? DiveDetailScreen.single(dive: dive)
+            : DiveDetailScreen(
+                dives: [for (final d in siblings) (dive: d, diver: null)],
+                index: siblings.indexOf(dive),
+              ),
       ),
     ),
   );
@@ -298,6 +312,27 @@ void main() {
       );
     });
 
+    testWidgets('the code is on the page and follows the site', (tester) async {
+      await _pump(tester, dive: _diveAt(latitude: 36.0186, longitude: 14.2798));
+
+      // Checked on what the card is handed rather than on the rendered
+      // code: QrImageView keeps its payload private, and how a payload is
+      // built is covered in ssi_qr_payload_builder_test. What matters here
+      // is that the card is given the *current* site.
+      DiveSite? codedSite() =>
+          tester.widget<DiveQrCard>(find.byType(DiveQrCard)).site;
+
+      expect(find.byType(DiveQrCard), findsOneWidget);
+      expect(codedSite()?.siteId, '2595');
+
+      await tester.tap(find.text('Entfernen'));
+      await tester.pumpAndSettle();
+
+      // Taking the site away has to reach the code as well - otherwise one
+      // scans a code that predates the decision.
+      expect(codedSite(), isNull);
+    });
+
     testWidgets('the map can be moved, and found again', (tester) async {
       await _pump(tester, dive: _diveAt(latitude: 36.0167, longitude: 14.2799));
 
@@ -330,6 +365,39 @@ void main() {
       await _pump(tester, dive: _diveAt());
 
       expect(find.byType(DiveMap), findsNothing);
+    });
+
+    testWidgets('the neighbours are one swipe away', (tester) async {
+      // Working through a dive day means one dive after another, and going
+      // back to the list between each answers nothing.
+      final first = _diveAt(latitude: 36.0186, longitude: 14.2798);
+      final second = Dive(
+        id: 'b',
+        dateTime: DateTime(2025, 11, 8, 14),
+        maxDepthMeters: 18,
+        avgDepthMeters: null,
+        waterTemperatureCelsius: null,
+        duration: const Duration(minutes: 41),
+        locationName: null,
+        diveNumberOfDay: 2,
+      );
+
+      await _pump(tester, dive: first, siblings: [first, second]);
+
+      expect(find.text('1. Tauchgang'), findsOneWidget);
+      expect(find.text('1 von 2'), findsOneWidget);
+
+      await tester.drag(find.text('Werte'), const Offset(-600, 0));
+      await tester.pumpAndSettle();
+
+      expect(find.text('2. Tauchgang'), findsOneWidget);
+      expect(find.text('2 von 2'), findsOneWidget);
+      expect(find.text('18,0'), findsOneWidget);
+
+      await tester.drag(find.text('Werte'), const Offset(600, 0));
+      await tester.pumpAndSettle();
+
+      expect(find.text('1. Tauchgang'), findsOneWidget);
     });
   });
 }

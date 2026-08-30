@@ -18,8 +18,8 @@ Kamera der SSI-App scannt.
 
 - **Mehrere Garmin-Accounts** (z.B. für die ganze Familie), Login inkl. Zwei-Faktor-Code
 - **Startseite mit den jüngsten Tauchgängen** über alle Accounts hinweg – ein Tippen darauf
-  öffnet direkt den QR-Code. Über „Alle anzeigen" die vollständige gemeinsame Liste, die sich
-  auf Knopfdruck seitenweise weiter in die Vergangenheit lädt
+  öffnet die Detailansicht, wie überall sonst auch. Über „Alle anzeigen" die vollständige
+  gemeinsame Liste, die sich auf Knopfdruck seitenweise weiter in die Vergangenheit lädt
 - **Farbe je Account**, als Balken am linken Rand der Tauchgänge – auf einem Familien-Tablet
   ist so auf einen Blick klar, wessen Tauchgang das ist (der Name steht zusätzlich dabei)
 - **Tauchgangs-Liste** pro Account: Datum, max. Tiefe, Tauchgangs-Nummer des Tages – mit
@@ -30,7 +30,12 @@ Kamera der SSI-App scannt.
   CCR. Eingeklappt, solange man ihn nicht braucht – auf dem Handy ist die Zeile sonst zwei
   Tauchgänge wert; ist gefiltert und die Zeile zu, sitzt ein Punkt am Symbol. Derselbe Filter
   sitzt auch über der gemeinsamen Liste hinter „Alle anzeigen"
-- **Detailansicht** mit allen geladenen Werten (Tiefe, Dauer, Wassertemperatur, ...)
+- **Detailansicht** mit allen geladenen Werten (Tiefe, Dauer, Wassertemperatur, ...) – und dem
+  **QR-Code direkt auf der Seite**, statt hinter einem weiteren Knopf. Ein Tauchplatz, den man
+  ein Stück weiter oben zuordnet, ändert den Code sofort. Für schwierige Kameras lässt er sich
+  weiterhin bildschirmfüllend anzeigen
+- **Wischen zum nächsten Tauchgang**: nach links oder rechts blättert durch die Liste, aus der
+  man gekommen ist – einen Tauchtag arbeitet man am Stück durch, nicht über den Umweg der Liste
 - **QR-Code-Export** im Format, das der SSI-QR-Scanner beim Anlegen eines Tauchgangs erwartet –
   inklusive der SSI-Mitgliedsnummer, wenn für den Account eine hinterlegt ist
 - **SSI-Anmeldung pro Account**: wer mag, meldet sich bei seinem Garmin-Account zusätzlich bei
@@ -84,8 +89,7 @@ Kamera der SSI-App scannt.
 2. Optional: beim Account unter „SSI-Identität" mit dem SSI-Konto anmelden – das trägt die
    Mitgliedsnummer ein und holt Tauchplätze und Buddys aus dem Logbuch
 3. Tauchgang aus der Liste auswählen, Werte in der Detailansicht prüfen
-4. "QR-Code erzeugen" antippen
-5. Mit einem zweiten Gerät (z.B. dem Handy) die SSI-App öffnen, "QR-Code scannen" wählen und
+4. Mit einem zweiten Gerät (z.B. dem Handy) die SSI-App öffnen, "QR-Code scannen" wählen und
    den Code vom Tablet-Bildschirm abscannen
 
 Der QR-Code muss von einem *anderen* Gerät gescannt werden als dem, auf dem er angezeigt wird –

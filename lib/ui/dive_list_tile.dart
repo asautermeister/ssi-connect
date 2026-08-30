@@ -26,10 +26,15 @@ class DiveListTile extends StatelessWidget {
     this.diver,
     this.accountColor,
     this.inSsiLogbook = false,
+    this.siblings = const [],
   });
 
   final Dive dive;
   final SsiBuddyCode? diver;
+
+  /// The dives this one is listed among, so the detail view can be swiped
+  /// from one to the next. Empty means "just this one".
+  final List<Dive> siblings;
 
   /// Colour of the account these dives belong to, drawn as a bar on the
   /// left edge. Null for FIT imports, which have no account.
@@ -44,6 +49,17 @@ class DiveListTile extends StatelessWidget {
   /// - a logbook may only be matched against its own person's dives.
   final bool inSsiLogbook;
 
+  /// This dive, opened among the ones it is listed with. Falls back to the
+  /// dive on its own when the caller did not say what it is listed among.
+  DiveDetailScreen _detailScreen() {
+    final index = siblings.indexOf(dive);
+    if (index < 0) return DiveDetailScreen.single(dive: dive, diver: diver);
+    return DiveDetailScreen(
+      dives: [for (final sibling in siblings) (dive: sibling, diver: diver)],
+      index: index,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -54,11 +70,9 @@ class DiveListTile extends StatelessWidget {
 
     return AppCard(
       edgeColor: accountColor?.of(context),
-      onTap: () => Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (_) => DiveDetailScreen(dive: dive, diver: diver),
-        ),
-      ),
+      onTap: () => Navigator.of(
+        context,
+      ).push(MaterialPageRoute(builder: (_) => _detailScreen())),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

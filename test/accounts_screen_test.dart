@@ -193,7 +193,13 @@ void main() {
       expect(find.textContaining('Marie'), findsWidgets);
     });
 
-    testWidgets('a recent dive goes straight to its QR code', (tester) async {
+    testWidgets('a recent dive opens the detail page, code and all', (
+      tester,
+    ) async {
+      // The same place the per-account list goes. Tapping a dive used to
+      // land on the QR screen here and on the detail page there, which was
+      // two answers to one question - and the code is on the detail page
+      // now, so nothing moved further away.
       await _pump(
         tester,
         accounts: [_account('Andreas', ssiMemberId: '3902893')],
@@ -205,7 +211,9 @@ void main() {
       await tester.tap(find.text('Fr, 07.11.2025'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Mit SSI-App scannen'), findsOneWidget);
+      expect(find.text('1. Tauchgang'), findsOneWidget);
+      expect(find.text('QR-Code für SSI'), findsOneWidget);
+      expect(find.text('Werte'), findsOneWidget);
     });
 
     testWidgets('the account card names its most recent dive', (tester) async {

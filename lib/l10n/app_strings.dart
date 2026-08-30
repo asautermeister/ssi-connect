@@ -203,6 +203,7 @@ abstract class AppStrings {
   String get wholeDiveDay;
   String get scanWithSsiApp;
   String get qrHintSingle;
+  String get qrFullScreen;
   String get qrHintBatch;
   String get transferredToSsi;
   String get back;

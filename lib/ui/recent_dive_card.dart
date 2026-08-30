@@ -6,8 +6,8 @@ import '../l10n/app_strings.dart';
 import '../dives/exported_dives_controller.dart';
 import '../dives/recent_dives_controller.dart';
 import 'format.dart';
+import 'dive_detail_screen.dart';
 import 'qr_display_screen.dart';
-import 'qr_screen.dart';
 import 'theme/app_theme.dart';
 import 'widgets/app_card.dart';
 import 'widgets/dive_type_icon.dart';
@@ -23,14 +23,38 @@ class RecentDiveCard extends StatelessWidget {
     super.key,
     required this.entry,
     this.inSsiLogbook = false,
+    this.siblings = const [],
   });
 
   final RecentDive entry;
+
+  /// The dives this one is listed among, so the detail view can be swiped
+  /// from one to the next. Empty means "just this one".
+  final List<RecentDive> siblings;
 
   /// Whether this dive was found in the SSI logbook of the account it
   /// belongs to. Worked out by the list, which can keep each account's
   /// dives against that account's logbook.
   final bool inSsiLogbook;
+
+  /// This dive, opened among the ones it is listed with. Each carries its
+  /// own account's SSI identity - a merged list is several people's dives.
+  DiveDetailScreen _detailScreen() {
+    final index = siblings.indexOf(entry);
+    if (index < 0) {
+      return DiveDetailScreen.single(
+        dive: entry.dive,
+        diver: entry.account.ssiIdentity,
+      );
+    }
+    return DiveDetailScreen(
+      dives: [
+        for (final sibling in siblings)
+          (dive: sibling.dive, diver: sibling.account.ssiIdentity),
+      ],
+      index: index,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -41,12 +65,13 @@ class RecentDiveCard extends StatelessWidget {
 
     return AppCard(
       edgeColor: entry.account.color?.of(context),
-      onTap: () => Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (_) =>
-              QrScreen(dive: dive, diver: entry.account.ssiIdentity),
-        ),
-      ),
+      // The detail page, the same as the per-account list does. Going
+      // straight to the code from here and to the dive from there was two
+      // answers to one question, and the code is on the detail page now
+      // anyway - so nothing got further away.
+      onTap: () => Navigator.of(
+        context,
+      ).push(MaterialPageRoute(builder: (_) => _detailScreen())),
       child: Row(
         children: [
           DiveTypeIcon(type: dive.type, size: 34),
