@@ -402,6 +402,15 @@ void main() {
       expect(find.text('1. Tauchgang'), findsOneWidget);
     });
 
+    testWidgets('the dive is dated in full, not just by weekday', (
+      tester,
+    ) async {
+      await _pump(tester, dive: _diveAt());
+
+      // A weekday on its own only picks a dive out of the seven around it.
+      expect(find.text('Sa 08.11.25, 09:00 Uhr'), findsOneWidget);
+    });
+
     testWidgets("the heading is Garmin's dive number when there is one", (
       tester,
     ) async {

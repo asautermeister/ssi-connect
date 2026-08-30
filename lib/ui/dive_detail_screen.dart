@@ -179,7 +179,12 @@ class _DiveDetailPageState extends State<_DiveDetailPage> {
                           style: theme.textTheme.titleMedium,
                         ),
                         Text(
-                          '${Fmt.weekday(dive.dateTime, s)}, ${Fmt.timeOfDay(dive.dateTime, s)}',
+                          // The full date, not just the weekday: this line
+                          // answers "which dive is this", and a weekday
+                          // alone only picks it out of the seven around it.
+                          '${Fmt.weekday(dive.dateTime, s)} '
+                          '${Fmt.shortDate(dive.dateTime)}, '
+                          '${Fmt.timeOfDay(dive.dateTime, s)}',
                           style: theme.textTheme.bodySmall,
                         ),
                       ],

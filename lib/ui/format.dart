@@ -22,6 +22,13 @@ class Fmt {
 
   static String date(DateTime d) => '${_two(d.day)}.${_two(d.month)}.${d.year}';
 
+  /// The same date with a two-digit year, for lines that already carry a
+  /// weekday and a clock time. A dive is dated by when it was, not by which
+  /// century - and next to "Fr" and "07:50 Uhr" the full year is the part
+  /// nobody reads.
+  static String shortDate(DateTime d) =>
+      '${_two(d.day)}.${_two(d.month)}.${_two(d.year % 100)}';
+
   static String time(DateTime d) => '${_two(d.hour)}:${_two(d.minute)}';
 
   static String dateTime(DateTime d) => '${date(d)} · ${time(d)}';
