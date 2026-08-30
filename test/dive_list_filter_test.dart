@@ -182,6 +182,26 @@ void main() {
       expect(find.text('Fr, 07.11.2025'), findsOneWidget);
     });
 
+    testWidgets('"Scuba" is everything except freediving', (tester) async {
+      await _pump(
+        tester,
+        dives: [
+          _dive('a', DateTime(2025, 11, 8, 9), type: DiveType.singleGas),
+          _dive('b', DateTime(2025, 11, 7, 9), type: DiveType.rebreather),
+          _dive('c', DateTime(2025, 11, 6, 9), type: DiveType.scuba),
+          _dive('d', DateTime(2025, 11, 5, 9), type: DiveType.apnea),
+        ],
+        // Whether a dive has gone across is not the question here.
+        transferred: const {'a': true},
+      );
+
+      await tester.tap(find.text('Scuba'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(DiveListTile), findsNWidgets(3));
+      expect(find.text('Mi, 05.11.2025'), findsNothing);
+    });
+
     testWidgets('"Rec" shows single-gas and unnamed open circuit', (
       tester,
     ) async {

@@ -171,6 +171,9 @@ class AppStringsDe extends AppStrings {
   @override
   String get filterOpen => 'Noch offen';
   @override
+  String get filterScuba => 'Scuba';
+
+  @override
   String get filterRec => 'Rec';
   @override
   String get filterTech => 'Tech';

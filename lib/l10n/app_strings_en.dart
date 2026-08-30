@@ -167,6 +167,9 @@ class AppStringsEn extends AppStrings {
   @override
   String get filterOpen => 'Still to do';
   @override
+  String get filterScuba => 'Scuba';
+
+  @override
   String get filterRec => 'Rec';
   @override
   String get filterTech => 'Tech';

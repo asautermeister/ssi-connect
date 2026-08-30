@@ -119,6 +119,7 @@ abstract class AppStrings {
   String get exportSeveral;
   String get filterAll;
   String get filterOpen;
+  String get filterScuba;
   String get filterRec;
   String get filterTech;
   String get noDivesForFilter;

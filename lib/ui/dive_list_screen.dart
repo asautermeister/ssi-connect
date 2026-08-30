@@ -194,12 +194,14 @@ class _DiveListScreenState extends State<DiveListScreen> {
 /// What the list is narrowed to.
 ///
 /// Two kinds of question, in the order they get asked: what still has to go
-/// across to SSI, and then which sort of diving it was. There is no
-/// "already transferred" - that is what the green tick on the card says,
+/// across to SSI, and then which sort of diving it was - narrowing from
+/// left to right, everything on scuba, then the two halves of it. There is
+/// no "already transferred" - that is what the green tick on the card says,
 /// and a filter for it would only ever be used to admire finished work.
 enum _DiveFilter {
   all,
   open,
+  scuba,
   rec,
   tech;
 
@@ -208,6 +210,11 @@ enum _DiveFilter {
     // Freediving is logged in SSI differently and is not what this list is
     // being worked through for, so it stays out of the working set.
     _DiveFilter.open => !isTransferred && dive.type != DiveType.apnea,
+    // Everything Rec and Tech together cover, without having to look at
+    // both - written as "not apnea" rather than as the union of the two
+    // sets, so a dive type added later lands here by default instead of
+    // quietly falling out.
+    _DiveFilter.scuba => dive.type != DiveType.apnea,
     _DiveFilter.rec => _recreational.contains(dive.type),
     _DiveFilter.tech => _technical.contains(dive.type),
   };
@@ -215,6 +222,7 @@ enum _DiveFilter {
   String label(AppStrings s) => switch (this) {
     _DiveFilter.all => s.filterAll,
     _DiveFilter.open => s.filterOpen,
+    _DiveFilter.scuba => s.filterScuba,
     _DiveFilter.rec => s.filterRec,
     _DiveFilter.tech => s.filterTech,
   };
