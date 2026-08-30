@@ -172,7 +172,7 @@ void main() {
       expect(diveTypeOf(DiveType.rebreather), 8);
     });
 
-    test('reports decompression as SSI codes it', () {
+    test('says "deco" by leaving the field out, not by sending 0', () {
       String payloadFor(bool? isDecoDive) => SsiQrPayloadBuilder.build(
         strings: _s,
         _dive(
@@ -182,11 +182,21 @@ void main() {
         ),
       );
 
-      expect(payloadFor(false), contains('deco:0'));
       expect(payloadFor(true), contains('deco:1'));
-      // Silence is not "no": a dive we were never told about must not be
-      // filed as a no-deco dive.
-      expect(payloadFor(null), isNot(contains('deco:')));
+
+      // The regression this whole field exists to prevent: every dive was
+      // arriving in SSI as a decompression dive, because `deco:0` is read
+      // as the field being present rather than as the value 0. SSI's own
+      // export of a no-stop dive has no `deco` at all.
+      expect(payloadFor(false), isNot(contains('deco')));
+
+      // And a dive Garmin said nothing about is filed the same way - there
+      // is no third state to express, and no-deco is the safe reading.
+      expect(payloadFor(null), isNot(contains('deco')));
+
+      // The shape of the two captured exports: the same dive twice, the
+      // no-stop one being the deco one minus that single field.
+      expect(payloadFor(false), payloadFor(true).replaceAll(';deco:1', ''));
     });
 
     test('marks the dive as a fun dive, which is SSI\'s own default', () {

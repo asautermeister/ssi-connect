@@ -37,7 +37,8 @@ import 'ssi_buddy_code.dart';
 /// three sea dives) and corrected two `dive_type` values that had been
 /// reasoned rather than observed. They are recorded here because knowing a
 /// code is not the same as knowing the value:
-/// - `deco` - `0` no, `1` yes.
+/// - `deco` - `0` no, `1` yes. Knowing the table was in fact not enough
+///   here: see below.
 /// - `var_weather_id` - `1` cloudless, `2` cloudy, `3` rainy, `121` snow.
 /// - `var_entry_id` - `21` shore, `22` boat, `35` other.
 /// - `var_water_body_id` - `13` ocean, `14` river, `15` quarry, `16` lake,
@@ -45,10 +46,29 @@ import 'ssi_buddy_code.dart';
 /// - `var_current_id` - `6` none, `7` light, `8` strong, `9` ripping.
 /// - `var_surface_id` - `10` calm, `11` moving, `12` stormy.
 ///
+/// `deco` is the one field where the code table was actively misleading.
+/// Every dive was arriving in SSI as a decompression dive. Four further
+/// exports from the SSI app, captured to find out why, settle it - two
+/// recreational dives from the same day, byte-identical except for the end:
+/// `...;watertemp_c:30.0;deco:1` for the deco dive, and `...;watertemp_c:30.0`
+/// for the one without. SSI does not write `deco:0`; it leaves the field
+/// out. Together with the symptom, that says the importer keys on the
+/// field being *there*, not on its value - `deco:0` was read as "yes".
+/// So: `deco:1` on a deco dive, nothing at all otherwise. Absent is the
+/// only way to say no, which also makes "Garmin didn't say" and "Garmin
+/// said no" indistinguishable in the payload - unavoidable, and the safe
+/// direction, since a no-stop dive filed as deco is the visible error.
+///
+/// The same four exports show `deco` sitting at the very end, after the
+/// `user_*` fields, and `divetime` ahead of `datetime` - both differ from
+/// the order emitted here. Left alone deliberately: dives do import, the
+/// earlier reference payloads used the other order, and changing the layout
+/// at the same time as the deco fix would make the fix untestable.
+///
 /// Emitted: `dive_type`, `datetime`, `divetime`, `depth_m`,
-/// `var_divetype_id`, plus `watertemp_c`, `var_watertype_id` and `deco`
-/// when the source reported them, plus the `user_*` fields when an SSI
-/// identity has been scanned for the account.
+/// `var_divetype_id`, plus `watertemp_c` and `var_watertype_id` when the
+/// source reported them, `deco:1` on a deco dive, plus the `user_*` fields
+/// when an SSI identity has been scanned for the account.
 ///
 /// `site` was in this list until the numbering was pinned down: it is an
 /// SSI dive-site id, and Garmin only has coordinates. It is emitted now
@@ -158,11 +178,10 @@ class SsiQrPayloadBuilder {
 
     fields.add('var_divetype_id:$_diveSubTypeFunDive');
 
-    final isDecoDive = dive.isDecoDive;
-    if (isDecoDive != null) {
-      // SSI: 0 no, 1 yes. Garmin says it outright as `decoDive`.
-      fields.add('deco:${isDecoDive ? 1 : 0}');
-    }
+    // Only ever `deco:1`, and only on an actual deco dive: SSI reads the
+    // field's presence, not its value, so `deco:0` filed a no-stop dive as
+    // a deco dive. Absent means no - see the class docs.
+    if (dive.isDecoDive == true) fields.add('deco:1');
 
     final waterType = dive.waterType;
     if (waterType != null) {
