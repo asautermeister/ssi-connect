@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../l10n/app_strings.dart';
 
 import '../models/dive.dart';
 import '../ssi/dive_site.dart';
+import '../ssi/dive_sites_controller.dart';
 import '../ssi/ssi_buddy_code.dart';
 import 'dive_site_section.dart';
 import 'format.dart';
@@ -30,7 +32,25 @@ class _DiveDetailScreenState extends State<DiveDetailScreen> {
   /// Chosen for this dive only, and only for this visit. The pairing of
   /// position to site number is what persists; which dive got which site
   /// is not stored, because the dives themselves are only a cache.
-  DiveSite? _site;
+  DiveSite? _chosen;
+
+  /// Whether [_chosen] is the user's own answer rather than the absence of
+  /// one. Needed because null means two different things: "not decided,
+  /// take the nearest known site" and "decided: no site" - and without the
+  /// difference, removing an automatically matched site would put it
+  /// straight back on the next build.
+  bool _decided = false;
+
+  /// The site this dive goes to SSI with.
+  ///
+  /// Undecided means the nearest known site within the match radius, taken
+  /// rather than offered: in practice the nearest one has been right every
+  /// time, and confirming a suggestion that is always accepted is a tap
+  /// that asks a question with only one answer. It stays visible, named,
+  /// and one tap from being changed or removed - which is what makes taking
+  /// it acceptable rather than presumptuous.
+  DiveSite? _siteFor(DiveSitesController sites) =>
+      _decided ? _chosen : sites.suggestionFor(widget.dive);
 
   @override
   Widget build(BuildContext context) {
@@ -39,6 +59,8 @@ class _DiveDetailScreenState extends State<DiveDetailScreen> {
     final theme = Theme.of(context);
     final s = AppStrings.of(context);
     final palette = theme.extension<AppPalette>()!;
+    final siteController = context.watch<DiveSitesController>();
+    final site = _siteFor(siteController);
 
     return Scaffold(
       appBar: AppBar(title: Text(s.diveOfDayTitle(dive.diveNumberOfDay))),
@@ -114,8 +136,15 @@ class _DiveDetailScreenState extends State<DiveDetailScreen> {
           SectionHeader(title: s.diveSite),
           DiveSiteSection(
             dive: dive,
-            selected: _site,
-            onChanged: (site) => setState(() => _site = site),
+            selected: site,
+            // Automatic exactly while the user has not answered - the label
+            // has to say which of the two it is, or a site nobody picked
+            // looks like one somebody did.
+            isAutomatic: !_decided && site != null,
+            onChanged: (chosen) => setState(() {
+              _chosen = chosen;
+              _decided = true;
+            }),
           ),
 
           SectionHeader(title: s.values),
@@ -219,7 +248,7 @@ class _DiveDetailScreenState extends State<DiveDetailScreen> {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => Navigator.of(context).push(
           MaterialPageRoute(
-            builder: (_) => QrScreen(dive: dive, diver: diver, site: _site),
+            builder: (_) => QrScreen(dive: dive, diver: diver, site: site),
           ),
         ),
         icon: const Icon(Icons.qr_code_2),

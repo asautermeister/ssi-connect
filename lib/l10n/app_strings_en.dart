@@ -238,12 +238,8 @@ class AppStringsEn extends AppStrings {
   @override
   String get diveSiteName => 'Name of the site';
   @override
-  String get siteSuggestion => 'Suggestion';
-  @override
-  String get useSuggestion => 'Use it';
-  @override
-  String siteNearby(String name, int metres) =>
-      '$name · ${distance(metres)} away';
+  String get siteAdoptedChange => 'Dive site adopted automatically - change';
+
   @override
   String moreSitesNearby(int count) =>
       count == 1 ? '1 more site nearby' : '$count more nearby';

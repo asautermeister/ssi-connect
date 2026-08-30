@@ -38,10 +38,13 @@ Kamera der SSI-App scannt.
   QR-Code – Scannen und Eintippen bleiben für alle, die kein SSI-Konto haben
 - **Tauchplätze aus dem SSI-Logbuch**: dieselbe Anmeldung holt jeden Platz, an dem man laut
   SSI schon getaucht ist, mit Nummer, Name und Position auf das Gerät. Danach erkennt die App
-  den Platz an der Position des Tauchgangs wieder und schlägt ihn vor; bestätigt landet er als
-  `site:` im QR-Code. Liegen mehrere Plätze im Umkreis, werden alle nach Entfernung sortiert
-  angeboten – vorgeschlagen wird immer, gesetzt nie von allein. Ein Platz lässt sich weiterhin
-  von Hand zuordnen (Nummer eintippen oder die Adresse der Platzseite einfügen).
+  den Platz an der Position des Tauchgangs wieder und **übernimmt ihn direkt** – er landet als
+  `site:` im QR-Code, ohne dass man ihn bestätigen muss. Stumm passiert das nie: Name, Nummer
+  und die Entfernung, bei der er erkannt wurde, stehen da, der Knopf sagt „Tauchplatz
+  automatisch übernommen", und ein Tipp ändert oder entfernt ihn. Liegen weitere Plätze im
+  Umkreis, wird darauf hingewiesen – Plätze liegen an derselben Küste dicht beieinander, und
+  SSI meldet nie, dass ein Tauchgang am falschen Ort abgelegt wurde. Ein Platz lässt sich
+  weiterhin von Hand zuordnen (Nummer eintippen oder die Adresse der Platzseite einfügen).
   Die Plätze gelten geräteweit, die Anmeldungen pro Person – ein Tauchplatz ist ein Ort, und
   den teilt die Familie. Unter „Einstellungen → SSI-Logbuch" stehen die bekannten Plätze,
   die verbundenen Konten und der Zeitpunkt des letzten Abgleichs

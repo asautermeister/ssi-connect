@@ -155,9 +155,7 @@ abstract class AppStrings {
   String get diveSiteNumber;
   String get diveSiteNumberHint;
   String get diveSiteName;
-  String get siteSuggestion;
-  String get useSuggestion;
-  String siteNearby(String name, int metres);
+  String get siteAdoptedChange;
   String moreSitesNearby(int count);
   String get searchDiveSite;
   String get noSiteMatches;

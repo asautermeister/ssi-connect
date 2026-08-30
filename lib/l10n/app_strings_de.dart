@@ -243,12 +243,9 @@ class AppStringsDe extends AppStrings {
   @override
   String get diveSiteName => 'Name des Platzes';
   @override
-  String get siteSuggestion => 'Vorschlag';
-  @override
-  String get useSuggestion => 'Übernehmen';
-  @override
-  String siteNearby(String name, int metres) =>
-      '$name · ${distance(metres)} entfernt';
+  String get siteAdoptedChange =>
+      'Tauchplatz automatisch übernommen – Zuordnung ändern';
+
   @override
   String moreSitesNearby(int count) => count == 1
       ? '1 weiterer Platz in der Nähe'
