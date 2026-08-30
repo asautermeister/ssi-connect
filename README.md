@@ -28,7 +28,8 @@ Kamera der SSI-App scannt.
   nach SSI? (Apnoe bleibt dabei außen vor, die läuft bei SSI anders.) Die übrigen trennen nach
   Art des Tauchens: „Scuba" alles außer Apnoe, „Rec" davon Single Gas, „Tech" Multi-Gas und
   CCR. Eingeklappt, solange man ihn nicht braucht – auf dem Handy ist die Zeile sonst zwei
-  Tauchgänge wert; ist gefiltert und die Zeile zu, sitzt ein Punkt am Symbol
+  Tauchgänge wert; ist gefiltert und die Zeile zu, sitzt ein Punkt am Symbol. Derselbe Filter
+  sitzt auch über der gemeinsamen Liste hinter „Alle anzeigen"
 - **Detailansicht** mit allen geladenen Werten (Tiefe, Dauer, Wassertemperatur, ...)
 - **QR-Code-Export** im Format, das der SSI-QR-Scanner beim Anlegen eines Tauchgangs erwartet –
   inklusive der SSI-Mitgliedsnummer, wenn für den Account eine hinterlegt ist

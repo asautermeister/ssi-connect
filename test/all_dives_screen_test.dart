@@ -12,7 +12,9 @@ import 'package:ssi_connect/dives/recent_dives_controller.dart';
 import 'package:ssi_connect/garmin/garmin_auth_exceptions.dart';
 import 'package:ssi_connect/garmin/models/garmin_session.dart';
 import 'package:ssi_connect/models/dive.dart';
+import 'package:ssi_connect/models/dive_type.dart';
 import 'package:ssi_connect/ui/all_dives_screen.dart';
+import 'package:ssi_connect/ui/recent_dive_card.dart';
 import 'package:ssi_connect/ui/theme/app_theme.dart';
 import 'support/exported_dives.dart';
 
@@ -57,7 +59,7 @@ GarminAccount _account(String name) => GarminAccount(
   ),
 );
 
-Dive _dive(String id, DateTime at) => Dive(
+Dive _dive(String id, DateTime at, {DiveType type = DiveType.scuba}) => Dive(
   id: id,
   dateTime: at,
   maxDepthMeters: 28,
@@ -65,7 +67,21 @@ Dive _dive(String id, DateTime at) => Dive(
   waterTemperatureCelsius: null,
   duration: const Duration(minutes: 54),
   locationName: null,
+  type: type,
 );
+
+/// One dive per type, newest first, all in one page.
+DiveFetcher _ofTypes(List<DiveType> types) => (account, {int start = 0}) async {
+  if (start > 0) return const [];
+  return [
+    for (var i = 0; i < types.length; i++)
+      _dive(
+        't$i',
+        DateTime(2025, 11, 8).subtract(Duration(days: i)),
+        type: types[i],
+      ),
+  ];
+};
 
 /// A logbook of [total] dives, one per day counting backwards, served in
 /// pages of [divePageSize] the way Garmin does.
@@ -312,6 +328,54 @@ void main() {
 
       expect(controller.forAccount('a').dives, hasLength(divePageSize + 4));
       expect(controller.hasMore, isFalse);
+    });
+
+    testWidgets('the same filter narrows this list too', (tester) async {
+      // The one behind "Alle anzeigen" - the same chips as the per-account
+      // list, from the same mixin, so the two cannot drift apart.
+      await pump(
+        tester,
+        accounts: [_account('a')],
+        fetch: _ofTypes(const [
+          DiveType.singleGas,
+          DiveType.multiGas,
+          DiveType.apnea,
+        ]),
+      );
+
+      expect(find.byType(RecentDiveCard), findsNWidgets(3));
+      expect(find.text('Tech'), findsNothing, reason: 'the row starts closed');
+
+      await tester.tap(find.byIcon(Icons.filter_list));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Tech'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(RecentDiveCard), findsOneWidget);
+      // Filtering hides dives, it does not unfetch them - the count at the
+      // foot is about what came from Garmin.
+      expect(find.text('3 Tauchgänge geladen'), findsOneWidget);
+    });
+
+    testWidgets('a filter matching nothing keeps a way back', (tester) async {
+      await pump(
+        tester,
+        accounts: [_account('a')],
+        fetch: _ofTypes(const [DiveType.singleGas, DiveType.singleGas]),
+      );
+
+      await tester.tap(find.byIcon(Icons.filter_list));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Tech'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(RecentDiveCard), findsNothing);
+      expect(find.textContaining('Keine Tauchgänge'), findsOneWidget);
+
+      await tester.tap(find.text('Alle anzeigen'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(RecentDiveCard), findsNWidgets(2));
     });
 
     testWidgets('a failed page says so and offers another go', (tester) async {

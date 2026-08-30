@@ -11,6 +11,7 @@ import '../garmin/garmin_auth_exceptions.dart';
 import 'recent_dive_card.dart';
 import 'theme/app_theme.dart';
 import 'widgets/app_card.dart';
+import 'widgets/dive_filter.dart';
 
 /// Every loaded dive across all accounts, newest first, with a button to
 /// fetch the next page from Garmin.
@@ -20,9 +21,15 @@ import 'widgets/app_card.dart';
 /// looking for a dive from last summer. It opens on what is already loaded
 /// - so instantly, and offline too - and only goes to the network when
 /// asked.
-class AllDivesScreen extends StatelessWidget {
+class AllDivesScreen extends StatefulWidget {
   const AllDivesScreen({super.key});
 
+  @override
+  State<AllDivesScreen> createState() => _AllDivesScreenState();
+}
+
+class _AllDivesScreenState extends State<AllDivesScreen>
+    with DiveFilterState<AllDivesScreen> {
   @override
   Widget build(BuildContext context) {
     final accounts = context.watch<AccountsController>().accounts;
@@ -31,35 +38,63 @@ class AllDivesScreen extends StatelessWidget {
     final s = AppStrings.of(context);
     // Each account's dives against that account's logbook - a family dives
     // together, so a cross-account match would tick everybody at once.
-    final inLogbook = context.watch<ExportedDivesController>().matchedAcross(
-      dives,
-    );
+    // Matched over all of them, before filtering: the matching is
+    // one-to-one, so doing it on a subset could hand a logbook entry to a
+    // different dive than the full list would.
+    final exported = context.watch<ExportedDivesController>();
+    final inLogbook = exported.matchedAcross(dives);
+    final visible = [
+      for (final entry in dives)
+        if (filter.accepts(
+          entry.dive,
+          isTransferred: exported.isTransferred(
+            entry.dive,
+            inLogbook: inLogbook.contains(entry.dive.id),
+          ),
+        ))
+          entry,
+    ];
 
     return Scaffold(
-      appBar: AppBar(title: Text(s.allDives)),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(
-          AppSpacing.lg,
-          AppSpacing.lg,
-          AppSpacing.lg,
-          AppSpacing.xxl,
-        ),
+      appBar: AppBar(
+        title: Text(s.allDives),
+        actions: [if (dives.isNotEmpty) buildFilterButton(s)],
+      ),
+      body: Column(
         children: [
-          for (final entry in dives) ...[
-            RecentDiveCard(
-              entry: entry,
-              inSsiLogbook: inLogbook.contains(entry.dive.id),
-            ),
-            const SizedBox(height: AppSpacing.md),
-          ],
-          const SizedBox(height: AppSpacing.sm),
-          _LoadMore(
-            controller: controller,
-            onPressed: () => controller.loadMore(
-              accounts: accounts,
-              fetch: context.read<DiveFetcher>(),
-            ),
-            loadedCount: dives.length,
+          buildFilterBar(),
+          Expanded(
+            child: visible.isEmpty && dives.isNotEmpty
+                ? buildNoMatchState(s)
+                : ListView(
+                    padding: const EdgeInsets.fromLTRB(
+                      AppSpacing.lg,
+                      AppSpacing.lg,
+                      AppSpacing.lg,
+                      AppSpacing.xxl,
+                    ),
+                    children: [
+                      for (final entry in visible) ...[
+                        RecentDiveCard(
+                          entry: entry,
+                          inSsiLogbook: inLogbook.contains(entry.dive.id),
+                        ),
+                        const SizedBox(height: AppSpacing.md),
+                      ],
+                      const SizedBox(height: AppSpacing.sm),
+                      _LoadMore(
+                        controller: controller,
+                        onPressed: () => controller.loadMore(
+                          accounts: accounts,
+                          fetch: context.read<DiveFetcher>(),
+                        ),
+                        // What is loaded, not what is on screen: this
+                        // counts what has been fetched from Garmin, and a
+                        // filter does not unfetch anything.
+                        loadedCount: dives.length,
+                      ),
+                    ],
+                  ),
           ),
         ],
       ),
