@@ -12,7 +12,7 @@ class AppInfo {
   const AppInfo._();
 
   /// Must match `version:` in pubspec.yaml, build number included.
-  static const version = '1.1.0+4';
+  static const version = '1.2.0+5';
 
   static const repositoryUrl = 'https://github.com/asautermeister/ssi-connect';
 
