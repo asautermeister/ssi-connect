@@ -42,18 +42,6 @@ niemand weiß, welche Tauchgänge einen haben.
 
 ## Zu prüfen
 
-### Die Deko-Behebung am Gerät bestätigen
-
-Der Fehler „jeder Tauchgang landet als Dekompressionstauchgang" ist
-behoben: `deco:0` wird nicht mehr gesendet, `deco:1` nur noch beim echten
-Deko-Tauchgang. Belegt ist das durch zwei Exporte der SSI-App, die sich
-genau in diesem einen Feld unterscheiden – Einzelheiten im
-Klassenkommentar von `lib/ssi/ssi_qr_payload_builder.dart`.
-
-Offen ist die andere Richtung: dass ein Code **ohne** `deco` in SSI auch
-wirklich als normaler Tauchgang ankommt. Ein Tauchgang ohne Deko
-übertragen, in der SSI-App nachsehen – dann kann dieser Punkt weg.
-
 ### Garmins Tauchgangsnummern
 
 *Merkposten – das genaue Symptom steht noch aus.*
