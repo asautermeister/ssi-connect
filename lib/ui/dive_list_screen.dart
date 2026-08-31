@@ -206,9 +206,6 @@ class DiveList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final maxDepth = dives
-        .map((d) => d.maxDepthMeters ?? 0)
-        .fold<double>(0, (a, b) => a > b ? a : b);
     final header = this.header;
     // Matched once for the whole list rather than per row: a logbook entry
     // must only be able to account for one dive.
@@ -233,7 +230,6 @@ class DiveList extends StatelessWidget {
         final dive = dives[index];
         return DiveListTile(
           dive: dive,
-          maxDepthInList: maxDepth,
           diver: diver,
           accountColor: accountColor,
           inSsiLogbook: inLogbook.contains(dive.id),

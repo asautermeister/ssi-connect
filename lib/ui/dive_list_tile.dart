@@ -22,7 +22,6 @@ class DiveListTile extends StatelessWidget {
   const DiveListTile({
     super.key,
     required this.dive,
-    required this.maxDepthInList,
     this.diver,
     this.accountColor,
     this.inSsiLogbook = false,
@@ -45,10 +44,6 @@ class DiveListTile extends StatelessWidget {
   /// Colour of the account these dives belong to, drawn as a bar on the
   /// left edge. Null for FIT imports, which have no account.
   final AccountColor? accountColor;
-
-  /// Deepest dive currently listed, so the bars share one scale. Pass 0 to
-  /// hide the bar entirely.
-  final double maxDepthInList;
 
   /// Whether this dive was found in the SSI logbook of the account it
   /// belongs to. Worked out by the list, which knows whose dives these are
@@ -87,7 +82,8 @@ class DiveListTile extends StatelessWidget {
     final s = AppStrings.of(context);
     final palette = theme.extension<AppPalette>()!;
     final depth = dive.maxDepthMeters;
-    final showMeter = maxDepthInList > 0 && depth != null;
+    // The scale is fixed now, so a depth is the only thing the bar needs.
+    final showMeter = depth != null;
 
     return AppCard(
       edgeColor: accountColor?.of(context),
@@ -177,7 +173,7 @@ class DiveListTile extends StatelessWidget {
           ),
           if (showMeter) ...[
             const SizedBox(height: AppSpacing.lg),
-            DepthMeter(value: depth, max: maxDepthInList),
+            DepthMeter(value: depth),
           ],
         ],
       ),

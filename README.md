@@ -22,7 +22,12 @@ Kamera der SSI-App scannt.
   gemeinsame Liste, die sich auf Knopfdruck seitenweise weiter in die Vergangenheit lädt
 - **Farbe je Account**, als Balken am linken Rand der Tauchgänge – auf einem Familien-Tablet
   ist so auf einen Blick klar, wessen Tauchgang das ist (der Name steht zusätzlich dabei)
-- **Tauchgangs-Liste** pro Account: Datum, max. Tiefe, Tauchgangs-Nummer des Tages – mit
+- **Tauchgangs-Liste** pro Account: Datum, max. Tiefe, Tauchgangs-Nummer des Tages. Ein Balken
+  auf fester Skala von 0 bis 45 m macht die Tiefe auf einen Blick vergleichbar – Striche alle
+  fünf Meter, längere alle zehn, beziffert nur an den Enden. Tiefer als 45 m füllt den Balken
+  ganz und setzt einen Pfeil ans Ende. Fest ist dabei der Punkt: vorher richtete sich der Balken
+  nach dem tiefsten Tauchgang der gerade geladenen Liste, war also je nach Filter und Ladestand
+  unterschiedlich lang für denselben Tauchgang. Dazu ein
   Filter hinter dem Trichter-Symbol oben rechts: „Alle / Noch offen / Scuba / Rec / Tech".
   „Noch offen" beantwortet die Frage, die man vor dieser Liste tatsächlich hat: was muss noch
   nach SSI? (Apnoe bleibt dabei außen vor, die läuft bei SSI anders.) Die übrigen trennen nach

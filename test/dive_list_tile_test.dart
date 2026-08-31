@@ -7,6 +7,7 @@ import 'package:ssi_connect/models/dive_type.dart';
 import 'package:ssi_connect/ui/dive_list_tile.dart';
 import 'package:ssi_connect/ui/theme/app_theme.dart';
 import 'package:ssi_connect/ui/widgets/dive_type_icon.dart';
+import 'package:ssi_connect/ui/widgets/stat_tile.dart';
 import 'support/exported_dives.dart';
 import 'package:provider/provider.dart';
 
@@ -60,7 +61,6 @@ void main() {
         tester,
         DiveListTile(
           dive: _dive(maxDepth: 44, duration: const Duration(minutes: 92)),
-          maxDepthInList: 44,
         ),
       );
 
@@ -76,10 +76,7 @@ void main() {
     ) async {
       await _pump(
         tester,
-        DiveListTile(
-          dive: _dive(maxDepth: 11.5, type: DiveType.apnea),
-          maxDepthInList: 11.5,
-        ),
+        DiveListTile(dive: _dive(maxDepth: 11.5, type: DiveType.apnea)),
       );
 
       final badge = tester.widget<DiveTypeIcon>(find.byType(DiveTypeIcon));
@@ -94,10 +91,7 @@ void main() {
     ) async {
       await _pump(
         tester,
-        DiveListTile(
-          dive: _dive(maxDepth: 20, diveNumber: 142),
-          maxDepthInList: 20,
-        ),
+        DiveListTile(dive: _dive(maxDepth: 20, diveNumber: 142)),
       );
 
       expect(find.text('# 142'), findsOneWidget);
@@ -108,10 +102,7 @@ void main() {
     ) async {
       await _pump(
         tester,
-        DiveListTile(
-          dive: _dive(maxDepth: 20, diveNumber: 142),
-          maxDepthInList: 20,
-        ),
+        DiveListTile(dive: _dive(maxDepth: 20, diveNumber: 142)),
       );
 
       final number = tester.getRect(find.text('# 142'));
@@ -125,10 +116,7 @@ void main() {
     testWidgets('omits the running number when the source has none', (
       tester,
     ) async {
-      await _pump(
-        tester,
-        DiveListTile(dive: _dive(maxDepth: 20), maxDepthInList: 20),
-      );
+      await _pump(tester, DiveListTile(dive: _dive(maxDepth: 20)));
 
       expect(find.textContaining('#'), findsNothing);
     });
@@ -137,10 +125,7 @@ void main() {
       for (final type in DiveType.values) {
         await _pump(
           tester,
-          DiveListTile(
-            dive: _dive(maxDepth: 20, type: type),
-            maxDepthInList: 20,
-          ),
+          DiveListTile(dive: _dive(maxDepth: 20, type: type)),
         );
         expect(tester.takeException(), isNull);
       }
@@ -149,37 +134,31 @@ void main() {
     testWidgets('renders without a depth, showing the placeholder', (
       tester,
     ) async {
-      await _pump(tester, DiveListTile(dive: _dive(), maxDepthInList: 0));
+      await _pump(tester, DiveListTile(dive: _dive()));
 
       expect(find.text('–'), findsOneWidget);
-      // No shared scale and no value, so no magnitude bar is drawn.
-      expect(find.byType(LinearProgressIndicator), findsNothing);
+      // Nothing to draw, so no bar - and no bare axis either.
+      expect(find.byType(DepthMeter), findsNothing);
     });
 
-    testWidgets('draws the depth meter when a scale is available', (
+    testWidgets('the depth bar reads against a fixed scale', (tester) async {
+      // Fixed, so the same dive is the same length whatever else is
+      // loaded. The ends are named; between them the ticks are the scale.
+      await _pump(tester, DiveListTile(dive: _dive(maxDepth: 20)));
+
+      expect(tester.widget<DepthMeter>(find.byType(DepthMeter)).value, 20);
+      expect(find.text('0'), findsOneWidget);
+      expect(find.text('45 m'), findsOneWidget);
+    });
+
+    testWidgets('a dive past the scale still draws its own depth', (
       tester,
     ) async {
-      await _pump(
-        tester,
-        DiveListTile(dive: _dive(maxDepth: 20), maxDepthInList: 40),
-      );
+      // The bar fills and the arrow says "further than this"; the value is
+      // passed through untouched, so nothing downstream is told it was 45.
+      await _pump(tester, DiveListTile(dive: _dive(maxDepth: 58)));
 
-      final meter = tester.widget<LinearProgressIndicator>(
-        find.byType(LinearProgressIndicator),
-      );
-      expect(meter.value, closeTo(0.5, 0.001));
-    });
-
-    testWidgets('clamps the meter when a dive is the deepest', (tester) async {
-      await _pump(
-        tester,
-        DiveListTile(dive: _dive(maxDepth: 40), maxDepthInList: 40),
-      );
-
-      final meter = tester.widget<LinearProgressIndicator>(
-        find.byType(LinearProgressIndicator),
-      );
-      expect(meter.value, 1.0);
+      expect(tester.widget<DepthMeter>(find.byType(DepthMeter)).value, 58);
     });
   });
 }
