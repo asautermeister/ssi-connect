@@ -122,11 +122,12 @@ class _SsiBuddiesScreenState extends State<SsiBuddiesScreen> {
       for (final centre in centers.centers)
         if (_matches([centre.name, centre.centerId])) centre,
     ];
-    // By name alone, because the number is not on the card - SSI's site ids
-    // are not something anybody reads or remembers.
+    // By name and region, the two readable things on screen. Not by the
+    // number: SSI's site ids are not something anybody reads or remembers,
+    // and not by the coordinates either.
     final matchedSites = [
       for (final site in sites.sites)
-        if (_matches([site.name])) site,
+        if (_matches([site.name, site.region])) site,
     ];
     final visibleSites = searching || _allSites
         ? matchedSites
@@ -218,9 +219,12 @@ class _SsiBuddiesScreenState extends State<SsiBuddiesScreen> {
                       total: sites.sites.length,
                     ),
                   ),
-                  for (final site in visibleSites) ...[
-                    _SiteCard(site: site),
-                    const SizedBox(height: AppSpacing.md),
+                  for (final group in _byRegion(visibleSites, s)) ...[
+                    _RegionHeader(title: group.region),
+                    for (final site in group.sites) ...[
+                      _SiteCard(site: site),
+                      const SizedBox(height: AppSpacing.md),
+                    ],
                   ],
                   if (visibleSites.length < matchedSites.length)
                     Align(
@@ -269,11 +273,74 @@ class _Count extends StatelessWidget {
   }
 }
 
+/// The sites grouped by the region SSI files them under, regions in
+/// alphabetical order and the ungrouped ones last.
+///
+/// Grouping rather than sorting: a list of a hundred sites from six trips
+/// reads as one undifferentiated wall, and "Gozo" is the word that says
+/// which trip a name belongs to. Sites without a region go to the bottom
+/// under their own heading rather than being folded into the last group,
+/// where they would look like they belonged to it.
+///
+/// The order inside a group is whatever came in - the controller keeps its
+/// sites alphabetical, so the groups are too.
+List<({String region, List<DiveSite> sites})> _byRegion(
+  List<DiveSite> sites,
+  AppStrings s,
+) {
+  final groups = <String, List<DiveSite>>{};
+  final ungrouped = <DiveSite>[];
+  for (final site in sites) {
+    if (site.region case final region?) {
+      groups.putIfAbsent(region, () => []).add(site);
+    } else {
+      ungrouped.add(site);
+    }
+  }
+
+  final regions = groups.keys.toList()
+    ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+  return [
+    for (final region in regions) (region: region, sites: groups[region]!),
+    if (ungrouped.isNotEmpty) (region: s.withoutRegion, sites: ungrouped),
+  ];
+}
+
+/// A region above its sites. Deliberately quieter than [SectionHeader]:
+/// this divides one section, it does not open a new one.
+class _RegionHeader extends StatelessWidget {
+  const _RegionHeader({required this.title});
+
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.xs,
+        AppSpacing.sm,
+        AppSpacing.xs,
+        AppSpacing.md,
+      ),
+      child: Text(
+        title,
+        style: theme.textTheme.titleSmall?.copyWith(
+          color: theme.extension<AppPalette>()!.inkMuted,
+        ),
+      ),
+    );
+  }
+}
+
 /// One dive site as this device knows it.
 ///
-/// The name only. SSI's site id is in the QR payload and in the dive's
-/// detail view, where it can be checked against something - here it would
-/// be a number nobody reads.
+/// Name and position. SSI's site id stays off the card - it is in the QR
+/// payload and in the dive's detail view, where it can be checked against
+/// something; here it would be a number nobody reads. The coordinates are
+/// the opposite: they say which of two similarly named places this is, and
+/// they can be pasted straight into a map.
 class _SiteCard extends StatelessWidget {
   const _SiteCard({required this.site});
 
@@ -289,7 +356,21 @@ class _SiteCard extends StatelessWidget {
         children: [
           Icon(Icons.place_outlined, size: 18, color: palette.inkMuted),
           const SizedBox(width: AppSpacing.md),
-          Expanded(child: Text(site.name, style: theme.textTheme.titleMedium)),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(site.name, style: theme.textTheme.titleMedium),
+                const SizedBox(height: 2),
+                Text(
+                  site.coordinatesLabel,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: palette.inkMuted,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );

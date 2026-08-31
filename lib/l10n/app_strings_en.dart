@@ -283,6 +283,8 @@ class AppStringsEn extends AppStrings {
   @override
   String get diveSites => 'Dive sites';
   @override
+  String get withoutRegion => 'No region';
+  @override
   String get ssiLogbook => 'SSI logbook';
   @override
   String knownDiveSites(int count) =>

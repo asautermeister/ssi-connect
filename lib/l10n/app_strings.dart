@@ -176,6 +176,10 @@ abstract class AppStrings {
   String get ssiAccountHint;
   String get signInWithSsi;
   String get diveSites;
+
+  /// Heading over the sites SSI files under no region - entered by hand,
+  /// or imported before the region was kept.
+  String get withoutRegion;
   String get ssiLogbook;
   String knownDiveSites(int count);
   String knownBuddies(int count);

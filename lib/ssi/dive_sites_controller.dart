@@ -59,19 +59,46 @@ class DiveSitesController extends ChangeNotifier {
   /// may have renamed one, and a position that came from one of their own
   /// dives points at the entry they actually use, which is a better match
   /// target than a site's registered centre.
+  ///
+  /// With one exception: a known site that has no region yet takes the one
+  /// from the import. The region is not something the user can set or
+  /// correct, so there is no edit to protect - and without this, every
+  /// site imported before regions were kept would stay ungrouped forever.
   Future<int> addAllNew(Iterable<DiveSite> sites) async {
     final known = {for (final site in _sites) site.siteId};
+    final regions = <String, String>{};
     final added = <DiveSite>[];
     for (final site in sites) {
       // `known` also guards against duplicates inside the incoming list.
-      if (known.add(site.siteId)) added.add(site);
+      if (known.add(site.siteId)) {
+        added.add(site);
+      } else if (site.region != null) {
+        regions[site.siteId] = site.region!;
+      }
     }
-    if (added.isEmpty) return 0;
 
-    _sites = _sorted([..._sites, ...added]);
+    final backfilled = [
+      for (final site in _sites)
+        if (regions[site.siteId] case final region? when site.region == null)
+          site.withRegion(region)
+        else
+          site,
+    ];
+    if (added.isEmpty && !_anyChanged(_sites, backfilled)) return 0;
+
+    _sites = _sorted([...backfilled, ...added]);
     await _repository.saveAll(_sites);
     notifyListeners();
     return added.length;
+  }
+
+  /// Whether the backfill actually changed anything - identity is enough,
+  /// because an untouched entry is the very same object.
+  static bool _anyChanged(List<DiveSite> before, List<DiveSite> after) {
+    for (var i = 0; i < before.length; i++) {
+      if (!identical(before[i], after[i])) return true;
+    }
+    return false;
   }
 
   Future<void> remove(String siteId) async {

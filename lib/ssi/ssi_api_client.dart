@@ -251,6 +251,9 @@ class SsiApiClient {
 /// `country_lalo` is the centre of the *country*, roughly 10 km off, and
 /// `odin_dive_sites_address` held SSI's own office address rather than the
 /// site's. Only `odin_dive_sites_lat`/`_lon` describe the place.
+///
+/// `odin_dive_sites_regions_name` is kept for grouping the list, and
+/// nothing else - see [DiveSite.region]. `bow` ("salt") is still unused.
 DiveSite? _siteFromLogbookEntry(Map<String, dynamic> entry) {
   final siteId = _idOf(entry['odin_dive_sites_id']);
   if (siteId == null) return null;
@@ -265,6 +268,7 @@ DiveSite? _siteFromLogbookEntry(Map<String, dynamic> entry) {
   if (latitude == 0 && longitude == 0) return null;
 
   final name = (entry['odin_dive_sites_name'] as String?)?.trim() ?? '';
+  final region = (entry['odin_dive_sites_regions_name'] as String?)?.trim();
   return DiveSite(
     // Named by its number when SSI has no name, the same way a buddy
     // without a name is.
@@ -272,6 +276,7 @@ DiveSite? _siteFromLogbookEntry(Map<String, dynamic> entry) {
     siteId: siteId,
     latitude: latitude,
     longitude: longitude,
+    region: region == null || region.isEmpty ? null : region,
   );
 }
 

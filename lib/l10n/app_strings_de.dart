@@ -292,6 +292,8 @@ class AppStringsDe extends AppStrings {
   @override
   String get diveSites => 'Tauchplätze';
   @override
+  String get withoutRegion => 'Ohne Region';
+  @override
   String get ssiLogbook => 'SSI-Logbuch';
   @override
   String knownDiveSites(int count) =>

@@ -288,6 +288,23 @@ void main() {
       expect(restored.longitude, closeTo(20.8990, 0.00001));
     });
 
+    test('a region survives the round trip, and its absence too', () {
+      final withRegion = DiveSite.fromJson(
+        _zakynthos.withRegion('Zakynthos').toJson(),
+      );
+      expect(withRegion.region, 'Zakynthos');
+
+      // Entries written before the field existed have no key at all.
+      expect(_zakynthos.toJson().containsKey('region'), isFalse);
+      expect(DiveSite.fromJson(_zakynthos.toJson()).region, isNull);
+    });
+
+    test('coordinates read as one line, with dots and four places', () {
+      // Pasted into a map as-is; a German decimal comma would collide with
+      // the comma between the two values.
+      expect(_zakynthos.coordinatesLabel, '37.7870, 20.8990');
+    });
+
     test('identifies a site by its number, not by its name', () {
       expect(
         const DiveSite(

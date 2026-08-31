@@ -141,8 +141,19 @@ class _StoredSites extends DiveSiteRepository {
   Future<void> saveAll(List<DiveSite> sites) async {}
 }
 
-DiveSite _site(String name, {String id = '1'}) =>
-    DiveSite(siteId: id, name: name, latitude: 36.0, longitude: 14.0);
+DiveSite _site(
+  String name, {
+  String id = '1',
+  String? region,
+  double latitude = 36.0,
+  double longitude = 14.0,
+}) => DiveSite(
+  siteId: id,
+  name: name,
+  latitude: latitude,
+  longitude: longitude,
+  region: region,
+);
 
 void main() {
   group('SsiBuddiesScreen', () {
@@ -451,6 +462,63 @@ void main() {
 
       expect(find.text('Platz 13'), findsOneWidget);
       expect(find.text('Mehr anzeigen'), findsNothing);
+    });
+
+    testWidgets('sites are grouped by the region SSI files them under', (
+      tester,
+    ) async {
+      await _pump(
+        tester,
+        const [],
+        sites: [
+          _site('Ras il-Hobz', id: '1', region: 'Gozo'),
+          _site('Blue Hole', id: '2', region: 'Gozo'),
+          _site('Hausriff', id: '3'),
+          _site('Cirkewwa', id: '4', region: 'Malta'),
+        ],
+      );
+
+      // Regions alphabetically, and the ones SSI has no region for last -
+      // folded into the group above they would look like they belonged.
+      final headings = tester
+          .widgetList<Text>(find.byType(Text))
+          .map((t) => t.data)
+          .where((t) => t == 'Gozo' || t == 'Malta' || t == 'Ohne Region')
+          .toList();
+      expect(headings, ['Gozo', 'Malta', 'Ohne Region']);
+    });
+
+    testWidgets('a site carries its position under its name', (tester) async {
+      await _pump(
+        tester,
+        const [],
+        sites: [_site('Ras il-Hobz', latitude: 36.0166, longitude: 14.2798)],
+      );
+
+      // Four places and dots, so it can be pasted into a map.
+      expect(find.text('36.0166, 14.2798'), findsOneWidget);
+    });
+
+    testWidgets('the search reaches a region name too', (tester) async {
+      // It is on screen as a heading, so typing it has to work - the same
+      // rule the rest of this screen follows.
+      await _pump(
+        tester,
+        [
+          for (var i = 0; i < 8; i++)
+            SsiBuddyCode(memberId: '$i', firstName: 'Marco', lastName: '$i'),
+        ],
+        sites: [
+          _site('Ras il-Hobz', id: '1', region: 'Gozo'),
+          _site('Cirkewwa', id: '2', region: 'Malta'),
+        ],
+      );
+
+      await tester.enterText(find.byType(TextField), 'gozo');
+      await tester.pumpAndSettle();
+
+      expect(find.text('Ras il-Hobz'), findsOneWidget);
+      expect(find.text('Cirkewwa'), findsNothing);
     });
 
     testWidgets('one search field narrows every section at once', (
