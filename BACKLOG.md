@@ -69,47 +69,98 @@ so ist, liefert ausgerechnet der Weg für den Bootstag weniger als der
 einzelne QR-Code – das gehört behoben, bevor der Einstieg wieder
 prominent wird.
 
-### Den SSI-Bereich neu ordnen, und den Abgleich aus den Einstellungen holen
+### Den SSI-Bereich neu ordnen
 
-Der SSI-Teil ist heute auf drei Orte verteilt, ohne dass einer davon der
-offensichtliche wäre:
+*Der Abgleich ist beschlossen und wird gebaut (siehe unten); der Umzug der
+Anzeige und die beiden Kleinteile stehen noch aus.*
 
-* die **Anmeldung** beim jeweiligen Account („SSI-Identität"),
-* der **Abgleich** samt Zahlen und Zeitstempel unter „Einstellungen →
-  SSI-Logbuch",
-* die **Buddy-Liste** als eigener Eintrag auf der Startseite.
+Der SSI-Teil liegt heute an drei Orten, ohne dass einer davon der
+offensichtliche wäre: die **Anmeldung** beim Account, der **Abgleich**
+samt Zahlen unter „Einstellungen → SSI-Logbuch", die **Buddy-Liste** als
+eigener Eintrag auf der Startseite.
 
-Der Abgleich in den Einstellungen ist dabei der klarste Fehlgriff: er ist
-keine Einstellung, sondern das Abholen von Daten. Er gehört dorthin, wo
-ohnehin Daten geholt werden – an den normalen Tauchgangs-Abruf, mit
-demselben Zwischenspeicher-Verhalten wie dort: erst zeigen, was da ist,
-dann im Hintergrund auffrischen.
+**Beschlossen und in Arbeit: das Aktualisierungsverhalten.** Garmin und
+SSI werden gemeinsam über dieselbe Geste geholt, mit Zeitstempeln je
+Account statt einer Signatur über alle:
 
-**Was dafür schon liegt.** `RecentDivesController` macht das für Garmin
-bereits vor (Cache zuerst, dann Aktualisierung, sichtbarer Stand-Hinweis).
-Und `SsiSyncController` speichert seit dem Zeitstempel-Eintrag bereits
-`lastSyncAt` dauerhaft – das ist genau die Angabe, an der sich entscheiden
-lässt, ob ein Abgleich fällig ist.
+* **60 s** Mindestabstand für jeden Abruf, auch beim Herunterziehen — die
+  Zahl stammt aus der SSI-App.
+* **15 min**, ab wann ein Bildschirm beim Öffnen von allein nachlädt.
+  Getrennte Fenster für Garmin und SSI braucht es nicht: die App wird
+  abends nach dem Tauchtag benutzt, nicht während.
+* **Umfang folgt der Ansicht.** In der Ansicht eines Accounts wird nur
+  dieser aktualisiert.
+* Der Knopf „Jetzt abgleichen" bleibt in den Einstellungen, aber **nur im
+  Diagnose-Modus** — als Notausgang, nicht als Weg.
 
-**Beim Bauen zu klären:**
+**Danach umzuziehen.** SSI Buddy ist eigentlich der Bildschirm für „alles,
+was aus SSI kommt", er heißt nur nicht so:
 
-1. **Wie oft.** Ein Logbuch ändert sich selten; bei jedem App-Start
-   abzugleichen wäre Verschwendung und würde die Startseite ausbremsen.
-   Naheliegend: höchstens einmal am Tag, plus beim Herunterziehen zum
-   Aktualisieren.
-2. **Ein Fehlschlag darf die Tauchgangsliste nicht anfassen.** Garmin-Abruf
-   und SSI-Abgleich sind unabhängig. Schlägt SSI fehl, muss die Liste
-   normal aussehen – der Hinweis gehört an eine ruhige Stelle, so wie es
-   der Offline-Hinweis heute vormacht.
-3. **Was in den Einstellungen bleibt.** Die Zahlen und der Zeitpunkt des
-   letzten Abgleichs sind dort weiterhin richtig aufgehoben; ein
-   „Jetzt abgleichen" darf als Notausgang bleiben, nur eben nicht als
-   einziger Weg.
+1. **Tauchplätze als eigener Abschnitt.** Heute kann man die bekannten
+   Plätze nirgends ansehen — sie tauchen nur im Zuordnen-Dialog auf.
+   Nicht alle auf einmal: die ersten zehn, dann „mehr".
+2. **Kein Status-Block**, aber eine **Fehlerzeile**, wenn ein Abgleich
+   scheitert. Der wichtigste Fall ist der abgelaufene SSI-Token: die
+   Sitzung wird verworfen, das Logbuch vergessen, die grünen Haken
+   verschwinden — künftig hinter einem beiläufigen Herunterziehen. Mit dem
+   Konto im Klartext und einem „Erneut anmelden".
+3. **Einstellungen werden wieder, was sie sind:** Design, Sprache,
+   Diagnose.
+4. **Umbenennen**, wenn Plätze dort liegen: „SSI" mit den Abschnitten
+   Meine Codes / Mittaucher / Tauchbasen / Tauchplätze.
 
-**Nebeneffekt, der es lohnender macht als es klingt.** Der automatische
-Übernahme-Haken hängt daran, wie aktuell das Logbuch ist. Solange der
-Abgleich ein Knopf in den Einstellungen ist, den man vergisst, sind die
-grünen Haken älter als die Tauchgänge daneben.
+### Suche in SSI Buddy
+
+*Entwurf steht, wird mit dem Umzug oben gebaut.*
+
+Ein Feld für den ganzen Bildschirm, nicht eines je Abschnitt: beim Tippen
+weiß man nicht, ob „Ras" ein Platz, eine Basis oder ein Nachname ist.
+
+* Sichtbar erst ab **8 Einträgen** — dieselbe Schwelle wie im
+  Tauchplatz-Dialog, damit die App eine Regel hat und nicht zwei.
+* Filtert **alle Abschnitte gleichzeitig**; leere Abschnitte verschwinden
+  während der Suche, statt als leere Überschrift stehen zu bleiben.
+* Gesucht wird nur, **was auf der Karte steht**: Name und Nummer
+  (Mitglieds-, Basis-, Platznummer). Nicht die E-Mail — ein Treffer, den
+  man auf der Karte nicht sieht, sieht aus wie ein Fehler.
+* Die Überschrift zählt mit („3 von 41"), sonst wirkt eine gefilterte
+  Liste wie eine kurze.
+* Während der Suche gilt die 10er-Grenze der Tauchplätze nicht, sondern
+  das Suchergebnis.
+
+### Herkunft eines Buddy-Eintrags
+
+*Später nochmal ansehen.*
+
+Bei 41 importierten Mittauchern beantwortet heute nichts die Frage „wer
+ist das, und warum steht der hier?". Die Antwort wäre oft: weil er im
+Logbuch einer anderen Person auf diesem Gerät stand.
+
+**Nicht an `SsiBuddyCode` anbauen.** Der Typ ist das Drahtformat — er wird
+aus QR-Codes geparst, in QR-Codes gerendert und dient als Identität eines
+Accounts. Herkunftsdaten dort hinein hieße, dass ein angezeigter QR-Code
+Felder mit sich trägt, die niemanden außerhalb dieses Geräts angehen.
+Stattdessen ein Speicher-Typ darum herum:
+
+```dart
+enum BuddySource { logbook, scanned, byHand, unknown }
+
+class StoredBuddy {
+  final SsiBuddyCode code;
+  final BuddySource source;
+  final String? fromAccountId;   // nur bei logbook: wessen Logbuch
+  final DateTime? addedAt;
+}
+```
+
+Auf der Karte eine leise Zeile, nur wo bekannt: „Aus dem Logbuch von
+Andreas" · „Abgescannt" · „Von Hand". **Bestehende Einträge bekommen
+`unknown` und zeigen gar nichts** — lieber schweigen als eine Herkunft
+erfinden. Das ist zugleich die Migration.
+
+**Was damit möglich würde, aber eigene Entscheidungen sind:** beim
+Entfernen eines Garmin-Accounts anbieten, die Mittaucher mitzunehmen, die
+nur aus dessen Logbuch stammen; und ein Filter „nur meine".
 
 ### Fortschrittsbalken für den Tauchplatz-Abgleich
 
