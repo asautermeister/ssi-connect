@@ -174,7 +174,12 @@ class _Body extends StatelessWidget {
       accounts: accounts,
     );
     if (ok) {
-      await sync.syncAll(
+      // Straight away and without the usual floor: a fresh login is the one
+      // moment where there is certainly something to fetch.
+      sync.forgetSyncState(account.id);
+      final signedIn = accounts.accounts.where((a) => a.id == account.id);
+      await sync.syncAccounts(
+        scope: signedIn.toList(),
         accounts: accounts,
         sites: sites,
         buddies: buddies,

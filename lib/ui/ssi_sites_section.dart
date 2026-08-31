@@ -7,6 +7,7 @@ import '../dives/exported_dives_controller.dart';
 import '../ssi/dive_sites_controller.dart';
 import '../ssi/ssi_buddies_controller.dart';
 import '../ssi/ssi_sync_controller.dart';
+import 'developer_mode.dart';
 import 'format.dart';
 import 'theme/app_theme.dart';
 import 'widgets/app_card.dart';
@@ -82,21 +83,28 @@ class SsiSitesSection extends StatelessWidget {
                       ],
                     ),
                   ),
-                const SizedBox(height: AppSpacing.md),
-                Text(s.ssiSyncExplanation, style: theme.textTheme.bodySmall),
-                const SizedBox(height: AppSpacing.lg),
-                FilledButton.icon(
-                  icon: const Icon(Icons.sync, size: 18),
-                  label: Text(s.ssiSyncSites),
-                  onPressed: sync.isBusy
-                      ? null
-                      : () => context.read<SsiSyncController>().syncAll(
-                          accounts: accounts,
-                          sites: sites,
-                          buddies: buddies,
-                          exported: context.read<ExportedDivesController>(),
-                        ),
-                ),
+                // The abgleich happens with every refresh now, so this is
+                // no longer a way anybody needs - only a lever for finding
+                // out why one did not work. Which is what the diagnostic
+                // mode is for.
+                if (context.watch<DeveloperMode>().enabled) ...[
+                  const SizedBox(height: AppSpacing.md),
+                  Text(s.ssiSyncExplanation, style: theme.textTheme.bodySmall),
+                  const SizedBox(height: AppSpacing.lg),
+                  FilledButton.icon(
+                    icon: const Icon(Icons.sync, size: 18),
+                    label: Text(s.ssiSyncSites),
+                    onPressed: sync.isBusy
+                        ? null
+                        : () => context.read<SsiSyncController>().syncAccounts(
+                            scope: accounts.accounts,
+                            accounts: accounts,
+                            sites: sites,
+                            buddies: buddies,
+                            exported: context.read<ExportedDivesController>(),
+                          ),
+                  ),
+                ],
               ],
 
               if (sync.isBusy) ...[

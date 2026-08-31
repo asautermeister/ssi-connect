@@ -87,6 +87,11 @@ Kamera der SSI-App scannt.
   folgend. Der QR-Code bleibt immer hell – ein dunkler Code ist für Kameras unzuverlässig
 - **FIT-Datei-Import** als Alternative, falls der Garmin-Login gerade nicht funktioniert
   (z.B. Original-FIT-Export aus Garmin Connect Web)
+- **Aktualisieren durch Herunterziehen**, und zwar Garmin **und** SSI zusammen: die grünen
+  Haken und die Tauchplätze sind damit so aktuell wie die Tauchgänge, neben denen sie stehen.
+  In der Ansicht eines Accounts wird nur dieser aktualisiert. Beim Öffnen eines Bildschirms
+  passiert es von allein, wenn die Daten älter als 15 Minuten sind; ein Abruf desselben
+  Kontos näher als 60 Sekunden am vorigen unterbleibt – die Zahl stammt aus der SSI-App
 - **Offline nutzbar**: die zuletzt geladenen Tauchgänge liegen auf dem Gerät und stehen auch
   ohne Netz zur Verfügung – mit sichtbarem Hinweis, von wann sie sind
 - Zugangsdaten, SSI-Token *und* die zwischengespeicherten Tauchgänge liegen verschlüsselt im

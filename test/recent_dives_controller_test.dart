@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:ssi_connect/accounts/models/garmin_account.dart';
 import 'package:ssi_connect/dives/dive_cache_repository.dart';
 import 'package:ssi_connect/dives/recent_dives_controller.dart';
+import 'package:ssi_connect/dives/refresh.dart';
 import 'package:ssi_connect/garmin/garmin_auth_exceptions.dart';
 import 'package:ssi_connect/garmin/models/garmin_session.dart';
 import 'package:ssi_connect/models/dive.dart';
@@ -61,6 +62,7 @@ void main() {
                 _dive('a2', DateTime(2025, 11, 1, 8)),
               ]
             : [_dive('m1', DateTime(2025, 11, 5, 8))],
+        notWithin: Duration.zero,
       );
 
       final recent = controller.recent([andreas, marie]);
@@ -80,6 +82,7 @@ void main() {
           for (var day = 1; day <= 9; day++)
             _dive('d$day', DateTime(2025, 11, day)),
         ],
+        notWithin: Duration.zero,
       );
 
       expect(controller.recent([account], limit: 5), hasLength(5));
@@ -96,6 +99,7 @@ void main() {
           if (account.id == 'broken') throw StateError('login abgelaufen');
           return [_dive('w1', DateTime(2025, 11, 8))];
         },
+        notWithin: Duration.zero,
       );
 
       expect(controller.recent([broken, working]).map((r) => r.dive.id), [
@@ -117,12 +121,13 @@ void main() {
           _dive('old', DateTime(2025, 10, 1)),
           _dive('new', DateTime(2025, 11, 8)),
         ],
+        notWithin: Duration.zero,
       );
 
       expect(controller.forAccount('a').latest?.id, 'new');
     });
 
-    test('asking again for the same accounts does not re-fetch', () async {
+    test('a second ask inside the window costs nothing', () async {
       final account = _account('a');
       final controller = _controller();
       var fetches = 0;
@@ -132,14 +137,24 @@ void main() {
         return [_dive('d', DateTime(2025, 11, 8))];
       }
 
-      await controller.load(accounts: [account], fetch: fetch);
-      await controller.load(accounts: [account], fetch: fetch);
+      const window = RefreshPolicy.automaticWindow;
+      await controller.load(
+        accounts: [account],
+        fetch: fetch,
+        notWithin: window,
+      );
+      await controller.load(
+        accounts: [account],
+        fetch: fetch,
+        notWithin: window,
+      );
 
-      // The start screen asks on every build, so this has to be free.
+      // A screen asks on every build, so this has to be free.
       expect(fetches, 1);
     });
 
-    test('force re-fetches, which is what pull-to-refresh needs', () async {
+    test('a zero window always fetches', () async {
+      // What a pull-to-refresh past the floor comes down to.
       final account = _account('a');
       final controller = _controller();
       var fetches = 0;
@@ -149,13 +164,24 @@ void main() {
         return [_dive('d', DateTime(2025, 11, 8))];
       }
 
-      await controller.load(accounts: [account], fetch: fetch);
-      await controller.load(accounts: [account], fetch: fetch, force: true);
+      await controller.load(
+        accounts: [account],
+        fetch: fetch,
+        notWithin: Duration.zero,
+      );
+      await controller.load(
+        accounts: [account],
+        fetch: fetch,
+        notWithin: Duration.zero,
+      );
 
       expect(fetches, 2);
     });
 
-    test('a new account triggers a fetch without forcing', () async {
+    test('only the account that is due gets fetched', () async {
+      // The point of keeping a timestamp each: a freshly added account is
+      // due, the one beside it is not, and the one that is not stays where
+      // it is instead of being asked again.
       final first = _account('a');
       final second = _account('b');
       final controller = _controller();
@@ -166,10 +192,71 @@ void main() {
         return const [];
       }
 
-      await controller.load(accounts: [first], fetch: fetch);
-      await controller.load(accounts: [first, second], fetch: fetch);
+      const window = RefreshPolicy.automaticWindow;
+      await controller.load(accounts: [first], fetch: fetch, notWithin: window);
+      await controller.load(
+        accounts: [first, second],
+        fetch: fetch,
+        notWithin: window,
+      );
 
-      expect(asked, ['a', 'a', 'b']);
+      expect(asked, ['a', 'b']);
+    });
+
+    test('a scope of one leaves the other accounts alone', () async {
+      // What the per-account dive list does. It used to drop everybody
+      // else's dives from memory on the way through, which only went
+      // unnoticed because the screen behind it re-fetched everything.
+      final first = _account('a');
+      final second = _account('b');
+      final controller = _controller();
+
+      Future<List<Dive>> fetch(GarminAccount _, {int start = 0}) async => [
+        _dive('d', DateTime(2025, 11, 8)),
+      ];
+
+      await controller.load(
+        accounts: [first, second],
+        fetch: fetch,
+        notWithin: Duration.zero,
+      );
+      await controller.load(
+        accounts: [first],
+        fetch: fetch,
+        notWithin: Duration.zero,
+      );
+
+      expect(controller.forAccount('b').dives, hasLength(1));
+    });
+
+    test('a failing account is not asked again on the next build', () async {
+      // The floor counts attempts, not successes. A screen asks on every
+      // build; an account that only ever fails would otherwise be asked
+      // again on every frame, which is a loop rather than a retry - and it
+      // is what a failing account did until the timestamp moved.
+      final account = _account('a');
+      final controller = _controller();
+      var fetches = 0;
+
+      Future<List<Dive>> fetch(GarminAccount _, {int start = 0}) async {
+        fetches++;
+        throw StateError('nicht erreichbar');
+      }
+
+      const window = RefreshPolicy.automaticWindow;
+      await controller.load(
+        accounts: [account],
+        fetch: fetch,
+        notWithin: window,
+      );
+      await controller.load(
+        accounts: [account],
+        fetch: fetch,
+        notWithin: window,
+      );
+
+      expect(fetches, 1);
+      expect(controller.forAccount('a').hasError, isTrue);
     });
 
     test('a removed account leaves no dives behind', () async {
@@ -180,11 +267,11 @@ void main() {
       await controller.load(
         accounts: [first, second],
         fetch: (_, {start = 0}) async => [_dive('d', DateTime(2025, 11, 8))],
+        notWithin: Duration.zero,
       );
-      await controller.load(
-        accounts: [first],
-        fetch: (_, {start = 0}) async => [_dive('d', DateTime(2025, 11, 8))],
-      );
+      // Forgetting is its own question now, asked by the screen that sees
+      // every account - not a side effect of refreshing some of them.
+      controller.retain([first]);
 
       expect(controller.forAccount('b').dives, isEmpty);
       expect(controller.recent([first]), hasLength(1));
@@ -207,6 +294,7 @@ void main() {
       await _controller(cache).load(
         accounts: [account],
         fetch: (_, {start = 0}) async => [_dive('d1', DateTime(2025, 11, 8))],
+        notWithin: Duration.zero,
       );
 
       expect(cache.stored['a']?.dives.single.id, 'd1');
@@ -226,6 +314,7 @@ void main() {
           GarminAuthErrorType.offline,
           'Keine Internetverbindung.',
         ),
+        notWithin: Duration.zero,
       );
 
       final load = controller.forAccount('a');
@@ -250,6 +339,7 @@ void main() {
         fetch: (_, {start = 0}) async => [
           _dive('fresh', DateTime(2025, 11, 8)),
         ],
+        notWithin: Duration.zero,
       );
 
       final load = controller.forAccount('a');
@@ -273,6 +363,7 @@ void main() {
             'x',
           );
         },
+        notWithin: Duration.zero,
       );
 
       expect(controller.forAccount('a').isOffline, isTrue);
@@ -287,6 +378,7 @@ void main() {
         accounts: [_account('a'), _account('b')],
         fetch: (_, {start = 0}) async =>
             throw GarminAuthException(GarminAuthErrorType.offline, 'x'),
+        notWithin: Duration.zero,
       );
 
       expect(controller.isOffline, isTrue);
@@ -299,6 +391,7 @@ void main() {
       await controller.load(
         accounts: [account],
         fetch: (_, {start = 0}) async => [_dive('d1', DateTime(2025, 11, 8))],
+        notWithin: Duration.zero,
       );
 
       await controller.forget('a');
@@ -317,9 +410,17 @@ void main() {
         return [_dive('d', DateTime(2025, 11, 8))];
       }
 
-      await controller.load(accounts: [account], fetch: fetch);
+      await controller.load(
+        accounts: [account],
+        fetch: fetch,
+        notWithin: Duration.zero,
+      );
       await controller.forget('a');
-      await controller.load(accounts: [account], fetch: fetch);
+      await controller.load(
+        accounts: [account],
+        fetch: fetch,
+        notWithin: Duration.zero,
+      );
 
       // Without resetting the "already loaded" marker this would
       // short-circuit and leave the screen empty.

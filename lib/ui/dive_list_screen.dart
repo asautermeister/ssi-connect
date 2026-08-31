@@ -5,7 +5,12 @@ import 'package:provider/provider.dart';
 
 import '../accounts/models/account_color.dart';
 import '../accounts/models/garmin_account.dart';
+import '../accounts/accounts_controller.dart';
 import '../dives/dive_loader.dart';
+import '../dives/refresh.dart';
+import '../ssi/dive_sites_controller.dart';
+import '../ssi/ssi_buddies_controller.dart';
+import '../ssi/ssi_sync_controller.dart';
 import '../dives/exported_dives_controller.dart';
 import '../dives/recent_dives_controller.dart';
 import '../garmin/garmin_auth_exceptions.dart';
@@ -36,11 +41,20 @@ class DiveListScreen extends StatefulWidget {
 
 class _DiveListScreenState extends State<DiveListScreen>
     with DiveFilterState<DiveListScreen> {
-  void _refresh() {
-    context.read<RecentDivesController>().load(
-      accounts: [widget.account],
+  /// Only this account, because this is this account's screen. Garmin and
+  /// SSI together, so the green ticks are as current as the dives they sit
+  /// beside.
+  void _refresh({RefreshReason reason = RefreshReason.userAsked}) {
+    refreshAccounts(
+      scope: [widget.account],
+      reason: reason,
+      dives: context.read<RecentDivesController>(),
       fetch: context.read<DiveFetcher>(),
-      force: true,
+      accounts: context.read<AccountsController>(),
+      sites: context.read<DiveSitesController>(),
+      buddies: context.read<SsiBuddiesController>(),
+      exported: context.read<ExportedDivesController>(),
+      sync: context.read<SsiSyncController>(),
     );
   }
 
@@ -57,7 +71,7 @@ class _DiveListScreenState extends State<DiveListScreen>
     // that genuinely has no dives doesn't re-fetch forever.
     if (load.fetchedAt == null && !load.isLoading && !load.hasError) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) _refresh();
+        if (mounted) _refresh(reason: RefreshReason.automatic);
       });
     }
 

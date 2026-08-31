@@ -137,7 +137,11 @@ Future<void> _pump(
   }
 
   if (accounts.isNotEmpty) {
-    await recent.load(accounts: accounts, fetch: fetch);
+    await recent.load(
+      accounts: accounts,
+      fetch: fetch,
+      notWithin: Duration.zero,
+    );
   }
 
   await tester.pumpWidget(

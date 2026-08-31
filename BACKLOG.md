@@ -71,17 +71,17 @@ prominent wird.
 
 ### Den SSI-Bereich neu ordnen
 
-*Der Abgleich ist beschlossen und wird gebaut (siehe unten); der Umzug der
-Anzeige und die beiden Kleinteile stehen noch aus.*
+*Das Aktualisierungsverhalten ist gebaut. Der Umzug der Anzeige nach SSI
+Buddy, die Suche und die Herkunft stehen noch aus.*
 
 Der SSI-Teil liegt heute an drei Orten, ohne dass einer davon der
 offensichtliche wäre: die **Anmeldung** beim Account, der **Abgleich**
 samt Zahlen unter „Einstellungen → SSI-Logbuch", die **Buddy-Liste** als
 eigener Eintrag auf der Startseite.
 
-**Beschlossen und in Arbeit: das Aktualisierungsverhalten.** Garmin und
-SSI werden gemeinsam über dieselbe Geste geholt, mit Zeitstempeln je
-Account statt einer Signatur über alle:
+**Erledigt: das Aktualisierungsverhalten.** Garmin und SSI werden
+gemeinsam über dieselbe Geste geholt, mit Zeitstempeln je Account statt
+einer Signatur über alle:
 
 * **60 s** Mindestabstand für jeden Abruf, auch beim Herunterziehen — die
   Zahl stammt aus der SSI-App.

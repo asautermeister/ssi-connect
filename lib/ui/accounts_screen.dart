@@ -7,6 +7,10 @@ import '../accounts/accounts_controller.dart';
 import '../accounts/models/account_color.dart';
 import '../accounts/models/garmin_account.dart';
 import '../dives/dive_loader.dart';
+import '../dives/refresh.dart';
+import '../ssi/dive_sites_controller.dart';
+import '../ssi/ssi_buddies_controller.dart';
+import '../ssi/ssi_sync_controller.dart';
 import '../dives/exported_dives_controller.dart';
 import '../dives/recent_dives_controller.dart';
 import 'add_account_screen.dart';
@@ -38,16 +42,28 @@ class AccountsScreen extends StatefulWidget {
 
 class _AccountsScreenState extends State<AccountsScreen> {
   /// Kicks off the fetch once the accounts are known. Called from build,
-  /// which is safe because [RecentDivesController.load] returns immediately
-  /// for a set of accounts it already has.
-  void _loadAfterBuild(List<GarminAccount> accounts, {bool force = false}) {
+  /// which is safe because a fetch that is not due yet does nothing.
+  void _loadAfterBuild(
+    List<GarminAccount> accounts, {
+    RefreshReason reason = RefreshReason.automatic,
+  }) {
     if (accounts.isEmpty) return;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      context.read<RecentDivesController>().load(
-        accounts: accounts,
+      final dives = context.read<RecentDivesController>();
+      // The one screen that sees every account, so the one place that can
+      // say which of them are gone.
+      dives.retain(accounts);
+      refreshAccounts(
+        scope: accounts,
+        reason: reason,
+        dives: dives,
         fetch: context.read<DiveFetcher>(),
-        force: force,
+        accounts: context.read<AccountsController>(),
+        sites: context.read<DiveSitesController>(),
+        buddies: context.read<SsiBuddiesController>(),
+        exported: context.read<ExportedDivesController>(),
+        sync: context.read<SsiSyncController>(),
       );
     });
   }
@@ -66,7 +82,8 @@ class _AccountsScreenState extends State<AccountsScreen> {
       body: !controller.loaded
           ? const Center(child: CircularProgressIndicator())
           : RefreshIndicator(
-              onRefresh: () async => _loadAfterBuild(accounts, force: true),
+              onRefresh: () async =>
+                  _loadAfterBuild(accounts, reason: RefreshReason.userAsked),
               child: ListView(
                 padding: const EdgeInsets.fromLTRB(
                   AppSpacing.lg,
@@ -84,7 +101,10 @@ class _AccountsScreenState extends State<AccountsScreen> {
                         child: OfflineBanner(
                           isOffline: recentDives.isOffline,
                           fetchedAt: recentDives.oldestFetchedAt,
-                          onRetry: () => _loadAfterBuild(accounts, force: true),
+                          onRetry: () => _loadAfterBuild(
+                            accounts,
+                            reason: RefreshReason.userAsked,
+                          ),
                         ),
                       ),
                     _RecentDives(accounts: accounts, controller: recentDives),
