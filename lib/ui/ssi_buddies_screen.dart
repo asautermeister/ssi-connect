@@ -362,11 +362,24 @@ class _SiteCard extends StatelessWidget {
               children: [
                 Text(site.name, style: theme.textTheme.titleMedium),
                 const SizedBox(height: 2),
-                Text(
-                  site.coordinatesLabel,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: palette.inkMuted,
-                  ),
+                Row(
+                  children: [
+                    // The same pin as over the dive's own site, a size
+                    // down: it marks the line as a position rather than
+                    // some other pair of numbers.
+                    const Icon(
+                      Icons.place_outlined,
+                      size: 12,
+                      color: AppColors.settled,
+                    ),
+                    const SizedBox(width: AppSpacing.xs),
+                    Text(
+                      site.coordinatesLabel,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: AppColors.settled,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),

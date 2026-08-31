@@ -41,15 +41,23 @@ class DiveSite {
   /// which site a dive belongs to. That stays the position's job.
   final String? region;
 
-  /// The position as one line, the way it is written into a map's search
-  /// field.
+  /// The position as one line - `36.0166 N, 14.2798 E`.
   ///
   /// Dots for the decimal point in both languages: a German decimal comma
   /// would collide with the comma between the two values, and everything
   /// that reads coordinates expects dots. Four places is what SSI sends,
   /// and it is about 11 m - finer would be invented precision.
-  String get coordinatesLabel =>
-      '${latitude.toStringAsFixed(4)}, ${longitude.toStringAsFixed(4)}';
+  ///
+  /// The hemisphere carries the sign, so the numbers themselves are always
+  /// positive. N/E/S/W stay untranslated - German would want O for Ost, but
+  /// this is what dive computers, charts and map search fields show, and a
+  /// lone "O" among them reads as a typo.
+  String get coordinatesLabel {
+    final northSouth = latitude < 0 ? 'S' : 'N';
+    final eastWest = longitude < 0 ? 'W' : 'E';
+    return '${latitude.abs().toStringAsFixed(4)} $northSouth, '
+        '${longitude.abs().toStringAsFixed(4)} $eastWest';
+  }
 
   /// How far [latitude]/[longitude] are from a position, in metres.
   ///

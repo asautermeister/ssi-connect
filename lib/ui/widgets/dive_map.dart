@@ -80,7 +80,7 @@ class DiveMap extends StatefulWidget {
   /// goes to SSI without a `site:`, which is the one thing the map is there
   /// to help decide.
   static const _diverColour = Color(0xFFE65100);
-  static const _diverSettledColour = Color(0xFF2E7D32);
+  static const _diverSettledColour = AppColors.settled;
   static const _siteColour = Color(0xFF7F1416);
   static const _otherSiteColour = Color(0xFFE0736C);
   static const _lineColour = Color(0xCC37474F);

@@ -495,8 +495,9 @@ void main() {
         sites: [_site('Ras il-Hobz', latitude: 36.0166, longitude: 14.2798)],
       );
 
-      // Four places and dots, so it can be pasted into a map.
-      expect(find.text('36.0166, 14.2798'), findsOneWidget);
+      // Four places and dots, so it can be pasted into a map, with the
+      // hemisphere spelling out the sign.
+      expect(find.text('36.0166 N, 14.2798 E'), findsOneWidget);
     });
 
     testWidgets('the search reaches a region name too', (tester) async {

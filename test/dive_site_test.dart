@@ -302,7 +302,27 @@ void main() {
     test('coordinates read as one line, with dots and four places', () {
       // Pasted into a map as-is; a German decimal comma would collide with
       // the comma between the two values.
-      expect(_zakynthos.coordinatesLabel, '37.7870, 20.8990');
+      expect(_zakynthos.coordinatesLabel, '37.7870 N, 20.8990 E');
+    });
+
+    test('the hemisphere carries the sign, not the number', () {
+      // The Great Barrier Reef is south and east, the Caribbean south and
+      // west - a minus in front of a coordinate is easy to miss.
+      const cairns = DiveSite(
+        siteId: '1',
+        name: 'Flynn Reef',
+        latitude: -16.9186,
+        longitude: 146.2731,
+      );
+      expect(cairns.coordinatesLabel, '16.9186 S, 146.2731 E');
+
+      const bonaire = DiveSite(
+        siteId: '2',
+        name: 'Salt Pier',
+        latitude: 12.0833,
+        longitude: -68.2833,
+      );
+      expect(bonaire.coordinatesLabel, '12.0833 N, 68.2833 W');
     });
 
     test('identifies a site by its number, not by its name', () {
