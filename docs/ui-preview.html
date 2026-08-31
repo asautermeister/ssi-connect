@@ -146,8 +146,58 @@
     border-radius: 999px; padding: 2.5px 7px;
     font-size: 7.5px; font-weight: 600; letter-spacing: .05em;
   }
-  .meter { height: 4px; border-radius: 4px; background: var(--meter-track); margin-top: 11px; overflow: hidden; }
-  .meter > i { display: block; height: 100%; background: var(--accent); border-radius: 4px; }
+  /* Depth meter: a fixed 0-45 m scale, so two dives are comparable at a
+     glance. Ticks every 5 m, taller on the tens; an arrow when the dive
+     ran past the end of the scale. */
+  .depth { margin-top: 11px; }
+  .depth .rail { position: relative; padding-right: 8px; }
+  .depth .track {
+    position: relative; height: 5.5px; border-radius: 999px;
+    background: var(--meter-track); overflow: hidden;
+  }
+  .depth .track > i { display: block; height: 100%; background: var(--accent); border-radius: 999px; }
+  .depth .arrow {
+    position: absolute; right: 0; top: 0px; width: 0; height: 0;
+    border-top: 3px solid transparent; border-bottom: 3px solid transparent;
+    border-left: 4.5px solid var(--accent);
+  }
+  .depth .ticks { position: relative; height: 4px; margin-top: 3px; }
+  .depth .ticks span {
+    position: absolute; top: 0; width: 1px; height: 2px;
+    background: var(--ink-3); opacity: .55;
+  }
+  .depth .ticks span.tall { height: 4px; }
+  .depth .ends {
+    display: flex; justify-content: space-between; margin-top: 1px;
+    font-size: 7px; color: var(--ink-3); font-variant-numeric: tabular-nums;
+  }
+
+  /* Map thumbnail. Not a real tile - the app draws OpenStreetMap here. */
+  .map {
+    position: relative; height: 74px; border-radius: 8px; overflow: hidden;
+    border: 1px solid var(--hairline); margin-top: 9px;
+    background:
+      radial-gradient(120% 90% at 20% 110%, #cfe3d8 0 38%, transparent 38.5%),
+      linear-gradient(160deg, #dbe9f2, #cfe0ec);
+  }
+  :root[data-theme="dark"] .map { filter: brightness(.72) saturate(.85); }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .map { filter: brightness(.72) saturate(.85); } }
+  .map .pin { position: absolute; transform: translate(-50%, -100%); }
+  .map .pin svg { width: 13px; height: 13px; display: block; }
+  .map .pin.small svg { width: 9px; height: 9px; }
+  .map .pin b {
+    position: absolute; left: 50%; top: 100%; transform: translateX(-50%);
+    background: rgba(255,255,255,.9); color: #14201E; border-radius: 3px;
+    padding: 0 3px; font-size: 6px; font-weight: 600; white-space: nowrap;
+  }
+  .map .leg {
+    position: absolute; height: 0; border-top: 1px dashed rgba(55,71,79,.8);
+    transform-origin: 0 0;
+  }
+  .map .attr {
+    position: absolute; right: 2px; bottom: 1px; font-size: 5.5px;
+    color: #55625F; background: rgba(255,255,255,.75); padding: 0 2px; border-radius: 2px;
+  }
   .section-head { font-size: 15px; font-weight: 300; margin: 13px 2px 8px; }
   .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 17px 10px; }
   .avatar {
@@ -223,26 +273,26 @@
 <div class="wrap">
   <header class="page">
     <span class="eyebrow">Design-Vorschau · nachgebaut, kein Screenshot</span>
-    <h1>SSI Connect – Stand nach „SSI Buddy"</h1>
+    <h1>SSI Connect – Stand nach Detailseite und Tauchplätzen</h1>
     <p>
-      Gegenüber der ersten Vorschau ist einiges dazugekommen: eine Startseite, die mit den
-      Tauchgängen beginnt statt mit einer Namensliste, die Tauchgangs-Nummer und das
-      Typ-Symbol an der linken Kante, die SSI-Mitgliedsnummer am Account, die Buddy-Auswahl
-      unter dem QR-Code samt eigener Buddy-Liste – und ein kleines Analyse-Werkzeug für
-      SSI-Codes.
+      Seit der letzten Vorschau ist der Weg zum Code kürzer geworden: ein Tap auf einen
+      Tauchgang öffnet überall dieselbe Detailseite, der QR-Code sitzt an deren Ende statt
+      hinter einem eigenen Schritt, und zwischen den Tauchgängen einer Person wird gewischt.
+      Dazu der Tauchplatz mit Karte, ein aufgeräumter Tiefenbalken und ein SSI-Bereich, der
+      auch die Tauchplätze aus dem Logbuch führt.
     </p>
     <p class="note">
       Buddies stehen <strong>nicht</strong> im QR-Code: SSIs Import-Format hat kein Feld dafür.
-      Die Auswahl, die es dort einmal gab, ist wieder weg – ein Bedienelement ohne Wirkung ist
-      schlechter als keines.
+      Der Tauchplatz dagegen schon – <code>site:</code> trägt SSIs eigene Nummer, und genau
+      deshalb ist das Zuordnen eines Platzes ein eigener Schritt auf der Detailseite.
     </p>
   </header>
 
   <h2 class="group">Startseite und Tauchgänge</h2>
   <p class="group-sub">
-    Gleiche Struktur wie bisher – flache Karten auf hellem Untergrund, die Zahl führt,
-    die Beschriftung folgt. Die Startseite beginnt jetzt mit den Tauchgängen statt mit
-    einer Namensliste: von hier ist der QR-Code ein Tap entfernt.
+    Gleiche Struktur wie bisher – flache Karten auf hellem Untergrund, die Zahl führt, die
+    Beschriftung folgt. Neu ist, was ein Tap auslöst: die Karte öffnet die Detailseite, das
+    QR-Symbol rechts springt in denselben Tauchgang und dort direkt zum Code.
   </p>
 
   <div class="gallery">
@@ -262,17 +312,23 @@
               <span style="color:var(--accent);font-size:9px;font-weight:600">ERNEUT</span>
             </div>
           </div>
-          <div class="section-head" style="margin:2px 2px 7px">Zuletzt getaucht</div>
+          <div class="row" style="align-items:center;margin:2px 2px 7px">
+            <div class="section-head" style="flex:1;margin:0">Zuletzt getaucht</div>
+            <span style="color:var(--accent);font-size:9px;font-weight:600">ALLE ANZEIGEN</span>
+          </div>
           <div class="card edge-blue" data-edge style="padding:10px">
             <div class="row" style="align-items:center;gap:8px">
-              <span class="badge" style="width:26px;height:26px;border-radius:50%;background:var(--accent)">
+              <span class="badge" style="width:26px;height:26px;border-radius:50%;background:var(--accent-container)">
                 <svg viewBox="0 0 24 24" style="width:15px;height:15px">
-                  <rect x="4.5" y="6" width="6" height="14" rx="3" style="stroke:var(--surface)"/>
-                  <rect x="13.5" y="6" width="6" height="14" rx="3" style="stroke:var(--surface)"/>
+                  <rect x="4.5" y="6" width="6" height="14" rx="3"/>
+                  <rect x="13.5" y="6" width="6" height="14" rx="3"/>
                 </svg>
               </span>
               <div style="flex:1">
-                <div class="title">Sa, 08.11.2025</div>
+                <div class="row" style="align-items:center;gap:4px">
+                  <div class="title">Sa, 08.11.2025</div>
+                  <span style="color:#2E7D32;font-size:9px">✔</span>
+                </div>
                 <div class="sub">Andreas · 92 min</div>
               </div>
               <div class="baseline"><span class="stat" style="font-size:17px">44,0</span><span class="unit">m</span></div>
@@ -281,9 +337,9 @@
           </div>
           <div class="card edge-blue" data-edge style="padding:10px">
             <div class="row" style="align-items:center;gap:8px">
-              <span class="badge" style="width:26px;height:26px;border-radius:50%;background:var(--accent)">
+              <span class="badge" style="width:26px;height:26px;border-radius:50%;background:var(--accent-container)">
                 <svg viewBox="0 0 24 24" style="width:15px;height:15px">
-                  <rect x="8.5" y="5.5" width="7" height="15" rx="3.5" style="stroke:var(--surface)"/>
+                  <rect x="8.5" y="5.5" width="7" height="15" rx="3.5"/>
                 </svg>
               </span>
               <div style="flex:1">
@@ -296,10 +352,10 @@
           </div>
           <div class="card edge-coral" data-edge style="padding:10px">
             <div class="row" style="align-items:center;gap:8px">
-              <span class="badge" style="width:26px;height:26px;border-radius:50%;background:var(--accent)">
+              <span class="badge" style="width:26px;height:26px;border-radius:50%;background:var(--accent-container)">
                 <svg viewBox="0 0 24 24" style="width:15px;height:15px">
-                  <path d="M8.1 17.1c-.6-.2-.9-.6-.8-1.1l1.5-9.5c.1-.8.7-1.3 1.4-1.2.7.1 1.1.7 1 1.5l-1.2 9.5c-.1.5-.5.9-1.1.9z" style="stroke:var(--surface)"/>
-                  <path d="M15.9 17.1c.6-.2.9-.6.8-1.1l-1.5-9.5c-.1-.8-.7-1.3-1.4-1.2-.7.1-1.1.7-1 1.5l1.2 9.5c.1.5.5.9 1.1.9z" style="stroke:var(--surface)"/>
+                  <path d="M8.1 17.1c-.6-.2-.9-.6-.8-1.1l1.5-9.5c.1-.8.7-1.3 1.4-1.2.7.1 1.1.7 1 1.5l-1.2 9.5c-.1.5-.5.9-1.1.9z"/>
+                  <path d="M15.9 17.1c.6-.2.9-.6.8-1.1l-1.5-9.5c-.1-.8-.7-1.3-1.4-1.2-.7.1-1.1.7-1 1.5l1.2 9.5c.1.5.5.9 1.1.9z"/>
                 </svg>
               </span>
               <div style="flex:1">
@@ -334,7 +390,7 @@
             <span class="badge">👥</span>
             <div style="flex:1">
               <div class="title">SSI Buddy</div>
-              <div class="sub">Mittaucher und Basen speichern und teilen</div>
+              <div class="sub">Mittaucher, Basen und Tauchplätze</div>
             </div><span style="color:var(--ink-3)">›</span>
           </div></div>
           <div class="card" style="padding:9px"><div class="row" style="align-items:center;gap:8px">
@@ -356,16 +412,23 @@
       </div></div>
       <figcaption>
         <span class="name">1 · Startseite (hier ohne Netz)</span>
-        <span class="desc">Die Tauchgänge führen: der jüngste aus allen Accounts zuoberst, ein Tap darauf öffnet direkt den QR-Code. Der Farbbalken links zeigt, wessen Tauchgang es ist – dieselbe Farbe trägt der Account weiter unten. Ohne Verbindung kommen die Tauchgänge aus dem Zwischenspeicher, mit dem Datum, von dem sie stammen.</span>
+        <span class="desc">Die Tauchgänge führen: der jüngste aus allen Accounts zuoberst. Ein Tap auf die Karte öffnet die Detailseite, das QR-Symbol rechts springt dort direkt zum Code. Der grüne Haken heißt „steht schon im SSI-Logbuch“. Herunterziehen aktualisiert Garmin und SSI zusammen, frühestens alle 60 Sekunden.</span>
       </figcaption>
     </figure>
 
-    <!-- 2 Dive list -->
+    <!-- 2 Dive list with filters -->
     <figure class="screen">
       <div class="device"><div class="screen-surface">
         <div class="statusbar"><span>21:33</span><span>▾ ▮</span></div>
-        <div class="appbar">← Andreas <span class="spacer">⛭</span></div>
+        <div class="appbar">← Andreas <span class="spacer">⛭ ▼</span></div>
         <div class="body-scroll">
+          <div class="filter-row" style="margin:0 0 9px">
+            <span class="filter">Alle</span>
+            <span class="filter on">Noch offen</span>
+            <span class="filter">Scuba</span>
+            <span class="filter">Rec</span>
+            <span class="filter">Tech</span>
+          </div>
           <div class="card">
             <div class="row" style="gap:9px">
               <div class="badge-col">
@@ -392,7 +455,18 @@
                 <div class="label">Max. Tiefe</div>
               </div>
             </div>
-            <div class="meter"><i style="width:100%"></i></div>
+            <div class="depth">
+              <div class="rail">
+                <div class="track"><i style="width:97.8%"></i></div>
+                <div class="ticks">
+                  <span style="left:11.1%"></span><span class="tall" style="left:22.2%"></span>
+                  <span style="left:33.3%"></span><span class="tall" style="left:44.4%"></span>
+                  <span style="left:55.6%"></span><span class="tall" style="left:66.7%"></span>
+                  <span style="left:77.8%"></span><span class="tall" style="left:88.9%"></span>
+                </div>
+              </div>
+              <div class="ends"><span>0</span><span>45 m</span></div>
+            </div>
           </div>
           <div class="card">
             <div class="row" style="gap:9px">
@@ -418,49 +492,84 @@
                 <div class="label">Max. Tiefe</div>
               </div>
             </div>
-            <div class="meter"><i style="width:64%"></i></div>
+            <div class="depth">
+              <div class="rail">
+                <div class="track"><i style="width:62.2%"></i></div>
+                <div class="ticks">
+                  <span style="left:11.1%"></span><span class="tall" style="left:22.2%"></span>
+                  <span style="left:33.3%"></span><span class="tall" style="left:44.4%"></span>
+                  <span style="left:55.6%"></span><span class="tall" style="left:66.7%"></span>
+                  <span style="left:77.8%"></span><span class="tall" style="left:88.9%"></span>
+                </div>
+              </div>
+              <div class="ends"><span>0</span><span>45 m</span></div>
+            </div>
           </div>
           <div class="card">
             <div class="row" style="gap:9px">
               <div class="badge-col">
+                <span class="badge-num"># 138</span>
                 <span class="badge">
-                  <!-- a pair of freediving fins, splayed at the tips -->
                   <svg viewBox="0 0 24 24">
-                    <path d="M8.1 17.1c-.6-.2-.9-.6-.8-1.1l1.5-9.5c.1-.8.7-1.3 1.4-1.2.7.1 1.1.7 1 1.5l-1.2 9.5c-.1.5-.5.9-1.1.9z"/>
-                    <path d="M15.9 17.1c.6-.2.9-.6.8-1.1l-1.5-9.5c-.1-.8-.7-1.3-1.4-1.2-.7.1-1.1.7-1 1.5l1.2 9.5c.1.5.5.9 1.1.9z"/>
+                    <rect x="4.5" y="6" width="6" height="14" rx="3"/>
+                    <path d="M7.5 6V4.2"/>
+                    <rect x="13.5" y="6" width="6" height="14" rx="3"/>
+                    <path d="M16.5 6V4.2"/>
                   </svg>
                 </span>
               </div>
               <div style="flex:1">
-                <div class="title">Do, 06.11.2025</div>
-                <div class="sub">14:12 Uhr · 38 min · 31× abgetaucht</div>
-                <span class="chip">2. TG · APNOE</span>
+                <div class="title">So, 26.10.2025</div>
+                <div class="sub">09:14 Uhr · 71 min</div>
+                <span class="chip">1. TG · MULTIGAS</span>
               </div>
               <div style="text-align:right">
                 <div class="baseline" style="justify-content:flex-end">
-                  <span class="hero">11,5</span><span class="unit">m</span>
+                  <span class="hero">51,2</span><span class="unit">m</span>
                 </div>
                 <div class="label">Max. Tiefe</div>
               </div>
             </div>
-            <div class="meter"><i style="width:26%"></i></div>
+            <div class="depth">
+              <div class="rail">
+                <div class="track"><i style="width:100%"></i></div>
+                <div class="arrow"></div>
+                <div class="ticks">
+                  <span style="left:11.1%"></span><span class="tall" style="left:22.2%"></span>
+                  <span style="left:33.3%"></span><span class="tall" style="left:44.4%"></span>
+                  <span style="left:55.6%"></span><span class="tall" style="left:66.7%"></span>
+                  <span style="left:77.8%"></span><span class="tall" style="left:88.9%"></span>
+                </div>
+              </div>
+              <div class="ends"><span>0</span><span>45 m</span></div>
+            </div>
           </div>
         </div>
       </div></div>
       <figcaption>
-        <span class="name">2 · Tauchgangs-Liste</span>
-        <span class="desc">Links Nummer über Typ-Symbol: ein Flossenpaar für Apnoe, eine oder zwei Flaschen, Maske mit Schlauch für CCR. Der Typ steht zusätzlich im Chip, damit die Zeichnung nie allein die Bedeutung trägt. Ohne Nummer (Apnoe) bleibt die Zeile leer statt zu raten.</span>
+        <span class="name">2 · Tauchgangs-Liste mit Filter <span class="new-flag">neu</span></span>
+        <span class="desc">Das Trichter-Symbel rechts oben blendet die Filter ein statt sie dauerhaft Platz kosten zu lassen. Der Tiefenbalken hat jetzt eine feste Skala von 0 bis 45 m – erst dadurch sind zwei Tauchgänge auf einen Blick vergleichbar. Striche alle 5 m, längere auf den Zehnern; ein Pfeil rechts heißt „ging über die Skala hinaus“.</span>
       </figcaption>
     </figure>
+  </div>
 
-    <!-- 3 Detail -->
+  <h2 class="group">Neu: die Detailseite <span class="new-flag">neu</span></h2>
+  <p class="group-sub">
+    Aus zwei Schritten ist einer geworden. Die Detailseite trägt jetzt alles: Werte,
+    Tauchplatz samt Karte und am Ende den QR-Code. Gewischt wird zwischen den Tauchgängen
+    <em>einer</em> Person – links der ältere, rechts der jüngere. Die Überschrift ist Garmins
+    eigene Tauchgangsnummer; fehlt sie (Apnoe), steht dort der Typ.
+  </p>
+
+  <div class="gallery">
+    <!-- 3 Detail top -->
     <figure class="screen">
       <div class="device"><div class="screen-surface">
         <div class="statusbar"><span>21:34</span><span>▾ ▮</span></div>
-        <div class="appbar">← 1. Tauchgang</div>
+        <div class="appbar">← Tauchgang #142</div>
         <div class="body-scroll">
-          <div class="card" style="padding:15px">
-            <div class="row" style="gap:9px;margin-bottom:12px">
+          <div class="card" style="padding:13px">
+            <div class="row" style="gap:9px;align-items:flex-start">
               <div class="badge-col">
                 <span class="badge-num"># 142</span>
                 <span class="badge">
@@ -473,68 +582,143 @@
                 </span>
               </div>
               <div style="flex:1">
-                <div class="title">Multigas</div>
-                <div class="sub">Sa, 08.11.2025, 08:56 Uhr</div>
+                <div class="row" style="align-items:center;gap:5px">
+                  <div class="title">Multigas</div>
+                  <span style="color:#2E7D32;font-size:11px">✔</span>
+                </div>
+                <div class="sub">Sa 08.11.25, 08:56 Uhr</div>
               </div>
+              <span style="color:var(--accent);font-size:14px">▦</span>
             </div>
-            <div class="label">Max. Tiefe</div>
-            <div class="baseline" style="margin-top:5px">
-              <span class="hero" style="font-size:34px">44,0</span><span class="unit">m</span>
+            <div class="row" style="align-items:center;gap:4px;margin-top:11px">
+              <span style="color:var(--ink-3);font-size:9px">📍</span>
+              <div class="sub" style="margin:0;color:var(--ink-1);font-size:9.5px">Zakynthos, Griechenland</div>
             </div>
           </div>
+
+          <div class="section-head">Tauchplatz</div>
+          <div class="card" style="padding:11px">
+            <div class="row" style="align-items:center;gap:6px">
+              <span style="color:var(--ink-3);font-size:10px">📍</span>
+              <div class="title" style="flex:1">Hausriff Nero-Sport</div>
+              <span style="color:var(--ink-3);font-size:10px">✎</span>
+            </div>
+            <div class="sub mono" style="margin-top:2px">site:214234 · 120 m</div>
+            <div class="map">
+              <div class="leg" style="left:34%;top:52%;width:26%;transform:rotate(-14deg)"></div>
+              <div class="pin small" style="left:16%;top:36%">
+                <svg viewBox="0 0 24 24"><path d="M12 2c-3.9 0-7 3.1-7 7 0 5.2 7 13 7 13s7-7.8 7-13c0-3.9-3.1-7-7-7z" fill="#E0736C"/></svg>
+              </div>
+              <div class="pin small" style="left:78%;top:30%">
+                <svg viewBox="0 0 24 24"><path d="M12 2c-3.9 0-7 3.1-7 7 0 5.2 7 13 7 13s7-7.8 7-13c0-3.9-3.1-7-7-7z" fill="#E0736C"/></svg>
+              </div>
+              <div class="pin small" style="left:62%;top:82%">
+                <svg viewBox="0 0 24 24"><path d="M12 2c-3.9 0-7 3.1-7 7 0 5.2 7 13 7 13s7-7.8 7-13c0-3.9-3.1-7-7-7z" fill="#E0736C"/></svg>
+              </div>
+              <div class="pin" style="left:60%;top:46%">
+                <svg viewBox="0 0 24 24"><path d="M12 2c-3.9 0-7 3.1-7 7 0 5.2 7 13 7 13s7-7.8 7-13c0-3.9-3.1-7-7-7z" fill="#7F1416"/></svg>
+                <b>Hausriff Nero-Sport</b>
+              </div>
+              <div class="pin" style="left:34%;top:58%">
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="#2E7D32"/></svg>
+              </div>
+              <div class="attr">© OpenStreetMap</div>
+            </div>
+          </div>
+
           <div class="section-head">Werte</div>
-          <div class="card" style="padding:15px">
+          <div class="card" style="padding:13px">
+            <div class="label">Max. Tiefe</div>
+            <div class="baseline" style="margin-top:4px">
+              <span class="hero" style="font-size:30px">44,0</span><span class="unit">m</span>
+            </div>
+          </div>
+        </div>
+      </div></div>
+      <figcaption>
+        <span class="name">3 · Detailseite, oben</span>
+        <span class="desc">Der grüne Haken sitzt neben dem Typ – hier entscheidet man, ob ein Tauchgang noch rüber muss. Das QR-Symbol rechts oben springt ans Seitenende zum Code. Der nächstgelegene bekannte Tauchplatz wird übernommen, nicht nur vorgeschlagen; die Karte zeigt Taucher (grün, weil gesetzt), den zugeordneten Platz dunkel und drei hellere Nachbarn im Umkreis von 15 km, die sich antippen lassen.</span>
+      </figcaption>
+    </figure>
+
+    <!-- 4 Detail bottom -->
+    <figure class="screen">
+      <div class="device"><div class="screen-surface">
+        <div class="statusbar"><span>21:35</span><span>▾ ▮</span></div>
+        <div class="appbar">← Tauchgang #142</div>
+        <div class="body-scroll">
+          <div class="card" style="padding:13px">
+            <div class="label">Max. Tiefe</div>
+            <div class="baseline" style="margin-top:4px">
+              <span class="hero" style="font-size:30px">44,0</span><span class="unit">m</span>
+            </div>
+            <div class="depth" style="margin-bottom:13px">
+              <div class="rail">
+                <div class="track"><i style="width:97.8%"></i></div>
+                <div class="ticks">
+                  <span style="left:11.1%"></span><span class="tall" style="left:22.2%"></span>
+                  <span style="left:33.3%"></span><span class="tall" style="left:44.4%"></span>
+                  <span style="left:55.6%"></span><span class="tall" style="left:66.7%"></span>
+                  <span style="left:77.8%"></span><span class="tall" style="left:88.9%"></span>
+                </div>
+              </div>
+              <div class="ends"><span>0</span><span>45 m</span></div>
+            </div>
             <div class="grid2">
               <div><div class="label">Dauer</div><div class="baseline"><span class="stat">92</span><span class="unit">min</span></div></div>
               <div><div class="label">Ø Tiefe</div><div class="baseline"><span class="stat">31,2</span><span class="unit">m</span></div></div>
               <div><div class="label">Wassertemp.</div><div class="baseline"><span class="stat">24,0</span><span class="unit">°C</span></div></div>
               <div><div class="label">Tauchgang</div><div class="baseline"><span class="stat">1</span><span class="unit">des Tages</span></div></div>
+              <div><div class="label">Wasser</div><div class="baseline"><span class="stat">Salz</span></div></div>
+              <div><div class="label">Deko</div><div class="baseline"><span class="stat">Ja</span></div></div>
+            </div>
+          </div>
+
+          <div class="section-head">QR-Code für SSI</div>
+          <div class="card" style="padding:11px;background:#fff;border-color:#E2E7E5">
+            <div style="display:grid;place-items:center">
+              <canvas id="qr-inline" width="150" height="150" style="width:64%;aspect-ratio:1"></canvas>
+            </div>
+            <div style="text-align:center;font-size:8px;color:#63706C;line-height:1.5;margin-top:7px">
+              In der SSI-App einen Tauchgang hinzufügen und „QR-Code scannen“ wählen.
+            </div>
+            <div style="display:flex;justify-content:center;margin-top:6px">
+              <span style="display:inline-flex;align-items:center;gap:4px;font-size:9px;font-weight:600;color:#14201E">
+                <span style="color:#2E7D32">✔</span> In SSI übernommen
+              </span>
             </div>
           </div>
         </div>
-        <div class="fab">▦ QR-Code für SSI</div>
       </div></div>
       <figcaption>
-        <span class="name">3 · Detail</span>
-        <span class="desc">Nummer und Symbol auch hier links oben; die laufende Nummer steht deshalb nicht noch einmal als Kachel im Raster.</span>
+        <span class="name">4 · Detailseite, unten</span>
+        <span class="desc">Erst die Werte, dann der Code: was man prüft, kommt vor dem, was man mitnimmt. Der Code wird bei jedem Aufbau neu gerendert – ein oben zugeordneter Tauchplatz steckt sofort darin. Der Haken darunter lässt sich zurücknehmen; er sagt einen Zustand, er ist kein Knopf mit Einbahnstraße.</span>
       </figcaption>
     </figure>
   </div>
 
-  <h2 class="group">Neu: Buddies und Basen <span class="new-flag">neu</span></h2>
+  <h2 class="group">SSI: Buddies, Basen und Tauchplätze <span class="new-flag">neu</span></h2>
   <p class="group-sub">
-    Buddies reisen nicht mit einem Tauchgang mit – SSIs Import-Format hat kein Feld dafür.
-    Sie haben stattdessen eine eigene Liste, aus der sich jeder Eintrag wieder als QR-Code
-    zeigen lässt, damit ein anderes Gerät ihn scannen kann. Tauchbasen sind eine dritte
-    Code-Art mit eigenem Abschnitt: sie tragen einen Namen und eine Basis-Nummer statt
-    Mitglied und Mailadresse.
+    Alles, wofür das Gerät einen SSI-Code oder eine SSI-Nummer kennt, an einem Ort – und seit
+    dem Logbuch-Abgleich auch die Tauchplätze. Ein Suchfeld für den ganzen Screen, sobald
+    mehr als acht Einträge zusammenkommen. Die Optionen eines Kontakts sind auf dessen
+    QR-Seite gewandert, damit die Zeile ein einziges Ziel bleibt.
   </p>
 
   <div class="gallery">
-    <!-- 4 QR + buddies -->
-    <figure class="screen">
-      <div class="device"><div class="screen-surface">
-        <div class="qr-surface">
-          <div class="qr-appbar">← Mit SSI-App scannen</div>
-          <div class="qr-meta">08.11.2025 · 44,0 m · 92 min</div>
-          <div style="width:100%;display:grid;place-items:center">
-            <canvas id="qr" width="168" height="168" style="width:66%;aspect-ratio:1"></canvas>
-          </div>
-          <div class="qr-hint">In der SSI-App einen Tauchgang hinzufügen und „QR-Code scannen" wählen.</div>
-        </div>
-      </div></div>
-      <figcaption>
-        <span class="name">4 · QR-Code</span>
-        <span class="desc">Immer hell mit Ruhezone – ein Scan-Ziel, das im Dunkelmodus unzuverlässig wäre. Ohne Buddy-Auswahl: SSIs Import kennt kein Feld dafür, und ein Bedienelement ohne Wirkung ist schlechter als keines.</span>
-      </figcaption>
-    </figure>
-
-    <!-- 5 Buddy list -->
+    <!-- 5 SSI screen -->
     <figure class="screen">
       <div class="device"><div class="screen-surface">
         <div class="statusbar"><span>21:36</span><span>▾ ▮</span></div>
         <div class="appbar">← SSI Buddy</div>
         <div class="body-scroll" style="padding:2px 11px">
+          <div class="card" style="padding:7px 9px;margin-bottom:9px">
+            <div class="row" style="align-items:center;gap:6px">
+              <span style="color:var(--ink-3);font-size:10px">⌕</span>
+              <span class="sub" style="margin:0">Suchen</span>
+            </div>
+          </div>
+
           <div class="section-head" style="margin:2px 2px 7px">Aus den Accounts</div>
           <div class="card edge-blue" data-edge style="padding:10px"><div class="row" style="align-items:center;gap:8px">
             <div class="avatar" style="width:28px;height:28px;font-size:12px;background:#2A5FCC;color:#fff">⌚</div>
@@ -544,39 +728,111 @@
               <span class="chip">GARMIN-ACCOUNT</span>
             </div><span style="color:var(--accent);font-size:12px">▦</span>
           </div></div>
+
           <div class="section-head" style="margin:11px 2px 7px">Zusätzlich gespeichert</div>
           <div class="card"><div class="row" style="align-items:center;gap:9px">
             <div class="avatar">👤</div>
             <div style="flex:1">
               <div class="title">Cem Yilmaz</div>
               <div class="sub">SSI-Nr. 99 · cem@example.com</div>
-            </div><span style="color:var(--ink-3)">⋯</span>
+            </div><span style="color:var(--accent);font-size:12px">▦</span>
           </div></div>
-          <div class="card"><div class="row" style="align-items:center;gap:9px">
-            <div class="avatar">👤</div>
-            <div style="flex:1">
-              <div class="title">Thomas Burger</div>
-              <div class="sub">SSI-Nr. 3154225 · SSI Professional Nr. 110890</div>
-            </div><span style="color:var(--ink-3)">⋯</span>
-          </div></div>
+
           <div class="section-head" style="margin:11px 2px 7px">Tauchbasen</div>
           <div class="card"><div class="row" style="align-items:center;gap:9px">
             <div class="avatar">🏪</div>
             <div style="flex:1">
-              <div class="title">Nero-Sport Diving Center, Zakynthos</div>
+              <div class="title">Nero-Sport Diving Center</div>
               <div class="sub">Basis-Nr. 718019</div>
-            </div><span style="color:var(--ink-3)">⋯</span>
+            </div><span style="color:var(--accent);font-size:12px">▦</span>
           </div></div>
+
+          <div class="section-head" style="margin:11px 2px 7px">Tauchplätze</div>
         </div>
         <div class="fab">▣ Code scannen</div>
       </div></div>
       <figcaption>
         <span class="name">5 · SSI Buddy</span>
-        <span class="desc">Alle SSI-Codes, die das Gerät kennt: oben die Accounts mit hinterlegter Nummer, darunter die eigens gescannten Buddies, zuletzt die Tauchbasen. Ein Tippen zeigt den Eintrag wieder als QR-Code, damit ein anderes Gerät ihn einlesen kann. Account-Zeilen haben kein Menü – ihre Nummer gehört zum Account. Der Scanner erkennt selbst, ob ein Buddy- oder ein Basis-Code vor der Kamera ist.</span>
+        <span class="desc">Accounts mit hinterlegter Nummer, gescannte Buddies, Basen – und seit dem Logbuch-Abgleich die Tauchplätze. Das QR-Symbol rechts sagt, was ein Tap tut; Account-Zeilen tragen zusätzlich einen Chip, weil sie als einzige keine Optionen haben. Das Suchfeld erscheint ab acht Einträgen und greift auf alle Abschnitte zugleich.</span>
       </figcaption>
     </figure>
 
-    <!-- 6 Scanner -->
+    <!-- 6 SSI screen, scrolled to the sites -->
+    <figure class="screen">
+      <div class="device"><div class="screen-surface">
+        <div class="statusbar"><span>21:37</span><span>▾ ▮</span></div>
+        <div class="appbar">← SSI Buddy</div>
+        <div class="body-scroll" style="padding:2px 11px">
+          <div class="section-head" style="margin:2px 2px 7px">Tauchplätze</div>
+          <div class="label" style="margin:0 2px 6px;text-transform:none;font-size:9.5px;letter-spacing:0;font-weight:600;color:var(--ink-3)">Gozo</div>
+          <div class="card" style="padding:9px"><div class="row" style="align-items:center;gap:8px">
+            <span style="color:var(--ink-3);font-size:11px">📍</span>
+            <div style="flex:1">
+              <div class="title">Ras il-Hobz</div>
+              <div class="sub" style="display:flex;align-items:center;gap:3px">
+                <span style="font-size:8px;opacity:.75">📍</span> 36.0166 N, 14.2798 E
+              </div>
+            </div>
+          </div></div>
+          <div class="card" style="padding:9px"><div class="row" style="align-items:center;gap:8px">
+            <span style="color:var(--ink-3);font-size:11px">📍</span>
+            <div style="flex:1">
+              <div class="title">Xatt l-Ahmar</div>
+              <div class="sub" style="display:flex;align-items:center;gap:3px">
+                <span style="font-size:8px;opacity:.75">📍</span> 36.0200 N, 14.2830 E
+              </div>
+            </div>
+          </div></div>
+          <div class="label" style="margin:9px 2px 6px;text-transform:none;font-size:9.5px;letter-spacing:0;font-weight:600;color:var(--ink-3)">Zakynthos</div>
+          <div class="card" style="padding:9px"><div class="row" style="align-items:center;gap:8px">
+            <span style="color:var(--ink-3);font-size:11px">📍</span>
+            <div style="flex:1">
+              <div class="title">Hausriff Nero-Sport</div>
+              <div class="sub" style="display:flex;align-items:center;gap:3px">
+                <span style="font-size:8px;opacity:.75">📍</span> 37.7870 N, 20.8990 E
+              </div>
+            </div>
+          </div></div>
+          <div class="label" style="margin:9px 2px 6px;text-transform:none;font-size:9.5px;letter-spacing:0;font-weight:600;color:var(--ink-3)">Ohne Region</div>
+          <div class="card" style="padding:9px"><div class="row" style="align-items:center;gap:8px">
+            <span style="color:var(--ink-3);font-size:11px">📍</span>
+            <div style="flex:1">
+              <div class="title">Steinbruch Nord</div>
+              <div class="sub" style="display:flex;align-items:center;gap:3px">
+                <span style="font-size:8px;opacity:.75">📍</span> 49.0134 N, 8.4044 E
+              </div>
+            </div>
+          </div></div>
+          <span style="color:var(--accent);font-size:9px;font-weight:600;margin-left:2px">MEHR ANZEIGEN</span>
+        </div>
+      </div></div>
+      <figcaption>
+        <span class="name">6 · Tauchplätze <span class="new-flag">neu</span></span>
+        <span class="desc">Die Plätze kommen aus dem SSI-Logbuch und stehen unter SSIs eigener Region – „Gozo“ ist das Wort, das sagt, zu welcher Reise ein Name gehört. Von Hand angelegte Plätze haben keine und stehen am Ende unter eigener Überschrift, statt in die Gruppe darüber gefaltet zu werden. Darunter die Position mit Himmelsrichtung; die SSI-Nummer liest niemand, die Koordinaten lassen sich in eine Karte einfügen. Erst zehn Plätze, dann „Mehr anzeigen“.</span>
+      </figcaption>
+    </figure>
+
+    <!-- 7 Contact QR with options -->
+    <figure class="screen">
+      <div class="device"><div class="screen-surface">
+        <div class="qr-surface">
+          <div class="qr-appbar" style="display:flex;align-items:center">
+            <span style="flex:1">← Cem Yilmaz</span><span style="color:#55625F">⋯</span>
+          </div>
+          <div class="qr-meta">SSI-Nr. 99</div>
+          <div style="width:100%;display:grid;place-items:center">
+            <canvas id="qr" width="168" height="168" style="width:66%;aspect-ratio:1"></canvas>
+          </div>
+          <div class="qr-hint">In der SSI-App unter „Buddies“ hinzufügen und diesen Code scannen.</div>
+        </div>
+      </div></div>
+      <figcaption>
+        <span class="name">7 · Kontakt als QR-Code</span>
+        <span class="desc">Immer hell mit Ruhezone – ein Scan-Ziel, das im Dunkelmodus unzuverlässig wäre. „Bearbeiten“ und „Entfernen“ sitzen hier oben rechts statt in der Liste. Die Seite liest den Eintrag live: eine Korrektur zeichnet den Code neu, ein Entfernen nimmt die Seite mit.</span>
+      </figcaption>
+    </figure>
+
+    <!-- 8 Scanner -->
     <figure class="screen">
       <div class="device"><div class="screen-surface" style="background:#0b1110">
         <div class="statusbar" style="color:#8B9A95"><span>21:36</span><span>▾ ▮</span></div>
@@ -587,23 +843,24 @@
                       background:repeating-linear-gradient(135deg,#141d1b 0 8px,#101817 8px 16px)"></div>
           <div style="position:absolute;left:12px;right:12px;bottom:14px;background:rgba(0,0,0,.65);
                       border-radius:10px;padding:9px;color:#fff;font-size:8px;text-align:center;line-height:1.5">
-            In der SSI-App „Dein QR-Code" öffnen und die Kamera darauf richten.
+            In der SSI-App „Dein QR-Code“ öffnen und die Kamera darauf richten.
           </div>
         </div>
       </div></div>
       <figcaption>
-        <span class="name">6 · Buddy scannen</span>
-        <span class="desc">Codes, die nichts Passendes enthalten, werden still ignoriert – bei einem Kamerastrom wäre jede Einzelmeldung eine Flut.</span>
+        <span class="name">8 · Buddy scannen</span>
+        <span class="desc">Codes, die nichts Passendes enthalten, werden still ignoriert – bei einem Kamerastrom wäre jede Einzelmeldung eine Flut. Der Scanner erkennt selbst, ob ein Buddy- oder ein Basis-Code vor der Kamera ist.</span>
       </figcaption>
     </figure>
   </div>
 
-  <h2 class="group">Neu: SSI-Code analysieren <span class="new-flag">neu</span></h2>
+  <h2 class="group">SSI-Code analysieren</h2>
   <p class="group-sub">
     Das Werkzeug, mit dem sich die offenen Felder klären lassen, ohne zu raten: einen echten
     SSI-Export scannen, in dem der gesuchte Wert schon eingetragen ist, und den Feldnamen
-    direkt ablesen. Dieselbe Methode hat vorher die Tiefeneinheit (Zentimeter) und die
-    Temperaturfelder aufgedeckt. Zu finden im API-Protokoll.
+    direkt ablesen. Dieselbe Methode hat die Tiefeneinheit (Zentimeter), die Temperaturfelder
+    und zuletzt <code>deco:1</code> aufgedeckt. Zu finden im API-Protokoll, sichtbar nur bei
+    eingeschaltetem Entwicklermodus.
   </p>
 
   <div class="gallery">
@@ -623,17 +880,18 @@
             <div class="kv"><span class="k mono">dive_type</span><span class="v">2</span></div>
             <div class="kv"><span class="k mono">datetime</span><span class="v">202511080856</span></div>
             <div class="kv"><span class="k mono">depth_m</span><span class="v">44.0</span></div>
-            <div class="kv"><span class="k mono">site</span><span class="v">1074</span></div>
+            <div class="kv"><span class="k mono">site</span><span class="v">214234</span></div>
+            <div class="kv"><span class="k mono">deco</span><span class="v">1</span></div>
             <div class="kv"><span class="k mono">user_leader_id</span><span class="v" style="color:var(--ink-3)">(leer)</span></div>
           </div>
           <div class="section-head">Rohdaten</div>
           <div class="card mono" style="padding:11px;font-size:7.5px;line-height:1.6;color:var(--ink-2)">
-            dive;noid;dive_type:2;divetime:92.0;datetime:202511080856;depth_m:44.0;site:1074;…
+            dive;noid;dive_type:2;divetime:92.0;datetime:202511080856;depth_m:44.0;site:214234;…;deco:1
           </div>
         </div>
       </div></div>
       <figcaption>
-        <span class="name">7 · SSI-Code analysieren</span>
+        <span class="name">9 · SSI-Code analysieren</span>
         <span class="desc">Felder im Klartext, Rohdaten zum Kopieren. Auch leere Felder werden gezeigt – gerade die sind beim Diagnostizieren interessant.</span>
       </figcaption>
     </figure>
@@ -641,30 +899,35 @@
 
   <footer class="page">
     Handgebautes HTML-Mockup des Flutter-Codes, kein <code>flutter run</code>-Screenshot –
-    Abstände und Schriftschnitte weichen leicht ab. Die Seite folgt der Hell-/Dunkel-Einstellung
-    des Systems; der QR-Screen bleibt bewusst in beiden Fällen hell.
+    Abstände und Schriftschnitte weichen leicht ab, die Karte ist angedeutet statt gekachelt
+    (die App zeichnet dort OpenStreetMap). Die Seite folgt der Hell-/Dunkel-Einstellung des
+    Systems; die QR-Flächen bleiben bewusst in beiden Fällen hell.
   </footer>
 </div>
 
 <script>
+  // Decorative QR-like pattern - not a readable code, and not meant to be.
   (function () {
-    const c = document.getElementById('qr');
-    if (!c) return;
-    const ctx = c.getContext('2d');
-    const n = 21, cell = c.width / n;
-    const rand = s => { const x = Math.sin(s) * 10000; return x - Math.floor(x); };
-    ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, c.width, c.height);
-    ctx.fillStyle = '#14201E';
-    for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) {
-      const finder = (x < 7 && y < 7) || (x > n - 8 && y < 7) || (x < 7 && y > n - 8);
-      if (finder) continue;
-      if (rand(x * 92.3 + y * 17.7 + 4) > 0.52) ctx.fillRect(x * cell, y * cell, cell * .92, cell * .92);
-    }
-    const finder = (ox, oy) => {
-      ctx.fillStyle = '#14201E'; ctx.fillRect(ox * cell, oy * cell, cell * 7, cell * 7);
-      ctx.fillStyle = '#fff'; ctx.fillRect((ox + 1) * cell, (oy + 1) * cell, cell * 5, cell * 5);
-      ctx.fillStyle = '#14201E'; ctx.fillRect((ox + 2) * cell, (oy + 2) * cell, cell * 3, cell * 3);
+    const draw = (c) => {
+      if (!c) return;
+      const ctx = c.getContext('2d');
+      const n = 21, cell = c.width / n;
+      const rand = s => { const x = Math.sin(s) * 10000; return x - Math.floor(x); };
+      ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, c.width, c.height);
+      ctx.fillStyle = '#14201E';
+      for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) {
+        const finder = (x < 7 && y < 7) || (x > n - 8 && y < 7) || (x < 7 && y > n - 8);
+        if (finder) continue;
+        if (rand(x * 92.3 + y * 17.7 + 4) > 0.52) ctx.fillRect(x * cell, y * cell, cell * .92, cell * .92);
+      }
+      const finder = (ox, oy) => {
+        ctx.fillStyle = '#14201E'; ctx.fillRect(ox * cell, oy * cell, cell * 7, cell * 7);
+        ctx.fillStyle = '#fff'; ctx.fillRect((ox + 1) * cell, (oy + 1) * cell, cell * 5, cell * 5);
+        ctx.fillStyle = '#14201E'; ctx.fillRect((ox + 2) * cell, (oy + 2) * cell, cell * 3, cell * 3);
+      };
+      finder(0, 0); finder(n - 7, 0); finder(0, n - 7);
     };
-    finder(0, 0); finder(n - 7, 0); finder(0, n - 7);
+    draw(document.getElementById('qr'));
+    draw(document.getElementById('qr-inline'));
   })();
 </script>

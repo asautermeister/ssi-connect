@@ -366,17 +366,18 @@ class _SiteCard extends StatelessWidget {
                   children: [
                     // The same pin as over the dive's own site, a size
                     // down: it marks the line as a position rather than
-                    // some other pair of numbers.
-                    const Icon(
+                    // some other pair of numbers. Muted like every other
+                    // second line - the greens in this app mean something.
+                    Icon(
                       Icons.place_outlined,
                       size: 12,
-                      color: AppColors.settled,
+                      color: palette.inkMuted,
                     ),
                     const SizedBox(width: AppSpacing.xs),
                     Text(
                       site.coordinatesLabel,
                       style: theme.textTheme.bodySmall?.copyWith(
-                        color: AppColors.settled,
+                        color: palette.inkMuted,
                       ),
                     ),
                   ],

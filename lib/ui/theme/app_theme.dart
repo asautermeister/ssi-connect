@@ -47,15 +47,11 @@ class AppColors {
   static const statusCritical = Color(0xFFD03B3B);
 
   /// The one deep green in the app. Deliberately not the accent: it says
-  /// "settled" - a dive carried over into SSI, a diver whose site is known,
-  /// a site's own position.
+  /// "settled" - a dive carried over into SSI, a diver whose site is known.
+  /// Like the status colours above it, it is never decoration.
   ///
   /// The same value in both themes, because it has to hold on the white
   /// scan surface of a QR page as well as on the dark canvas.
-  ///
-  /// The site's coordinate line is the one place it is not a state - it is
-  /// there on every card. It earns the exception by never sharing a screen
-  /// with the tick: the SSI screen has no transferred dives on it.
   static const settled = Color(0xFF2E7D32);
 }
 
