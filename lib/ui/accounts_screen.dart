@@ -7,6 +7,10 @@ import '../accounts/accounts_controller.dart';
 import '../accounts/models/account_color.dart';
 import '../accounts/models/garmin_account.dart';
 import '../dives/dive_loader.dart';
+import '../dives/refresh.dart';
+import '../ssi/dive_sites_controller.dart';
+import '../ssi/ssi_buddies_controller.dart';
+import '../ssi/ssi_sync_controller.dart';
 import '../dives/exported_dives_controller.dart';
 import '../dives/recent_dives_controller.dart';
 import 'add_account_screen.dart';
@@ -38,16 +42,28 @@ class AccountsScreen extends StatefulWidget {
 
 class _AccountsScreenState extends State<AccountsScreen> {
   /// Kicks off the fetch once the accounts are known. Called from build,
-  /// which is safe because [RecentDivesController.load] returns immediately
-  /// for a set of accounts it already has.
-  void _loadAfterBuild(List<GarminAccount> accounts, {bool force = false}) {
+  /// which is safe because a fetch that is not due yet does nothing.
+  void _loadAfterBuild(
+    List<GarminAccount> accounts, {
+    RefreshReason reason = RefreshReason.automatic,
+  }) {
     if (accounts.isEmpty) return;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      context.read<RecentDivesController>().load(
-        accounts: accounts,
+      final dives = context.read<RecentDivesController>();
+      // The one screen that sees every account, so the one place that can
+      // say which of them are gone.
+      dives.retain(accounts);
+      refreshAccounts(
+        scope: accounts,
+        reason: reason,
+        dives: dives,
         fetch: context.read<DiveFetcher>(),
-        force: force,
+        accounts: context.read<AccountsController>(),
+        sites: context.read<DiveSitesController>(),
+        buddies: context.read<SsiBuddiesController>(),
+        exported: context.read<ExportedDivesController>(),
+        sync: context.read<SsiSyncController>(),
       );
     });
   }
@@ -66,7 +82,8 @@ class _AccountsScreenState extends State<AccountsScreen> {
       body: !controller.loaded
           ? const Center(child: CircularProgressIndicator())
           : RefreshIndicator(
-              onRefresh: () async => _loadAfterBuild(accounts, force: true),
+              onRefresh: () async =>
+                  _loadAfterBuild(accounts, reason: RefreshReason.userAsked),
               child: ListView(
                 padding: const EdgeInsets.fromLTRB(
                   AppSpacing.lg,
@@ -84,7 +101,10 @@ class _AccountsScreenState extends State<AccountsScreen> {
                         child: OfflineBanner(
                           isOffline: recentDives.isOffline,
                           fetchedAt: recentDives.oldestFetchedAt,
-                          onRetry: () => _loadAfterBuild(accounts, force: true),
+                          onRetry: () => _loadAfterBuild(
+                            accounts,
+                            reason: RefreshReason.userAsked,
+                          ),
                         ),
                       ),
                     _RecentDives(accounts: accounts, controller: recentDives),
@@ -127,8 +147,15 @@ class _RecentDives extends StatelessWidget {
     final theme = Theme.of(context);
     final s = AppStrings.of(context);
     final recent = controller.recent(accounts);
+    // Matched over every loaded dive, not over the five on show. Two
+    // reasons, and the second is the one that bit: the match is one-to-one
+    // across an account's dives, so a five-dive subset could hand an entry
+    // to a different dive than the full list would - and the ticks travel
+    // with the swipe, which runs through all of them. Computed over five,
+    // everything older than the fifth arrived without a tick.
+    final all = controller.merged(accounts);
     final inLogbook = context.watch<ExportedDivesController>().matchedAcross(
-      recent,
+      all,
     );
 
     return Column(
@@ -177,6 +204,13 @@ class _RecentDives extends StatelessWidget {
             RecentDiveCard(
               entry: entry,
               inSsiLogbook: inLogbook.contains(entry.dive.id),
+              // Every loaded dive, not the five on show. These five are a
+              // preview of the account's dives, not a list in their own
+              // right - swiping out of them after the fifth would stop for
+              // no reason the screen ever gave. The card narrows this to
+              // the diver whose dive was tapped.
+              siblings: all,
+              siblingsInLogbook: inLogbook,
             ),
             const SizedBox(height: AppSpacing.md),
           ],

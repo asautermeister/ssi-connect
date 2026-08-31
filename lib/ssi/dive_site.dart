@@ -18,6 +18,7 @@ class DiveSite {
     required this.name,
     required this.latitude,
     required this.longitude,
+    this.region,
   });
 
   /// SSI's number for the site - what ends up in the QR code.
@@ -31,6 +32,32 @@ class DiveSite {
   /// the entry point of an actual dive rather than a map centre.
   final double latitude;
   final double longitude;
+
+  /// What SSI files the site under - "Gozo", "Zakynthos". Null for a site
+  /// entered by hand, because only SSI's logbook carries this.
+  ///
+  /// A region is not a place with an outline, it is whatever SSI's database
+  /// says, so it is only ever used to group the list - never to decide
+  /// which site a dive belongs to. That stays the position's job.
+  final String? region;
+
+  /// The position as one line - `36.0166 N, 14.2798 E`.
+  ///
+  /// Dots for the decimal point in both languages: a German decimal comma
+  /// would collide with the comma between the two values, and everything
+  /// that reads coordinates expects dots. Four places is what SSI sends,
+  /// and it is about 11 m - finer would be invented precision.
+  ///
+  /// The hemisphere carries the sign, so the numbers themselves are always
+  /// positive. N/E/S/W stay untranslated - German would want O for Ost, but
+  /// this is what dive computers, charts and map search fields show, and a
+  /// lone "O" among them reads as a typo.
+  String get coordinatesLabel {
+    final northSouth = latitude < 0 ? 'S' : 'N';
+    final eastWest = longitude < 0 ? 'W' : 'E';
+    return '${latitude.abs().toStringAsFixed(4)} $northSouth, '
+        '${longitude.abs().toStringAsFixed(4)} $eastWest';
+  }
 
   /// How far [latitude]/[longitude] are from a position, in metres.
   ///
@@ -50,6 +77,10 @@ class DiveSite {
     'name': name,
     'latitude': latitude,
     'longitude': longitude,
+    // Left out rather than written as null: entries stored before this
+    // field existed read back the same way, and there is no difference
+    // between "no region" and "never had one".
+    if (region != null) 'region': region,
   };
 
   factory DiveSite.fromJson(Map<String, dynamic> json) => DiveSite(
@@ -57,6 +88,17 @@ class DiveSite {
     name: json['name'] as String,
     latitude: (json['latitude'] as num).toDouble(),
     longitude: (json['longitude'] as num).toDouble(),
+    region: json['region'] as String?,
+  );
+
+  /// The same site with [region] filled in - used to backfill entries that
+  /// were stored before SSI's region was kept.
+  DiveSite withRegion(String? region) => DiveSite(
+    siteId: siteId,
+    name: name,
+    latitude: latitude,
+    longitude: longitude,
+    region: region,
   );
 
   /// Two entries are the same site when the number matches - the name is

@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import '../accounts/accounts_controller.dart';
+import '../accounts/models/garmin_account.dart';
 import '../dives/exported_dives_controller.dart';
 import 'dive_sites_controller.dart';
 import 'ssi_api_client.dart';
@@ -33,7 +34,12 @@ class SsiSyncController extends ChangeNotifier {
   /// keystore unused and unreachable.
   static const _legacyAccountKey = 'ssi_connect.ssi_account';
 
-  static const _lastSyncKey = 'ssi_connect.ssi.last_sync';
+  /// Where a single device-wide timestamp lived, before the sync learned to
+  /// run for one account at a time. Read once on startup so an existing
+  /// install does not re-sync everything the first time, then dropped.
+  static const _legacyLastSyncKey = 'ssi_connect.ssi.last_sync';
+
+  static const _lastSyncKey = 'ssi_connect.ssi.last_sync_by_account';
 
   bool _busy = false;
   bool get isBusy => _busy;
@@ -61,19 +67,72 @@ class SsiSyncController extends ChangeNotifier {
   int? _lastBuddyAddedCount;
   int? get lastBuddyAddedCount => _lastBuddyAddedCount;
 
-  /// When the logbooks were last read.
+  /// When each account's logbook was last read.
   ///
   /// Outlives the app run, unlike the counts beside it: those describe the
   /// sync you just watched happen, this answers "is what I am looking at
-  /// still current?" days later.
-  DateTime? _lastSyncAt;
-  DateTime? get lastSyncAt => _lastSyncAt;
+  /// still current?" days later - and, since the sync runs per account now,
+  /// it is what decides whether a given account is due at all.
+  final _lastSyncAt = <String, DateTime>{};
+
+  DateTime? lastSyncAtFor(String accountId) => _lastSyncAt[accountId];
+
+  /// The oldest of them, which is the honest answer to "how current is what
+  /// I see?" when several logbooks feed one screen. Null until the first
+  /// sync of the first account.
+  DateTime? get lastSyncAt {
+    DateTime? oldest;
+    for (final at in _lastSyncAt.values) {
+      if (oldest == null || at.isBefore(oldest)) oldest = at;
+    }
+    return oldest;
+  }
+
+  /// When each account's logbook was last *asked* for, successfully or not.
+  ///
+  /// Separate from [_lastSyncAt], which records success and is what gets
+  /// shown. This one only holds the floor open: a screen asks on every
+  /// build, so an account whose token is refused would otherwise be asked
+  /// again on every frame.
+  final _lastAttemptAt = <String, DateTime>{};
+
+  /// What went wrong per account on the last attempt, by account id. Empty
+  /// while everything is in order, which is most of the time.
+  final _failures = <String, String>{};
+  Map<String, String> get failures => Map.unmodifiable(_failures);
 
   Future<void> initialize() async {
     await _storage.delete(key: _legacyAccountKey);
     final stored = await _storage.read(key: _lastSyncKey);
-    _lastSyncAt = stored == null ? null : DateTime.tryParse(stored);
+    if (stored != null) {
+      for (final entry in stored.split('\n')) {
+        final at = entry.indexOf('=');
+        if (at <= 0) continue;
+        final parsed = DateTime.tryParse(entry.substring(at + 1));
+        if (parsed != null) _lastSyncAt[entry.substring(0, at)] = parsed;
+      }
+    }
+    _legacyAt ??= DateTime.tryParse(
+      await _storage.read(key: _legacyLastSyncKey) ?? '',
+    );
+    await _storage.delete(key: _legacyLastSyncKey);
     notifyListeners();
+  }
+
+  /// The device-wide timestamp from before this was per account. Stands in
+  /// for an account that has no timestamp of its own yet, so upgrading does
+  /// not look like "never synced" and re-read every logbook at once.
+  DateTime? _legacyAt;
+
+  Future<void> _rememberSync(String accountId) async {
+    _lastSyncAt[accountId] = DateTime.now();
+    await _storage.write(
+      key: _lastSyncKey,
+      value: [
+        for (final entry in _lastSyncAt.entries)
+          '${entry.key}=${entry.value.toIso8601String()}',
+      ].join('\n'),
+    );
   }
 
   /// Signs in and stores the session on [accountId].
@@ -101,29 +160,43 @@ class SsiSyncController extends ChangeNotifier {
     }
   }
 
-  /// Pulls the logbooks of every connected account: dive sites into
-  /// [sites], the buddies into [buddies].
+  /// Pulls the logbooks of the connected accounts in [scope]: dive sites
+  /// into [sites], the buddies into [buddies], the logged dives into
+  /// [exported] for the transferred tick.
+  ///
+  /// Skips any account whose logbook was read less than [notWithin] ago, so
+  /// this is safe to call from a screen opening or from a pull-to-refresh
+  /// without asking first whether it is worth it.
   ///
   /// One failing account does not stop the others: a stale token on one
-  /// logbook is no reason to withhold the rest. Whatever failed is
-  /// reported afterwards.
-  Future<bool> syncAll({
+  /// logbook is no reason to withhold the rest. What failed is kept per
+  /// account in [failures].
+  Future<bool> syncAccounts({
+    required List<GarminAccount> scope,
     required AccountsController accounts,
     required DiveSitesController sites,
     required SsiBuddiesController buddies,
     required ExportedDivesController exported,
+    Duration notWithin = Duration.zero,
   }) async {
-    final connected = accounts.accounts.where((a) => a.hasSsiLogin).toList();
-    if (connected.isEmpty) return false;
+    final now = DateTime.now();
+    final due = [
+      for (final account in scope)
+        if (account.hasSsiLogin && _isDue(account.id, now, notWithin)) account,
+    ];
+    if (due.isEmpty) return false;
 
     _begin(null);
     var siteTotal = 0;
     var siteAdded = 0;
     var buddyTotal = 0;
     final harvested = <SsiBuddyCode>[];
-    final failures = <String>[];
+    // Named for the message a person reads, keyed by id for the screen that
+    // will one day put the failure on the account it belongs to.
+    final named = <String>[];
     try {
-      for (final account in connected) {
+      for (final account in due) {
+        _lastAttemptAt[account.id] = DateTime.now();
         try {
           final logbook = await _client.loadLogbook(account.ssiSession!);
           siteTotal += logbook.sites.length;
@@ -133,8 +206,11 @@ class SsiSyncController extends ChangeNotifier {
           // Kept per account: a logbook may only ever be matched against
           // its own person's dives.
           await exported.setLogbook(account.id, logbook.dives);
+          _failures.remove(account.id);
+          await _rememberSync(account.id);
         } on SsiApiException catch (e) {
-          failures.add('${account.displayName}: ${e.message}');
+          named.add('${account.displayName}: ${e.message}');
+          _failures[account.id] = e.message;
           // A rejected token would fail the same way every time, and the
           // message would never change. Drop it and let them sign in again.
           if (e.type == SsiApiErrorType.invalidCredentials) {
@@ -151,22 +227,33 @@ class SsiSyncController extends ChangeNotifier {
       _lastBuddyCount = buddyTotal;
       _lastBuddyAddedCount = await _absorbBuddies(harvested, accounts, buddies);
 
-      // Recorded when at least one logbook came through: what is on the
-      // device really is that fresh. Had every account failed, the old
-      // timestamp is the honest answer and stays.
-      if (failures.length < connected.length) {
-        _lastSyncAt = DateTime.now();
-        await _storage.write(
-          key: _lastSyncKey,
-          value: _lastSyncAt!.toIso8601String(),
-        );
-      }
-
-      if (failures.isNotEmpty) _error = failures.join('\n');
-      return failures.isEmpty;
+      if (named.isNotEmpty) _error = named.join('\n');
+      return named.isEmpty;
     } finally {
       _end();
     }
+  }
+
+  /// Whether this account's logbook is old enough to be worth reading.
+  ///
+  /// An account with no timestamp of its own falls back to the device-wide
+  /// one from before this was per account, so upgrading does not read every
+  /// logbook at once on the first screen that opens.
+  bool _isDue(String accountId, DateTime now, Duration notWithin) {
+    final attempted = _lastAttemptAt[accountId];
+    if (attempted != null && now.difference(attempted) < notWithin) {
+      return false;
+    }
+    final last = _lastSyncAt[accountId] ?? _legacyAt;
+    return last == null || now.difference(last) >= notWithin;
+  }
+
+  /// Forgets what is known about an account, so it is due again. For the
+  /// moment a fresh login is stored on it.
+  void forgetSyncState(String accountId) {
+    _lastSyncAt.remove(accountId);
+    _lastAttemptAt.remove(accountId);
+    _failures.remove(accountId);
   }
 
   /// Files the harvested buddies, keeping the people who already have an

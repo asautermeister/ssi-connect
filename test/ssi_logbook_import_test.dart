@@ -177,6 +177,33 @@ void main() {
       expect(adapter.lastBody, contains('what=get_divelog'));
     });
 
+    test('keeps the region, which is what groups the list', () async {
+      final (client, _) = _clientAnswering(
+        (_) => jsonEncode({
+          'logbook_sites': [_rasIlHobz],
+        }),
+      );
+
+      final site = (await client.loadLogbook(_session)).sites.single;
+
+      expect(site.region, 'Gozo');
+    });
+
+    test('a blank region is absent, not empty', () async {
+      // An empty heading would open a group that says nothing.
+      final (client, _) = _clientAnswering(
+        (_) => jsonEncode({
+          'logbook_sites': [
+            {..._rasIlHobz, 'odin_dive_sites_regions_name': '  '},
+          ],
+        }),
+      );
+
+      final site = (await client.loadLogbook(_session)).sites.single;
+
+      expect(site.region, isNull);
+    });
+
     test('a four-digit number is a real number', () {
       // SSI's own page for this site ends in 2595. Nothing says a site id
       // has six digits, and truncating or padding it would file the dive
@@ -519,6 +546,69 @@ void main() {
       expect(added, 0);
       expect(controller.sites.single.name, 'Hausriff');
       expect(controller.sites.single.latitude, closeTo(36.0, 0.00001));
+    });
+
+    test(
+      'a known site without a region takes the one from the import',
+      () async {
+        // The one thing an import may overwrite: the user cannot set or
+        // correct a region, so there is no edit of theirs to protect - and
+        // sites imported before regions were kept would otherwise stay
+        // ungrouped forever.
+        final repository = _InMemoryRepository();
+        final controller = DiveSitesController(repository: repository);
+        await controller.loadFromStorage();
+        await controller.addAllNew(const [
+          DiveSite(
+            siteId: '2595',
+            name: 'Hausriff',
+            latitude: 36.0,
+            longitude: 14.2,
+          ),
+        ]);
+
+        final added = await controller.addAllNew(const [
+          DiveSite(
+            siteId: '2595',
+            name: 'Ras il-Hobz',
+            latitude: 36.0166,
+            longitude: 14.2798,
+            region: 'Gozo',
+          ),
+        ]);
+
+        expect(added, 0);
+        expect(controller.sites.single.region, 'Gozo');
+        // Everything the user could have touched stays theirs.
+        expect(controller.sites.single.name, 'Hausriff');
+        expect(controller.sites.single.latitude, closeTo(36.0, 0.00001));
+        // And it reached storage, not just memory.
+        expect(repository.stored.single.region, 'Gozo');
+      },
+    );
+
+    test('a region already stored is not replaced', () async {
+      final controller = await _controllerWith(const [
+        DiveSite(
+          siteId: '2595',
+          name: 'Hausriff',
+          latitude: 36.0,
+          longitude: 14.2,
+          region: 'Gozo',
+        ),
+      ]);
+
+      await controller.addAllNew(const [
+        DiveSite(
+          siteId: '2595',
+          name: 'Ras il-Hobz',
+          latitude: 36.0166,
+          longitude: 14.2798,
+          region: 'Malta',
+        ),
+      ]);
+
+      expect(controller.sites.single.region, 'Gozo');
     });
 
     test('the same site twice in one import counts once', () async {

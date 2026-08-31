@@ -6,8 +6,8 @@ import '../l10n/app_strings.dart';
 import '../dives/exported_dives_controller.dart';
 import '../dives/recent_dives_controller.dart';
 import 'format.dart';
+import 'dive_detail_screen.dart';
 import 'qr_display_screen.dart';
-import 'qr_screen.dart';
 import 'theme/app_theme.dart';
 import 'widgets/app_card.dart';
 import 'widgets/dive_type_icon.dart';
@@ -23,14 +23,70 @@ class RecentDiveCard extends StatelessWidget {
     super.key,
     required this.entry,
     this.inSsiLogbook = false,
+    this.siblings = const [],
+    this.siblingsInLogbook = const {},
   });
 
   final RecentDive entry;
+
+  /// The dives this one is listed among, so the detail view can be swiped
+  /// from one to the next. Empty means "just this one".
+  final List<RecentDive> siblings;
+
+  /// Which of [siblings] SSI's logbook already has, by dive id - worked out
+  /// once for the whole list, since the match is one-to-one.
+  final Set<String> siblingsInLogbook;
 
   /// Whether this dive was found in the SSI logbook of the account it
   /// belongs to. Worked out by the list, which can keep each account's
   /// dives against that account's logbook.
   final bool inSsiLogbook;
+
+  /// This dive, opened among the ones it is listed with - but only this
+  /// diver's.
+  ///
+  /// These lists are merged across accounts, and swiping through a merged
+  /// list would hand somebody else's dive the SSI number of whoever was
+  /// tapped, or at best jump between people mid-swipe. "Previous dive"
+  /// means the diver's previous dive; the family shares a tablet, not a
+  /// logbook.
+  DiveDetailScreen _detailScreen({bool openAtCode = false}) {
+    final mine = [
+      for (final sibling in siblings)
+        if (sibling.account.id == entry.account.id) sibling,
+    ];
+    // Found by the dive's id, not by identity. RecentDive is built fresh
+    // on every read, so the entry this card was given and the entry of the
+    // same dive in `siblings` are equal in every way that matters and
+    // identical in none - which quietly reduced the whole list to one dive
+    // when the two came from different calls, as they do on the start
+    // screen: the five on show and the full list are separate reads.
+    final index = mine.indexWhere((s) => s.dive.id == entry.dive.id);
+    if (index < 0) {
+      return DiveDetailScreen(
+        dives: [
+          (
+            dive: entry.dive,
+            diver: entry.account.ssiIdentity,
+            inLogbook: inSsiLogbook,
+          ),
+        ],
+        openAtCode: openAtCode,
+      );
+    }
+    return DiveDetailScreen(
+      dives: [
+        for (final sibling in mine)
+          (
+            dive: sibling.dive,
+            diver: sibling.account.ssiIdentity,
+            inLogbook: siblingsInLogbook.contains(sibling.dive.id),
+          ),
+      ],
+      index: index,
+      openAtCode: openAtCode,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -41,12 +97,13 @@ class RecentDiveCard extends StatelessWidget {
 
     return AppCard(
       edgeColor: entry.account.color?.of(context),
-      onTap: () => Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (_) =>
-              QrScreen(dive: dive, diver: entry.account.ssiIdentity),
-        ),
-      ),
+      // The detail page, the same as the per-account list does. Going
+      // straight to the code from here and to the dive from there was two
+      // answers to one question, and the code is on the detail page now
+      // anyway - so nothing got further away.
+      onTap: () => Navigator.of(
+        context,
+      ).push(MaterialPageRoute(builder: (_) => _detailScreen())),
       child: Row(
         children: [
           DiveTypeIcon(type: dive.type, size: 34),
@@ -105,8 +162,20 @@ class RecentDiveCard extends StatelessWidget {
             ],
           ),
           const SizedBox(width: AppSpacing.sm),
-          // Says where the tap goes, so the card isn't a guess.
-          Icon(Icons.qr_code_2, size: 20, color: theme.colorScheme.primary),
+          // The card goes to the dive; this goes to its code. It was only
+          // a picture before, saying where the tap led - which stopped
+          // being true when the card started opening the detail page.
+          IconButton(
+            icon: const Icon(Icons.qr_code_2, size: 20),
+            color: theme.colorScheme.primary,
+            tooltip: s.qrForSsi,
+            visualDensity: VisualDensity.compact,
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => _detailScreen(openAtCode: true),
+              ),
+            ),
+          ),
         ],
       ),
     );

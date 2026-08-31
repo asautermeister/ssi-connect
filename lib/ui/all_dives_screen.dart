@@ -78,6 +78,9 @@ class _AllDivesScreenState extends State<AllDivesScreen>
                         RecentDiveCard(
                           entry: entry,
                           inSsiLogbook: inLogbook.contains(entry.dive.id),
+                          // What is on screen, filter and all.
+                          siblings: visible,
+                          siblingsInLogbook: inLogbook,
                         ),
                         const SizedBox(height: AppSpacing.md),
                       ],

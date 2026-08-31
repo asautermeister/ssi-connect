@@ -11,11 +11,14 @@ import 'format.dart';
 import 'theme/app_theme.dart';
 import 'widgets/app_card.dart';
 
-/// The device-wide dive sites, and the SSI logbooks they come from.
+/// The manual SSI sync, for when an automatic one did not do what it
+/// should have.
 ///
-/// The list is device-wide on purpose while the logins are per person: a
-/// dive site is a place, and a family tablet should suggest it to whoever
-/// dived there, not only to whoever imported it.
+/// Only shown in diagnostic mode. Every refresh pulls the logbooks now, so
+/// this is no longer a way anybody needs - only a lever for taking one
+/// deliberately and watching what comes back. What the sync produced -
+/// the sites, the buddies, and any account it failed for - is listed under
+/// "SSI Buddy", beside the things themselves.
 class SsiSitesSection extends StatelessWidget {
   const SsiSitesSection({super.key});
 
@@ -38,16 +41,6 @@ class SsiSitesSection extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text(
-                s.knownDiveSites(sites.sites.length),
-                style: theme.textTheme.titleMedium,
-              ),
-              Text(
-                s.knownBuddies(buddies.buddies.length),
-                style: theme.textTheme.bodySmall,
-              ),
-              // Survives a restart, so it answers "is this still current?"
-              // long after the counts below have gone.
               if (sync.lastSyncAt case final at?)
                 Text(
                   s.lastSyncedAt(Fmt.dateTime(at)),
@@ -82,21 +75,24 @@ class SsiSitesSection extends StatelessWidget {
                       ],
                     ),
                   ),
-                const SizedBox(height: AppSpacing.md),
-                Text(s.ssiSyncExplanation, style: theme.textTheme.bodySmall),
-                const SizedBox(height: AppSpacing.lg),
-                FilledButton.icon(
-                  icon: const Icon(Icons.sync, size: 18),
-                  label: Text(s.ssiSyncSites),
-                  onPressed: sync.isBusy
-                      ? null
-                      : () => context.read<SsiSyncController>().syncAll(
-                          accounts: accounts,
-                          sites: sites,
-                          buddies: buddies,
-                          exported: context.read<ExportedDivesController>(),
-                        ),
-                ),
+                ...[
+                  const SizedBox(height: AppSpacing.md),
+                  Text(s.ssiSyncExplanation, style: theme.textTheme.bodySmall),
+                  const SizedBox(height: AppSpacing.lg),
+                  FilledButton.icon(
+                    icon: const Icon(Icons.sync, size: 18),
+                    label: Text(s.ssiSyncSites),
+                    onPressed: sync.isBusy
+                        ? null
+                        : () => context.read<SsiSyncController>().syncAccounts(
+                            scope: accounts.accounts,
+                            accounts: accounts,
+                            sites: sites,
+                            buddies: buddies,
+                            exported: context.read<ExportedDivesController>(),
+                          ),
+                  ),
+                ],
               ],
 
               if (sync.isBusy) ...[

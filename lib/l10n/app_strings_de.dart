@@ -205,6 +205,9 @@ class AppStringsDe extends AppStrings {
   @override
   String diveOfDayTitle(int number) => '$number. Tauchgang';
   @override
+  String diveNumberTitle(int number) => 'Tauchgang #$number';
+
+  @override
   String get values => 'Werte';
   @override
   String get duration => 'Dauer';
@@ -243,12 +246,15 @@ class AppStringsDe extends AppStrings {
   @override
   String get diveSiteName => 'Name des Platzes';
   @override
-  String get siteSuggestion => 'Vorschlag';
+  String get siteAdoptedChange =>
+      'Tauchplatz automatisch übernommen – Zuordnung ändern';
+
   @override
-  String get useSuggestion => 'Übernehmen';
+  String get osmAttribution => '© OpenStreetMap-Mitwirkende';
+
   @override
-  String siteNearby(String name, int metres) =>
-      '$name · ${distance(metres)} entfernt';
+  String get centreOnDive => 'Auf den Tauchgang zentrieren';
+
   @override
   String moreSitesNearby(int count) => count == 1
       ? '1 weiterer Platz in der Nähe'
@@ -285,6 +291,8 @@ class AppStringsDe extends AppStrings {
   String get signInWithSsi => 'Mit SSI anmelden';
   @override
   String get diveSites => 'Tauchplätze';
+  @override
+  String get withoutRegion => 'Ohne Region';
   @override
   String get ssiLogbook => 'SSI-Logbuch';
   @override
@@ -357,6 +365,9 @@ class AppStringsDe extends AppStrings {
   @override
   String get transferredToSsi => 'In SSI übernommen';
   @override
+  String get qrFullScreen => 'Groß anzeigen';
+
+  @override
   String get qrHintBatch =>
       'In der SSI-App einen Tauchgang hinzufügen und „QR-Code scannen" '
       'wählen, danach hier weiter.';
@@ -377,6 +388,17 @@ class AppStringsDe extends AppStrings {
 
   @override
   String get ssiBuddy => 'SSI Buddy';
+  @override
+  String get search => 'Suchen';
+  @override
+  String filteredCount(int shown, int total) => '$shown von $total';
+  @override
+  String get showMore => 'Mehr anzeigen';
+  @override
+  String syncFailedFor(String account, String message) =>
+      'SSI-Abgleich für $account: $message';
+  @override
+  String get signInAgain => 'Erneut anmelden';
   @override
   String get fromAccounts => 'Aus den Accounts';
   @override
@@ -401,7 +423,6 @@ class AppStringsDe extends AppStrings {
   @override
   String get addCentreByHand => 'Tauchbasis von Hand eintragen';
   @override
-  String get showAsQr => 'Als QR-Code zeigen';
   @override
   String get buddyQrHint =>
       'Mit der Kamera eines anderen Geräts scannen, um diesen Buddy dort zu '
@@ -519,8 +540,11 @@ class AppStringsDe extends AppStrings {
       'Tauchgänge liegen verschlüsselt im Schlüsselspeicher dieses Geräts.';
   @override
   String get yourDataNoThirdParty =>
-      'Es werden keine Daten an Dritte übertragen. Die einzige Verbindung '
-      'nach außen geht zu Garmin, um deine eigenen Tauchgänge abzurufen.';
+      'Verbindungen nach außen gehen dorthin, wo deine eigenen Daten liegen: '
+      'zu Garmin und, wenn du dich anmeldest, zu SSI. Dazu kommt die Karte: '
+      'sie lädt ihre Kacheln von OpenStreetMap, das dabei erfährt, wo dieser '
+      'Tauchgang war. Das passiert nur, während du einen Tauchgang geöffnet '
+      'hast, und ohne Angabe, wer du bist.';
   @override
   String get yourDataNoServer =>
       'Es gibt keinen Server und kein Konto bei uns. Die App entfernen '
@@ -649,6 +673,10 @@ class AppStringsDe extends AppStrings {
   String get diveTypeRebreather => 'Rebreather (CCR)';
   @override
   String get diveTypeScuba => 'Gerätetauchgang';
+  @override
+  String diveTypeTitle(String type) => '$type-Tauchgang';
+  @override
+  String get diveTypeScubaTitle => 'Gerätetauchgang';
   @override
   String get waterFresh => 'Süßwasser';
   @override

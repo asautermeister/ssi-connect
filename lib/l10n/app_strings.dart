@@ -137,6 +137,7 @@ abstract class AppStrings {
   // ------------------------------------------------------------ dive detail
 
   String diveOfDayTitle(int number);
+  String diveNumberTitle(int number);
   String get values;
   String get duration;
   String get avgDepth;
@@ -155,9 +156,9 @@ abstract class AppStrings {
   String get diveSiteNumber;
   String get diveSiteNumberHint;
   String get diveSiteName;
-  String get siteSuggestion;
-  String get useSuggestion;
-  String siteNearby(String name, int metres);
+  String get siteAdoptedChange;
+  String get osmAttribution;
+  String get centreOnDive;
   String moreSitesNearby(int count);
   String get searchDiveSite;
   String get noSiteMatches;
@@ -175,6 +176,10 @@ abstract class AppStrings {
   String get ssiAccountHint;
   String get signInWithSsi;
   String get diveSites;
+
+  /// Heading over the sites SSI files under no region - entered by hand,
+  /// or imported before the region was kept.
+  String get withoutRegion;
   String get ssiLogbook;
   String knownDiveSites(int count);
   String knownBuddies(int count);
@@ -203,6 +208,7 @@ abstract class AppStrings {
   String get wholeDiveDay;
   String get scanWithSsiApp;
   String get qrHintSingle;
+  String get qrFullScreen;
   String get qrHintBatch;
   String get transferredToSsi;
   String get back;
@@ -215,6 +221,17 @@ abstract class AppStrings {
   // ------------------------------------------------------------- buddies
 
   String get ssiBuddy;
+
+  /// One search field for the whole SSI screen; the sections say how much
+  /// of them survived it.
+  String get search;
+  String filteredCount(int shown, int total);
+  String get showMore;
+
+  /// A logbook that could not be read, and the way back in.
+  String syncFailedFor(String account, String message);
+  String get signInAgain;
+
   String get fromAccounts;
   String get stored;
   String get alsoStored;
@@ -225,7 +242,6 @@ abstract class AppStrings {
   String get noBuddiesYetBody;
   String get addBuddyByHand;
   String get addCentreByHand;
-  String get showAsQr;
   String get buddyQrHint;
   String get centreQrHint;
   String savedConfirmation(String name);
@@ -343,6 +359,10 @@ abstract class AppStrings {
   String get diveTypeMultiGas;
   String get diveTypeRebreather;
   String get diveTypeScuba;
+
+  /// A dive named by its type, for a heading: "Apnoe-Tauchgang".
+  String diveTypeTitle(String type);
+  String get diveTypeScubaTitle;
   String get waterFresh;
   String get waterSalt;
   List<String> get colourNames;

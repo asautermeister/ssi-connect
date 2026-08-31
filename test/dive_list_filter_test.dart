@@ -94,7 +94,11 @@ Future<void> _pump(
 
   Future<List<Dive>> fetch(GarminAccount account, {int start = 0}) async =>
       start == 0 ? dives : const [];
-  await recent.load(accounts: [_account], fetch: fetch);
+  await recent.load(
+    accounts: [_account],
+    fetch: fetch,
+    notWithin: Duration.zero,
+  );
 
   final exported = ExportedDivesController(
     repository: InMemoryExportedDives(transferred),

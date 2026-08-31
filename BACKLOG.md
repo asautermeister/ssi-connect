@@ -40,44 +40,6 @@ beim Übernahme-Haken.
 Tauchplatz" auf der Tauchgangs-Liste möglich, der heute nicht geht, weil
 niemand weiß, welche Tauchgänge einen haben.
 
-## Zu prüfen
-
-### Garmins Tauchgangsnummern
-
-*Merkposten – das genaue Symptom steht noch aus.*
-
-Es gibt zwei Nummern, und sie kommen aus völlig verschiedenen Quellen:
-
-**`Dive.diveNumber`** – die laufende Tauchgangsnummer des Tauchers, auf
-dem Abzeichen als `# 42` zu sehen. Sie kommt von Garmin, und die Stelle,
-die sie liest, hält den Vorbehalt selbst fest
-(`lib/garmin/models/garmin_activity.dart`):
-
-> „whether the activity-list endpoint passes it through – and under which
-> name – is unconfirmed"
-
-Gelesen werden vier Kandidaten: `diveNumber`, `diveNum`,
-`summaryDTO.diveNumber`, `summaryDTO.diveNum`. Trifft keiner, bleibt das
-Feld leer und die Anzeige blendet es aus. Genau das ist der wahrscheinliche
-Fall, den es zu prüfen gilt: erscheint das `#` überhaupt, und wenn ja,
-stimmt die Zahl mit der Uhr überein?
-
-**`Dive.diveNumberOfDay`** – die Nummer innerhalb des Tauchtags („2. TG"),
-von der App selbst berechnet (`assignDiveNumbersOfDay`), nicht von Garmin.
-Wenn diese falsch ist, liegt es an der Gruppierung nach Kalendertag – etwa
-bei einem Nachttauchgang über Mitternacht.
-
-**Prüfweg.** Im Diagnose-Werkzeug (Info → Version dreimal antippen →
-„API-Protokoll") steht eine `PROBE`-Zeile, die die tatsächlichen
-Feldnamen einer Garmin-Antwort auflistet. Damit lässt sich in einem Schritt
-klären, ob Garmin überhaupt eine Nummer mitschickt und unter welchem Namen.
-
-**Neue Vergleichsquelle.** Seit dem Logbuch-Abgleich liegt auch SSIs eigene
-Zählung vor: `odin_user_log_nr` in `logbook_details` (im Beispiel `1` und
-`2`). Damit ließe sich die Anzeige gegen etwas Echtes halten – und, falls
-Garmin gar keine Nummer liefert, wäre das eine mögliche Ersatzquelle für
-Tauchgänge, die schon in SSI stehen.
-
 ## Ideen
 
 ### Das Übertragen mehrerer Tauchgänge neu zugänglich machen
@@ -107,81 +69,39 @@ so ist, liefert ausgerechnet der Weg für den Bootstag weniger als der
 einzelne QR-Code – das gehört behoben, bevor der Einstieg wieder
 prominent wird.
 
-### Den SSI-Bereich neu ordnen, und den Abgleich aus den Einstellungen holen
+### Herkunft eines Buddy-Eintrags
 
-Der SSI-Teil ist heute auf drei Orte verteilt, ohne dass einer davon der
-offensichtliche wäre:
+*Später nochmal ansehen.*
 
-* die **Anmeldung** beim jeweiligen Account („SSI-Identität"),
-* der **Abgleich** samt Zahlen und Zeitstempel unter „Einstellungen →
-  SSI-Logbuch",
-* die **Buddy-Liste** als eigener Eintrag auf der Startseite.
+Bei 41 importierten Mittauchern beantwortet heute nichts die Frage „wer
+ist das, und warum steht der hier?". Die Antwort wäre oft: weil er im
+Logbuch einer anderen Person auf diesem Gerät stand.
 
-Der Abgleich in den Einstellungen ist dabei der klarste Fehlgriff: er ist
-keine Einstellung, sondern das Abholen von Daten. Er gehört dorthin, wo
-ohnehin Daten geholt werden – an den normalen Tauchgangs-Abruf, mit
-demselben Zwischenspeicher-Verhalten wie dort: erst zeigen, was da ist,
-dann im Hintergrund auffrischen.
+**Nicht an `SsiBuddyCode` anbauen.** Der Typ ist das Drahtformat — er wird
+aus QR-Codes geparst, in QR-Codes gerendert und dient als Identität eines
+Accounts. Herkunftsdaten dort hinein hieße, dass ein angezeigter QR-Code
+Felder mit sich trägt, die niemanden außerhalb dieses Geräts angehen.
+Stattdessen ein Speicher-Typ darum herum:
 
-**Was dafür schon liegt.** `RecentDivesController` macht das für Garmin
-bereits vor (Cache zuerst, dann Aktualisierung, sichtbarer Stand-Hinweis).
-Und `SsiSyncController` speichert seit dem Zeitstempel-Eintrag bereits
-`lastSyncAt` dauerhaft – das ist genau die Angabe, an der sich entscheiden
-lässt, ob ein Abgleich fällig ist.
+```dart
+enum BuddySource { logbook, scanned, byHand, unknown }
 
-**Beim Bauen zu klären:**
+class StoredBuddy {
+  final SsiBuddyCode code;
+  final BuddySource source;
+  final String? fromAccountId;   // nur bei logbook: wessen Logbuch
+  final DateTime? addedAt;
+}
+```
 
-1. **Wie oft.** Ein Logbuch ändert sich selten; bei jedem App-Start
-   abzugleichen wäre Verschwendung und würde die Startseite ausbremsen.
-   Naheliegend: höchstens einmal am Tag, plus beim Herunterziehen zum
-   Aktualisieren.
-2. **Ein Fehlschlag darf die Tauchgangsliste nicht anfassen.** Garmin-Abruf
-   und SSI-Abgleich sind unabhängig. Schlägt SSI fehl, muss die Liste
-   normal aussehen – der Hinweis gehört an eine ruhige Stelle, so wie es
-   der Offline-Hinweis heute vormacht.
-3. **Was in den Einstellungen bleibt.** Die Zahlen und der Zeitpunkt des
-   letzten Abgleichs sind dort weiterhin richtig aufgehoben; ein
-   „Jetzt abgleichen" darf als Notausgang bleiben, nur eben nicht als
-   einziger Weg.
+Auf der Karte eine leise Zeile, nur wo bekannt: „Aus dem Logbuch von
+Andreas" · „Abgescannt" · „Von Hand". **Bestehende Einträge bekommen
+`unknown` und zeigen gar nichts** — lieber schweigen als eine Herkunft
+erfinden. Das ist zugleich die Migration.
 
-**Nebeneffekt, der es lohnender macht als es klingt.** Der automatische
-Übernahme-Haken hängt daran, wie aktuell das Logbuch ist. Solange der
-Abgleich ein Knopf in den Einstellungen ist, den man vergisst, sind die
-grünen Haken älter als die Tauchgänge daneben.
-
-### Tauchgangs-Position auf einer OSM-Karte in der Detailansicht
-
-Die Koordinaten liegen schon vor (`Dive.latitude`/`longitude`, aus Garmins
-Oberflächen-Fix) und stehen heute nur als Zahlenpaar im Dialog „Tauchplatz
-zuordnen". Eine kleine Karte in der Detailansicht wäre anschaulicher – und
-besonders nützlich beim Umkreis-Vorschlag: Tauchgang und vorgeschlagener
-Platz nebeneinander auf einer Karte beantworten die Frage „ist das der
-richtige Platz?" schneller als eine Entfernung in Metern.
-
-Der übliche Weg in Flutter ist `flutter_map` mit OSM-Kacheln – im
-Gegensatz zu Google Maps ohne API-Schlüssel, was für ein sideload-
-verteiltes Projekt der passendere Weg ist.
-
-**Drei Punkte, die vorher geklärt sein wollen:**
-
-1. **Es wäre der erste Dritte, der etwas von uns erfährt.** Bisher spricht
-   die App ausschließlich mit Garmin und SSI. Eine Kachel anzufordern
-   verrät dem Kachel-Server, wo dieser Tauchgang war – das ist derselbe
-   Grund, aus dem die Umkreis-Suche über SSIs Website verworfen wurde. Kein
-   Ausschlusskriterium, aber eine bewusste Entscheidung und ein Fall für
-   die README.
-2. **OSMs öffentliche Kachel-Server haben eine Nutzungsrichtlinie**, die
-   Apps ohne Absprache ausdrücklich nicht vorsieht. Für eine verteilte App
-   gehört also entweder ein Anbieter mit passenden Bedingungen dazu oder
-   eine Rückfrage – der Kartenhinweis („© OpenStreetMap-Mitwirkende")
-   ohnehin.
-3. **Offline.** Die App ist bewusst ohne Netz benutzbar; eine Karte ist es
-   nicht. Sie braucht denselben ruhigen Umgang damit wie der Rest – ein
-   Platzhalter statt eines Fehlers, und die Koordinaten weiterhin als Text,
-   damit ohne Netz nichts fehlt.
-
-Nur für Tauchgänge mit Position sinnvoll – ohne Fix bleibt es beim heutigen
-Hinweis.
+**Was damit möglich würde, aber eigene Entscheidungen sind:** beim
+Entfernen eines Garmin-Accounts anbieten, die Mittaucher mitzunehmen, die
+nur aus dessen Logbuch stammen; und ein Filter „nur meine".
 
 ### Fortschrittsbalken für den Tauchplatz-Abgleich
 

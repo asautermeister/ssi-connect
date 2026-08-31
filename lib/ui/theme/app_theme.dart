@@ -45,6 +45,14 @@ class AppColors {
   static const statusGood = Color(0xFF0CA30C);
   static const statusWarning = Color(0xFFFAB219);
   static const statusCritical = Color(0xFFD03B3B);
+
+  /// The one deep green in the app. Deliberately not the accent: it says
+  /// "settled" - a dive carried over into SSI, a diver whose site is known.
+  /// Like the status colours above it, it is never decoration.
+  ///
+  /// The same value in both themes, because it has to hold on the white
+  /// scan surface of a QR page as well as on the dark canvas.
+  static const settled = Color(0xFF2E7D32);
 }
 
 /// Spacing scale - every gap in the app is one of these.

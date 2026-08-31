@@ -137,8 +137,8 @@ void main() {
         tester,
         Column(
           children: [
-            DiveListTile(dive: _dive('a1'), maxDepthInList: 28),
-            DiveListTile(dive: _dive('a2'), maxDepthInList: 28),
+            DiveListTile(dive: _dive('a1')),
+            DiveListTile(dive: _dive('a2')),
           ],
         ),
         exported: const {'a1': true},
@@ -148,10 +148,7 @@ void main() {
     });
 
     testWidgets('follows the tick without a reload', (tester) async {
-      final controller = await _pump(
-        tester,
-        DiveListTile(dive: _dive('a1'), maxDepthInList: 28),
-      );
+      final controller = await _pump(tester, DiveListTile(dive: _dive('a1')));
 
       expect(find.byType(DiveTransferredMark), findsNothing);
 

@@ -77,9 +77,20 @@ class RecentDivesController extends ChangeNotifier {
   bool _isLoadingMore = false;
   Object? _loadMoreError;
 
-  /// Which set of accounts the current data belongs to, so the screen can
-  /// ask on every build without re-fetching.
-  String? _loadedFor;
+  /// When each account was last *asked*, successfully or not.
+  ///
+  /// Per account rather than one signature over all of them, and that is
+  /// what makes the rest work: a scope smaller than "everyone" becomes
+  /// possible, "how old is this" becomes answerable, and a refresh of one
+  /// account stops invalidating the others.
+  ///
+  /// The attempt counts, not the success. A screen asks on every build, so
+  /// an account that only ever fails would otherwise be asked again on
+  /// every frame - which is a loop, not a retry.
+  final _lastAttemptAt = <String, DateTime>{};
+
+  /// True once a load has been started for anybody.
+  bool _started = false;
 
   bool get isLoadingMore => _isLoadingMore;
 
@@ -97,7 +108,10 @@ class RecentDivesController extends ChangeNotifier {
   bool get isLoading => _byAccountId.values.any((load) => load.isLoading);
 
   /// True once a load has been started, whatever came of it.
-  bool get hasLoaded => _loadedFor != null && !isLoading;
+  bool get hasLoaded => _started && !isLoading;
+
+  /// When [accountId] was last asked, or null if never.
+  DateTime? lastAttemptAt(String accountId) => _lastAttemptAt[accountId];
 
   /// Accounts whose fetch failed. The screen names them rather than
   /// pretending they simply have no dives.
@@ -145,26 +159,57 @@ class RecentDivesController extends ChangeNotifier {
   List<RecentDive> recent(List<GarminAccount> accounts, {int limit = 5}) =>
       merged(accounts).take(limit).toList();
 
-  /// Loads every account's dives in parallel. Does nothing if the same set
-  /// of accounts has already been loaded, unless [force] is set - the start
-  /// screen calls this from build, so it has to be cheap to ask.
+  /// Forgets accounts that are no longer there.
+  ///
+  /// Split off from [load] because it is a different question: a refresh
+  /// scoped to one account used to drop every other account's dives from
+  /// memory on its way through, which only went unnoticed because the
+  /// screen behind it re-fetched everything anyway.
+  void retain(List<GarminAccount> accounts) {
+    final keep = {for (final account in accounts) account.id};
+    final dropped = _byAccountId.keys.where((id) => !keep.contains(id));
+    if (dropped.isEmpty) return;
+    for (final id in dropped.toList()) {
+      _byAccountId.remove(id);
+      _lastAttemptAt.remove(id);
+      _pagesLoaded.remove(id);
+      _exhausted.remove(id);
+    }
+    notifyListeners();
+  }
+
+  /// Loads the dives of [accounts] in parallel, skipping any that were
+  /// fetched more recently than [notWithin].
+  ///
+  /// The caller says how fresh is fresh enough: a screen opening asks for
+  /// [RefreshPolicy.automaticWindow], a pull-to-refresh for
+  /// [RefreshPolicy.minimumInterval]. Nothing here refetches unconditionally
+  /// - the floor holds even for a deliberate gesture, because a list that
+  /// can be pulled twice a second is a list that can hammer an API nobody
+  /// gave us permission to hammer.
   Future<void> load({
     required List<GarminAccount> accounts,
     required DiveFetcher fetch,
-    bool force = false,
+    required Duration notWithin,
   }) async {
-    final signature = accounts.map((a) => a.id).join(',');
-    if (!force && signature == _loadedFor) return;
-    _loadedFor = signature;
+    final now = DateTime.now();
+    final due = [
+      for (final account in accounts)
+        if (_isDue(account.id, now, notWithin)) account,
+    ];
+    if (due.isEmpty) return;
+    _started = true;
 
-    // This re-fetches the first page, so anything paged in beyond it is
-    // gone and the paging state starts over.
-    _pagesLoaded.clear();
-    _exhausted.clear();
+    // Re-fetching the first page throws away anything paged in beyond it,
+    // so the paging state starts over - but only for the accounts actually
+    // being refetched.
+    for (final account in due) {
+      _pagesLoaded.remove(account.id);
+      _exhausted.remove(account.id);
+    }
     _loadMoreError = null;
 
-    _byAccountId.removeWhere((id, _) => !accounts.any((a) => a.id == id));
-    for (final account in accounts) {
+    for (final account in due) {
       final known = _byAccountId[account.id];
       // Keep whatever is already on screen while refreshing - blanking it
       // would make a pull-to-refresh flash empty for no reason.
@@ -177,13 +222,17 @@ class RecentDivesController extends ChangeNotifier {
     }
     notifyListeners();
 
-    await Future.wait([
-      for (final account in accounts) _loadOne(account, fetch),
-    ]);
+    await Future.wait([for (final account in due) _loadOne(account, fetch)]);
+  }
+
+  bool _isDue(String accountId, DateTime now, Duration notWithin) {
+    final last = _lastAttemptAt[accountId];
+    return last == null || now.difference(last) >= notWithin;
   }
 
   Future<void> _loadOne(GarminAccount account, DiveFetcher fetch) async {
     await _seedFromCache(account.id);
+    _lastAttemptAt[account.id] = DateTime.now();
 
     try {
       final dives = await fetch(account, start: 0);
@@ -300,9 +349,9 @@ class RecentDivesController extends ChangeNotifier {
     _byAccountId.remove(accountId);
     _pagesLoaded.remove(accountId);
     _exhausted.remove(accountId);
-    // Force the next load to actually run rather than short-circuit on an
-    // unchanged account list.
-    _loadedFor = null;
+    // Nothing is known about this account any more, so the next load has
+    // to run - and only for this one.
+    _lastAttemptAt.remove(accountId);
     await _cache.clear(accountId);
     notifyListeners();
   }

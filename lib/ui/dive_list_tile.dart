@@ -22,27 +22,59 @@ class DiveListTile extends StatelessWidget {
   const DiveListTile({
     super.key,
     required this.dive,
-    required this.maxDepthInList,
     this.diver,
     this.accountColor,
     this.inSsiLogbook = false,
+    this.siblings = const [],
+    this.siblingsInLogbook = const {},
   });
 
   final Dive dive;
   final SsiBuddyCode? diver;
 
+  /// The dives this one is listed among, so the detail view can be swiped
+  /// from one to the next. Empty means "just this one".
+  final List<Dive> siblings;
+
+  /// Which of [siblings] SSI's logbook already has, by dive id. Worked out
+  /// once for the whole list, because the match is one-to-one and a single
+  /// dive cannot decide it.
+  final Set<String> siblingsInLogbook;
+
   /// Colour of the account these dives belong to, drawn as a bar on the
   /// left edge. Null for FIT imports, which have no account.
   final AccountColor? accountColor;
-
-  /// Deepest dive currently listed, so the bars share one scale. Pass 0 to
-  /// hide the bar entirely.
-  final double maxDepthInList;
 
   /// Whether this dive was found in the SSI logbook of the account it
   /// belongs to. Worked out by the list, which knows whose dives these are
   /// - a logbook may only be matched against its own person's dives.
   final bool inSsiLogbook;
+
+  /// This dive, opened among the ones it is listed with. Falls back to the
+  /// dive on its own when the caller did not say what it is listed among.
+  DiveDetailScreen _detailScreen() {
+    // By id rather than by identity - a dive that has been through a
+    // cache round trip is a different object with the same content.
+    final index = siblings.indexWhere((sibling) => sibling.id == dive.id);
+    if (index < 0) {
+      return DiveDetailScreen.single(
+        dive: dive,
+        diver: diver,
+        inLogbook: inSsiLogbook,
+      );
+    }
+    return DiveDetailScreen(
+      dives: [
+        for (final sibling in siblings)
+          (
+            dive: sibling,
+            diver: diver,
+            inLogbook: siblingsInLogbook.contains(sibling.id),
+          ),
+      ],
+      index: index,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -50,15 +82,14 @@ class DiveListTile extends StatelessWidget {
     final s = AppStrings.of(context);
     final palette = theme.extension<AppPalette>()!;
     final depth = dive.maxDepthMeters;
-    final showMeter = maxDepthInList > 0 && depth != null;
+    // The scale is fixed now, so a depth is the only thing the bar needs.
+    final showMeter = depth != null;
 
     return AppCard(
       edgeColor: accountColor?.of(context),
-      onTap: () => Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (_) => DiveDetailScreen(dive: dive, diver: diver),
-        ),
-      ),
+      onTap: () => Navigator.of(
+        context,
+      ).push(MaterialPageRoute(builder: (_) => _detailScreen())),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -142,7 +173,7 @@ class DiveListTile extends StatelessWidget {
           ),
           if (showMeter) ...[
             const SizedBox(height: AppSpacing.lg),
-            DepthMeter(value: depth, max: maxDepthInList),
+            DepthMeter(value: depth),
           ],
         ],
       ),

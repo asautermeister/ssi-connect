@@ -305,7 +305,8 @@ void main() {
         }),
       );
 
-      final ok = await sync.syncAll(
+      final ok = await sync.syncAccounts(
+        scope: accounts.accounts,
         accounts: accounts,
         sites: sites,
         buddies: await _emptyBuddies(),
@@ -341,7 +342,8 @@ void main() {
         ),
       );
 
-      final ok = await sync.syncAll(
+      final ok = await sync.syncAccounts(
+        scope: accounts.accounts,
         accounts: accounts,
         sites: sites,
         buddies: await _emptyBuddies(),
@@ -367,7 +369,8 @@ void main() {
         client: _FakeClient(const {}, rejected: {'stale'}),
       );
 
-      await sync.syncAll(
+      await sync.syncAccounts(
+        scope: accounts.accounts,
         accounts: accounts,
         sites: await _emptySites(),
         buddies: await _emptyBuddies(),
@@ -405,7 +408,8 @@ void main() {
         ),
       );
 
-      await sync.syncAll(
+      await sync.syncAccounts(
+        scope: accounts.accounts,
         accounts: accounts,
         sites: await _emptySites(),
         buddies: buddies,
@@ -447,7 +451,8 @@ void main() {
         ),
       );
 
-      await sync.syncAll(
+      await sync.syncAccounts(
+        scope: accounts.accounts,
         accounts: accounts,
         sites: await _emptySites(),
         buddies: buddies,
@@ -494,7 +499,8 @@ void main() {
         ),
       );
 
-      await sync.syncAll(
+      await sync.syncAccounts(
+        scope: accounts.accounts,
         accounts: accounts,
         sites: await _emptySites(),
         buddies: await _emptyBuddies(),
@@ -530,7 +536,8 @@ void main() {
         ),
       );
 
-      await sync.syncAll(
+      await sync.syncAccounts(
+        scope: accounts.accounts,
         accounts: accounts,
         sites: await _emptySites(),
         buddies: buddies,
@@ -557,7 +564,8 @@ void main() {
       );
 
       final before = DateTime.now();
-      await sync.syncAll(
+      await sync.syncAccounts(
+        scope: accounts.accounts,
         accounts: accounts,
         sites: await _emptySites(),
         buddies: await _emptyBuddies(),
@@ -594,7 +602,8 @@ void main() {
         client: _FakeClient(const {}, rejected: {'stale'}),
       );
 
-      await sync.syncAll(
+      await sync.syncAccounts(
+        scope: accounts.accounts,
         accounts: accounts,
         sites: await _emptySites(),
         buddies: await _emptyBuddies(),
@@ -631,7 +640,8 @@ void main() {
         ),
       );
 
-      await sync.syncAll(
+      await sync.syncAccounts(
+        scope: accounts.accounts,
         accounts: accounts,
         sites: await _emptySites(),
         buddies: await _emptyBuddies(),
@@ -660,7 +670,8 @@ void main() {
       );
 
       expect(
-        await sync.syncAll(
+        await sync.syncAccounts(
+          scope: accounts.accounts,
           accounts: accounts,
           sites: await _emptySites(),
           buddies: await _emptyBuddies(),

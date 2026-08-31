@@ -6,6 +6,7 @@ import '../l10n/app_strings_de.dart';
 import '../l10n/app_strings_en.dart';
 import '../settings/settings_controller.dart';
 import 'ssi_sites_section.dart';
+import 'developer_mode.dart';
 import 'theme/app_theme.dart';
 import 'widgets/app_card.dart';
 
@@ -84,7 +85,11 @@ class SettingsScreen extends StatelessWidget {
               ],
             ),
           ),
-          const SsiSitesSection(),
+          // Nothing about SSI lives here any more - the counts and the
+          // sites are under "SSI Buddy", where the things they describe
+          // are. What is left is the manual sync, which is not a setting
+          // but a lever for finding out why a refresh did not work.
+          if (context.watch<DeveloperMode>().enabled) const SsiSitesSection(),
         ],
       ),
     );

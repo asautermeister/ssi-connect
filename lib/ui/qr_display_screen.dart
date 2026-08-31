@@ -135,10 +135,9 @@ class DiveTransferredCheckbox extends StatelessWidget {
   }
 }
 
-/// The one green in the app. Deliberately not the accent colour: this says
-/// "done", and it has to read that way on the white scan surface as well as
-/// in a dark dive list.
-const _transferredGreen = Color(0xFF2E7D32);
+/// This says "done", and it has to read that way on the white scan surface
+/// as well as in a dark dive list - see [AppColors.settled].
+const _transferredGreen = AppColors.settled;
 
 /// The tick as it appears next to a dive in a list - same colour, same
 /// icon, no label, so the QR screen and the list say the same thing.
@@ -167,6 +166,7 @@ class QrDisplayScreen extends StatelessWidget {
     required this.caption,
     required this.hint,
     this.footer,
+    this.actions,
   });
 
   final String title;
@@ -175,6 +175,13 @@ class QrDisplayScreen extends StatelessWidget {
   final String hint;
   final Widget? footer;
 
+  /// Top-right actions on the code's own page.
+  ///
+  /// What can be done with a contact lives here rather than on its row in
+  /// the list: the row's job is to open the code, and an options button
+  /// next to it competes with that one tap.
+  final List<Widget>? actions;
+
   @override
   Widget build(BuildContext context) {
     return Theme(
@@ -182,7 +189,11 @@ class QrDisplayScreen extends StatelessWidget {
       child: Builder(
         builder: (context) => Scaffold(
           backgroundColor: Colors.white,
-          appBar: AppBar(backgroundColor: Colors.white, title: Text(title)),
+          appBar: AppBar(
+            backgroundColor: Colors.white,
+            title: Text(title),
+            actions: actions,
+          ),
           body: SafeArea(
             child: QrScanSurface(
               payload: payload,

@@ -15,6 +15,7 @@ import 'package:ssi_connect/ssi/ssi_buddies_controller.dart';
 import 'package:ssi_connect/ssi/ssi_buddy_code.dart';
 import 'package:ssi_connect/ssi/ssi_buddy_repository.dart';
 import 'package:ssi_connect/ssi/ssi_sync_controller.dart';
+import 'package:ssi_connect/ui/developer_mode.dart';
 import 'package:ssi_connect/ui/settings_screen.dart';
 import 'package:ssi_connect/ui/theme/app_theme.dart';
 
@@ -87,6 +88,9 @@ Future<SettingsController> _pump(
     MultiProvider(
       providers: [
         ChangeNotifierProvider.value(value: controller),
+        // The manual sync is a diagnostic tool now, so the screen asks
+        // whether diagnostics are on.
+        ChangeNotifierProvider(create: (_) => DeveloperMode()),
         ChangeNotifierProvider(create: (_) => SsiSyncController()),
         ChangeNotifierProvider(
           create: (_) => AccountsController(repository: _NoAccounts()),

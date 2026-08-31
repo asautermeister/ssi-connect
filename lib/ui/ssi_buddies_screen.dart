@@ -5,11 +5,15 @@ import 'package:provider/provider.dart';
 
 import '../accounts/accounts_controller.dart';
 import '../accounts/models/garmin_account.dart';
+import '../ssi/dive_site.dart';
+import '../ssi/dive_sites_controller.dart';
 import '../ssi/ssi_buddies_controller.dart';
 import '../ssi/ssi_buddy_code.dart';
 import '../ssi/ssi_center_code.dart';
 import '../ssi/ssi_centers_controller.dart';
+import '../ssi/ssi_sync_controller.dart';
 import 'qr_display_screen.dart';
+import 'ssi_identity_screen.dart';
 import 'ssi_scan_screen.dart';
 import 'theme/app_theme.dart';
 import 'widgets/app_card.dart';
@@ -29,14 +33,50 @@ import 'widgets/stat_tile.dart';
 /// None of them travel with an exported dive: SSI's import format has no
 /// buddy field, so the picker that used to sit under the dive QR code was
 /// removed rather than left looking functional.
-class SsiBuddiesScreen extends StatelessWidget {
+class SsiBuddiesScreen extends StatefulWidget {
   const SsiBuddiesScreen({super.key});
+
+  /// Above this many entries, scrolling stops being a way to find anything
+  /// and the search field earns its space. The same threshold the dive-site
+  /// picker uses, so the app has one rule rather than two.
+  static const searchThreshold = 8;
+
+  /// Dive sites arrive by the hundred from a well-travelled logbook. Enough
+  /// to see that they are there and to recognise the last few; the rest on
+  /// request.
+  static const sitesShownAtFirst = 10;
+
+  @override
+  State<SsiBuddiesScreen> createState() => _SsiBuddiesScreenState();
+}
+
+class _SsiBuddiesScreenState extends State<SsiBuddiesScreen> {
+  final _query = TextEditingController();
+  bool _allSites = false;
+
+  @override
+  void dispose() {
+    _query.dispose();
+    super.dispose();
+  }
+
+  /// Whether any of [fields] contains what was typed.
+  ///
+  /// Only ever called with what the card actually shows. Matching a field
+  /// that is not on screen produces a hit that looks like a mistake.
+  bool _matches(List<String?> fields) {
+    final query = _query.text.trim().toLowerCase();
+    if (query.isEmpty) return true;
+    return fields.any((f) => f != null && f.toLowerCase().contains(query));
+  }
 
   @override
   Widget build(BuildContext context) {
     final buddies = context.watch<SsiBuddiesController>();
     final centers = context.watch<SsiCentersController>();
     final accounts = context.watch<AccountsController>();
+    final sites = context.watch<DiveSitesController>();
+    final sync = context.watch<SsiSyncController>();
     final s = AppStrings.of(context);
 
     final withIdentity = [
@@ -56,7 +96,42 @@ class SsiBuddiesScreen extends StatelessWidget {
 
     final loaded = buddies.loaded && centers.loaded && accounts.loaded;
     final empty =
-        withIdentity.isEmpty && standalone.isEmpty && centers.centers.isEmpty;
+        withIdentity.isEmpty &&
+        standalone.isEmpty &&
+        centers.centers.isEmpty &&
+        sites.sites.isEmpty;
+
+    // Everything the search can narrow, so the field appears on the same
+    // rule everywhere rather than per section.
+    final total =
+        withIdentity.length +
+        standalone.length +
+        centers.centers.length +
+        sites.sites.length;
+
+    final searching = _query.text.trim().isNotEmpty;
+    final matchedAccounts = [
+      for (final account in withIdentity)
+        if (_matches([account.displayName, account.ssiMemberId])) account,
+    ];
+    final matchedBuddies = [
+      for (final buddy in standalone)
+        if (_matches([buddy.fullName, buddy.memberId])) buddy,
+    ];
+    final matchedCentres = [
+      for (final centre in centers.centers)
+        if (_matches([centre.name, centre.centerId])) centre,
+    ];
+    // By name and region, the two readable things on screen. Not by the
+    // number: SSI's site ids are not something anybody reads or remembers,
+    // and not by the coordinates either.
+    final matchedSites = [
+      for (final site in sites.sites)
+        if (_matches([site.name, site.region])) site,
+    ];
+    final visibleSites = searching || _allSites
+        ? matchedSites
+        : matchedSites.take(SsiBuddiesScreen.sitesShownAtFirst).toList();
 
     return Scaffold(
       appBar: AppBar(title: Text(s.ssiBuddy)),
@@ -72,28 +147,93 @@ class SsiBuddiesScreen extends StatelessWidget {
                 96,
               ),
               children: [
-                if (withIdentity.isNotEmpty) ...[
-                  SectionHeader(title: s.fromAccounts),
-                  for (final account in withIdentity) ...[
+                // A logbook that could not be read, said where the things
+                // that came out of it are listed. The expired-token case is
+                // why: the session is dropped and the logbook forgotten, so
+                // green ticks disappear - and that now happens behind an
+                // ordinary pull-to-refresh, where nothing else would say so.
+                for (final account in accounts.accounts)
+                  if (sync.failures[account.id] case final message?)
+                    Padding(
+                      padding: const EdgeInsets.only(top: AppSpacing.lg),
+                      child: _SyncFailure(account: account, message: message),
+                    ),
+
+                if (total > SsiBuddiesScreen.searchThreshold) ...[
+                  const SizedBox(height: AppSpacing.lg),
+                  TextField(
+                    controller: _query,
+                    decoration: InputDecoration(
+                      labelText: s.search,
+                      prefixIcon: const Icon(Icons.search, size: 18),
+                      isDense: true,
+                    ),
+                    onChanged: (_) => setState(() {}),
+                  ),
+                ],
+
+                if (matchedAccounts.isNotEmpty) ...[
+                  SectionHeader(
+                    title: s.fromAccounts,
+                    trailing: _Count(
+                      shown: matchedAccounts.length,
+                      total: withIdentity.length,
+                    ),
+                  ),
+                  for (final account in matchedAccounts) ...[
                     _AccountBuddyCard(account: account),
                     const SizedBox(height: AppSpacing.md),
                   ],
                 ],
-                if (standalone.isNotEmpty) ...[
+                if (matchedBuddies.isNotEmpty) ...[
                   SectionHeader(
                     title: withIdentity.isEmpty ? s.stored : s.alsoStored,
+                    trailing: _Count(
+                      shown: matchedBuddies.length,
+                      total: standalone.length,
+                    ),
                   ),
-                  for (final buddy in standalone) ...[
+                  for (final buddy in matchedBuddies) ...[
                     _BuddyCard(buddy: buddy),
                     const SizedBox(height: AppSpacing.md),
                   ],
                 ],
-                if (centers.centers.isNotEmpty) ...[
-                  SectionHeader(title: s.diveCentres),
-                  for (final center in centers.centers) ...[
+                if (matchedCentres.isNotEmpty) ...[
+                  SectionHeader(
+                    title: s.diveCentres,
+                    trailing: _Count(
+                      shown: matchedCentres.length,
+                      total: centers.centers.length,
+                    ),
+                  ),
+                  for (final center in matchedCentres) ...[
                     _CenterCard(center: center),
                     const SizedBox(height: AppSpacing.md),
                   ],
+                ],
+                if (matchedSites.isNotEmpty) ...[
+                  SectionHeader(
+                    title: s.diveSites,
+                    trailing: _Count(
+                      shown: matchedSites.length,
+                      total: sites.sites.length,
+                    ),
+                  ),
+                  for (final group in _byRegion(visibleSites, s)) ...[
+                    _RegionHeader(title: group.region),
+                    for (final site in group.sites) ...[
+                      _SiteCard(site: site),
+                      const SizedBox(height: AppSpacing.md),
+                    ],
+                  ],
+                  if (visibleSites.length < matchedSites.length)
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: TextButton(
+                        onPressed: () => setState(() => _allSites = true),
+                        child: Text(s.showMore),
+                      ),
+                    ),
                 ],
               ],
             ),
@@ -104,6 +244,198 @@ class SsiBuddiesScreen extends StatelessWidget {
         // code already answers.
         icon: const Icon(Icons.qr_code_scanner),
         label: Text(s.scanCode),
+      ),
+    );
+  }
+}
+
+/// "3 von 41" beside a section heading.
+///
+/// Only while a search is narrowing it: a filtered list otherwise looks
+/// like a short one, which is the same trap the dot on the dive filter
+/// closes.
+class _Count extends StatelessWidget {
+  const _Count({required this.shown, required this.total});
+
+  final int shown;
+  final int total;
+
+  @override
+  Widget build(BuildContext context) {
+    if (shown == total) return const SizedBox.shrink();
+    final theme = Theme.of(context);
+    return Text(
+      AppStrings.of(context).filteredCount(shown, total),
+      style: theme.textTheme.bodySmall?.copyWith(
+        color: theme.extension<AppPalette>()!.inkMuted,
+      ),
+    );
+  }
+}
+
+/// The sites grouped by the region SSI files them under, regions in
+/// alphabetical order and the ungrouped ones last.
+///
+/// Grouping rather than sorting: a list of a hundred sites from six trips
+/// reads as one undifferentiated wall, and "Gozo" is the word that says
+/// which trip a name belongs to. Sites without a region go to the bottom
+/// under their own heading rather than being folded into the last group,
+/// where they would look like they belonged to it.
+///
+/// The order inside a group is whatever came in - the controller keeps its
+/// sites alphabetical, so the groups are too.
+List<({String region, List<DiveSite> sites})> _byRegion(
+  List<DiveSite> sites,
+  AppStrings s,
+) {
+  final groups = <String, List<DiveSite>>{};
+  final ungrouped = <DiveSite>[];
+  for (final site in sites) {
+    if (site.region case final region?) {
+      groups.putIfAbsent(region, () => []).add(site);
+    } else {
+      ungrouped.add(site);
+    }
+  }
+
+  final regions = groups.keys.toList()
+    ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+  return [
+    for (final region in regions) (region: region, sites: groups[region]!),
+    if (ungrouped.isNotEmpty) (region: s.withoutRegion, sites: ungrouped),
+  ];
+}
+
+/// A region above its sites. Deliberately quieter than [SectionHeader]:
+/// this divides one section, it does not open a new one.
+class _RegionHeader extends StatelessWidget {
+  const _RegionHeader({required this.title});
+
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.xs,
+        AppSpacing.sm,
+        AppSpacing.xs,
+        AppSpacing.md,
+      ),
+      child: Text(
+        title,
+        style: theme.textTheme.titleSmall?.copyWith(
+          color: theme.extension<AppPalette>()!.inkMuted,
+        ),
+      ),
+    );
+  }
+}
+
+/// One dive site as this device knows it.
+///
+/// Name and position. SSI's site id stays off the card - it is in the QR
+/// payload and in the dive's detail view, where it can be checked against
+/// something; here it would be a number nobody reads. The coordinates are
+/// the opposite: they say which of two similarly named places this is, and
+/// they can be pasted straight into a map.
+class _SiteCard extends StatelessWidget {
+  const _SiteCard({required this.site});
+
+  final DiveSite site;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final palette = theme.extension<AppPalette>()!;
+
+    return AppCard(
+      child: Row(
+        children: [
+          Icon(Icons.place_outlined, size: 18, color: palette.inkMuted),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(site.name, style: theme.textTheme.titleMedium),
+                const SizedBox(height: 2),
+                Row(
+                  children: [
+                    // The same pin as over the dive's own site, a size
+                    // down: it marks the line as a position rather than
+                    // some other pair of numbers. Muted like every other
+                    // second line - the greens in this app mean something.
+                    Icon(
+                      Icons.place_outlined,
+                      size: 12,
+                      color: palette.inkMuted,
+                    ),
+                    const SizedBox(width: AppSpacing.xs),
+                    Text(
+                      site.coordinatesLabel,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: palette.inkMuted,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// A logbook that could not be read, and the way back in.
+class _SyncFailure extends StatelessWidget {
+  const _SyncFailure({required this.account, required this.message});
+
+  final GarminAccount account;
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final s = AppStrings.of(context);
+
+    return AppCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(
+                Icons.error_outline,
+                size: 18,
+                color: theme.colorScheme.error,
+              ),
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: Text(
+                  s.syncFailedFor(account.displayName, message),
+                  style: theme.textTheme.bodyMedium,
+                ),
+              ),
+            ],
+          ),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: TextButton(
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => SsiIdentityScreen(accountId: account.id),
+                ),
+              ),
+              child: Text(s.signInAgain),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -214,7 +546,7 @@ class _EmptyBuddies extends StatelessWidget {
   }
 }
 
-enum _BuddyAction { showQr, edit, remove }
+enum _BuddyAction { edit, remove }
 
 class _BuddyCard extends StatelessWidget {
   const _BuddyCard({required this.buddy});
@@ -237,7 +569,7 @@ class _BuddyCard extends StatelessWidget {
     return AppCard(
       // Tapping shows the code, which is the thing you do with a buddy
       // when someone else wants to save them.
-      onTap: () => _showQr(context, buddy),
+      onTap: () => _showQr(context, buddy, saved: true),
       child: Row(
         children: [
           CircleAvatar(
@@ -270,24 +602,9 @@ class _BuddyCard extends StatelessWidget {
               ],
             ),
           ),
-          PopupMenuButton<_BuddyAction>(
-            icon: const Icon(Icons.more_horiz),
-            tooltip: s.options,
-            onSelected: (action) => switch (action) {
-              _BuddyAction.showQr => _showQr(context, buddy),
-              _BuddyAction.edit => enterBuddyManually(context, existing: buddy),
-              _BuddyAction.remove =>
-                context.read<SsiBuddiesController>().remove(buddy.memberId),
-            },
-            itemBuilder: (context) => [
-              PopupMenuItem(
-                value: _BuddyAction.showQr,
-                child: Text(s.showAsQr),
-              ),
-              PopupMenuItem(value: _BuddyAction.edit, child: Text(s.edit)),
-              PopupMenuItem(value: _BuddyAction.remove, child: Text(s.remove)),
-            ],
-          ),
+          // Says what the tap does. Editing and removing live on the code's
+          // own page, so the row stays a single target.
+          Icon(Icons.qr_code_2, size: 20, color: theme.colorScheme.primary),
         ],
       ),
     );
@@ -343,27 +660,7 @@ class _CenterCard extends StatelessWidget {
               ],
             ),
           ),
-          PopupMenuButton<_BuddyAction>(
-            icon: const Icon(Icons.more_horiz),
-            tooltip: s.options,
-            onSelected: (action) => switch (action) {
-              _BuddyAction.showQr => _showCenterQr(context, center),
-              _BuddyAction.edit => enterCenterManually(
-                context,
-                existing: center,
-              ),
-              _BuddyAction.remove =>
-                context.read<SsiCentersController>().remove(center.centerId),
-            },
-            itemBuilder: (context) => [
-              PopupMenuItem(
-                value: _BuddyAction.showQr,
-                child: Text(s.showAsQr),
-              ),
-              PopupMenuItem(value: _BuddyAction.edit, child: Text(s.edit)),
-              PopupMenuItem(value: _BuddyAction.remove, child: Text(s.remove)),
-            ],
-          ),
+          Icon(Icons.qr_code_2, size: 20, color: theme.colorScheme.primary),
         ],
       ),
     );
@@ -373,32 +670,133 @@ class _CenterCard extends StatelessWidget {
 /// Shows the member as the same kind of code the SSI app shows under
 /// "Dein QR-Code", so another device can scan them straight into its own
 /// buddy list - including this app's scanner.
-void _showQr(BuildContext context, SsiBuddyCode buddy) {
-  final s = AppStrings.of(context);
+///
+/// [saved] marks an entry this app owns: those get edit and remove on the
+/// code's page. An account's number is not one of them - it belongs to the
+/// account, and deleting it here would be ambiguous about what it deletes.
+void _showQr(BuildContext context, SsiBuddyCode buddy, {bool saved = false}) {
   Navigator.of(context).push(
     MaterialPageRoute(
-      builder: (_) => QrDisplayScreen(
-        title: buddy.displayName(s),
-        payload: buddy.toPayload(),
-        caption: s.ssiNumber(buddy.memberId),
-        hint: s.buddyQrHint,
-      ),
+      builder: (context) => saved
+          ? _SavedBuddyQr(memberId: buddy.memberId)
+          : _buddyQr(context, buddy),
     ),
   );
 }
 
-void _showCenterQr(BuildContext context, SsiCenterCode center) {
+QrDisplayScreen _buddyQr(
+  BuildContext context,
+  SsiBuddyCode buddy, {
+  List<Widget>? actions,
+}) {
   final s = AppStrings.of(context);
+  return QrDisplayScreen(
+    title: buddy.displayName(s),
+    payload: buddy.toPayload(),
+    caption: s.ssiNumber(buddy.memberId),
+    hint: s.buddyQrHint,
+    actions: actions,
+  );
+}
+
+/// The code of a saved buddy, read live from the list.
+///
+/// Watching rather than holding a copy: an edit made from this page has to
+/// change the code that is on screen, and a removal has to take the page
+/// with it instead of leaving a code for someone who is gone.
+class _SavedBuddyQr extends StatelessWidget {
+  const _SavedBuddyQr({required this.memberId});
+
+  final String memberId;
+
+  @override
+  Widget build(BuildContext context) {
+    final s = AppStrings.of(context);
+    final buddies = context.watch<SsiBuddiesController>().buddies;
+    final index = buddies.indexWhere((b) => b.memberId == memberId);
+    // Removed, or edited into a different member number: there is nothing
+    // left to show under this one.
+    if (index == -1) return _popBack(context);
+
+    final buddy = buddies[index];
+    return _buddyQr(
+      context,
+      buddy,
+      actions: [
+        PopupMenuButton<_BuddyAction>(
+          icon: const Icon(Icons.more_horiz),
+          tooltip: s.options,
+          onSelected: (action) => switch (action) {
+            _BuddyAction.edit => enterBuddyManually(context, existing: buddy),
+            _BuddyAction.remove => context.read<SsiBuddiesController>().remove(
+              memberId,
+            ),
+          },
+          itemBuilder: (context) => [
+            PopupMenuItem(value: _BuddyAction.edit, child: Text(s.edit)),
+            PopupMenuItem(value: _BuddyAction.remove, child: Text(s.remove)),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+void _showCenterQr(BuildContext context, SsiCenterCode center) {
   Navigator.of(context).push(
     MaterialPageRoute(
-      builder: (_) => QrDisplayScreen(
-        title: center.displayName(s),
-        payload: center.toPayload(),
-        caption: s.centreNumberLine(center.centerId),
-        hint: s.centreQrHint,
-      ),
+      builder: (_) => _SavedCenterQr(centerId: center.centerId),
     ),
   );
+}
+
+/// Same as [_SavedBuddyQr], for a base.
+class _SavedCenterQr extends StatelessWidget {
+  const _SavedCenterQr({required this.centerId});
+
+  final String centerId;
+
+  @override
+  Widget build(BuildContext context) {
+    final s = AppStrings.of(context);
+    final centers = context.watch<SsiCentersController>().centers;
+    final index = centers.indexWhere((c) => c.centerId == centerId);
+    if (index == -1) return _popBack(context);
+
+    final center = centers[index];
+    return QrDisplayScreen(
+      title: center.displayName(s),
+      payload: center.toPayload(),
+      caption: s.centreNumberLine(center.centerId),
+      hint: s.centreQrHint,
+      actions: [
+        PopupMenuButton<_BuddyAction>(
+          icon: const Icon(Icons.more_horiz),
+          tooltip: s.options,
+          onSelected: (action) => switch (action) {
+            _BuddyAction.edit => enterCenterManually(context, existing: center),
+            _BuddyAction.remove => context.read<SsiCentersController>().remove(
+              centerId,
+            ),
+          },
+          itemBuilder: (context) => [
+            PopupMenuItem(value: _BuddyAction.edit, child: Text(s.edit)),
+            PopupMenuItem(value: _BuddyAction.remove, child: Text(s.remove)),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+/// Leaves the page once what it was showing is gone. White rather than
+/// empty: this is on screen for the length of the pop animation, and the
+/// code's page is white.
+Widget _popBack(BuildContext context) {
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    if (context.mounted) Navigator.of(context).maybePop();
+  });
+  return const Scaffold(backgroundColor: Colors.white);
 }
 
 /// Scans either kind of code and files it where it belongs. Which list an

@@ -100,7 +100,11 @@ void main() {
       final controller = RecentDivesController(cache: _InMemoryCache());
       final account = _account('a');
 
-      await controller.load(accounts: [account], fetch: _paged(120));
+      await controller.load(
+        accounts: [account],
+        fetch: _paged(120),
+        notWithin: Duration.zero,
+      );
 
       expect(controller.forAccount('a').dives, hasLength(divePageSize));
       expect(controller.hasMore, isTrue);
@@ -109,7 +113,11 @@ void main() {
     test('a short first page means there is nothing older', () async {
       final controller = RecentDivesController(cache: _InMemoryCache());
 
-      await controller.load(accounts: [_account('a')], fetch: _paged(3));
+      await controller.load(
+        accounts: [_account('a')],
+        fetch: _paged(3),
+        notWithin: Duration.zero,
+      );
 
       expect(controller.hasMore, isFalse);
     });
@@ -122,7 +130,11 @@ void main() {
         final starts = <int>[];
         final fetch = _paged(120, requestedStarts: starts);
 
-        await controller.load(accounts: [account], fetch: fetch);
+        await controller.load(
+          accounts: [account],
+          fetch: fetch,
+          notWithin: Duration.zero,
+        );
         await controller.loadMore(accounts: [account], fetch: fetch);
 
         expect(starts, [0, divePageSize]);
@@ -144,7 +156,11 @@ void main() {
       final starts = <int>[];
       final fetch = _paged(3, requestedStarts: starts);
 
-      await controller.load(accounts: [account], fetch: fetch);
+      await controller.load(
+        accounts: [account],
+        fetch: fetch,
+        notWithin: Duration.zero,
+      );
       await controller.loadMore(accounts: [account], fetch: fetch);
 
       expect(starts, [0]);
@@ -171,7 +187,11 @@ void main() {
         ];
       }
 
-      await controller.load(accounts: [account], fetch: fetch);
+      await controller.load(
+        accounts: [account],
+        fetch: fetch,
+        notWithin: Duration.zero,
+      );
       await controller.loadMore(accounts: [account], fetch: fetch);
 
       final ids = controller.forAccount('a').dives.map((d) => d.id).toList();
@@ -196,7 +216,11 @@ void main() {
             : [_dive('frueh', DateTime(2025, 11, 6, 9))];
       }
 
-      await controller.load(accounts: [account], fetch: fetch);
+      await controller.load(
+        accounts: [account],
+        fetch: fetch,
+        notWithin: Duration.zero,
+      );
       await controller.loadMore(accounts: [account], fetch: fetch);
 
       final byId = {
@@ -223,7 +247,11 @@ void main() {
         ];
       }
 
-      await controller.load(accounts: [account], fetch: fetch);
+      await controller.load(
+        accounts: [account],
+        fetch: fetch,
+        notWithin: Duration.zero,
+      );
       await controller.loadMore(accounts: [account], fetch: fetch);
 
       expect(controller.forAccount('a').dives, hasLength(divePageSize));
@@ -239,9 +267,17 @@ void main() {
       final starts = <int>[];
       final fetch = _paged(200, requestedStarts: starts);
 
-      await controller.load(accounts: [account], fetch: fetch);
+      await controller.load(
+        accounts: [account],
+        fetch: fetch,
+        notWithin: Duration.zero,
+      );
       await controller.loadMore(accounts: [account], fetch: fetch);
-      await controller.load(accounts: [account], fetch: fetch, force: true);
+      await controller.load(
+        accounts: [account],
+        fetch: fetch,
+        notWithin: Duration.zero,
+      );
 
       expect(starts, [0, divePageSize, 0]);
       expect(controller.forAccount('a').dives, hasLength(divePageSize));
@@ -263,7 +299,11 @@ void main() {
       );
       final recent = RecentDivesController(cache: _InMemoryCache());
       await accountsController.loadFromStorage();
-      await recent.load(accounts: accounts, fetch: fetch);
+      await recent.load(
+        accounts: accounts,
+        fetch: fetch,
+        notWithin: Duration.zero,
+      );
 
       await tester.pumpWidget(
         MultiProvider(

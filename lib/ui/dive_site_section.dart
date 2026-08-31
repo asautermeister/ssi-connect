@@ -7,6 +7,7 @@ import '../ssi/dive_site.dart';
 import '../ssi/dive_sites_controller.dart';
 import 'theme/app_theme.dart';
 import 'widgets/app_card.dart';
+import 'widgets/dive_map.dart';
 
 /// The dive site of one dive: which one it is, or a way to say so.
 ///
@@ -16,23 +17,34 @@ import 'widgets/app_card.dart';
 /// logbook, or are entered by hand; the position is what recognises the
 /// place afterwards.
 ///
-/// A suggestion is always shown as a suggestion, and when several sites are
-/// in reach they are all offered. Applying the nearest one silently would
-/// be the one mistake worth avoiding here: dive sites sit close together on
-/// the same stretch of coast, and SSI never says that a dive was filed at
-/// the wrong place.
+/// The nearest known site within the match radius is taken, not offered:
+/// two weeks of diving produced no case where it was wrong, and a
+/// confirmation that is always given is a question with one answer. What
+/// makes that acceptable is that it is never silent - the site is named,
+/// the distance it was matched at is next to it, the button says the app
+/// filled it in, and one tap changes or removes it. Sites do sit close
+/// together on the same stretch of coast, and SSI never says a dive was
+/// filed at the wrong place, so anything within reach besides the nearest
+/// is still pointed out.
 class DiveSiteSection extends StatelessWidget {
   const DiveSiteSection({
     super.key,
     required this.dive,
     required this.selected,
     required this.onChanged,
+    this.isAutomatic = false,
   });
 
   final Dive dive;
 
   /// The site currently chosen for this dive, or null.
   final DiveSite? selected;
+
+  /// Whether [selected] was matched by position rather than picked. Only
+  /// changes what is said about it - a site the app filled in must not read
+  /// as one the user chose.
+  final bool isAutomatic;
+
   final ValueChanged<DiveSite?> onChanged;
 
   @override
@@ -42,9 +54,11 @@ class DiveSiteSection extends StatelessWidget {
     final palette = theme.extension<AppPalette>()!;
     final sites = context.watch<DiveSitesController>();
     final selected = this.selected;
-    final suggestions = selected == null
-        ? sites.suggestionsFor(dive)
-        : const <DiveSiteMatch>[];
+    // What else was in reach. Only interesting while the site was matched
+    // rather than picked: after a deliberate choice, listing the runners-up
+    // is second-guessing an answer that has been given.
+    final nearby = isAutomatic ? sites.suggestionsFor(dive) : const [];
+    final matchedAt = nearby.isEmpty ? null : nearby.first.distanceMetres;
 
     return AppCard(
       child: Column(
@@ -67,7 +81,12 @@ class DiveSiteSection extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.only(left: 26),
               child: Text(
-                'site:${selected.siteId}',
+                // The distance is the one thing that says whether the
+                // match is plausible, so it sits with the number rather
+                // than being something to go looking for.
+                matchedAt == null
+                    ? 'site:${selected.siteId}'
+                    : 'site:${selected.siteId} · ${s.distance(matchedAt.round())}',
                 style: theme.textTheme.bodySmall?.copyWith(
                   fontFamily: 'monospace',
                 ),
@@ -75,49 +94,72 @@ class DiveSiteSection extends StatelessWidget {
             ),
           ],
 
-          // Offered rather than applied - the user confirms which place
-          // this was.
-          if (suggestions.isNotEmpty) ...[
+          // Only for a dive that has a position - a map centred on nothing
+          // would be a picture of the sea somewhere.
+          if (dive.hasPosition) ...[
             const SizedBox(height: AppSpacing.md),
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    s.siteNearby(
-                      suggestions.first.site.name,
-                      suggestions.first.distanceMetres.round(),
-                    ),
-                    style: theme.textTheme.bodySmall,
-                  ),
-                ),
-                TextButton(
-                  onPressed: () => onChanged(suggestions.first.site),
-                  child: Text(s.useSuggestion),
-                ),
-              ],
+            DiveMap(
+              latitude: dive.latitude!,
+              longitude: dive.longitude!,
+              site: selected,
+              // The neighbourhood, for orientation. Ranked by distance, so
+              // taking the first few after the cut-off takes the nearest.
+              // The assigned site is left out - it already has its own,
+              // darker pin, and drawing it twice would say there are two
+              // places there.
+              otherSites: [
+                for (final match in sites.rankedByDistanceFrom(dive))
+                  if (match.distanceMetres <= DiveMap.otherSitesRadiusMetres &&
+                      match.site.siteId != selected?.siteId)
+                    match.site,
+              ].take(DiveMap.otherSitesShown).toList(),
+              // Tapping a neighbour files the dive there. No confirmation
+              // step: the card's heading right above the map changes to
+              // that name and the pin turns dark, so the result is in view
+              // the moment it happens - and one more tap picks another.
+              // The site is already known, so there is nothing to store.
+              onSiteTap: onChanged,
             ),
-            // The nearest is not automatically the right one. When others
-            // are in reach, say so instead of hiding them behind a button
-            // labelled as if there were nothing to choose from.
-            if (suggestions.length > 1)
-              Align(
-                alignment: Alignment.centerLeft,
-                child: TextButton(
-                  onPressed: () => _assign(context, dive, sites, onChanged),
-                  child: Text(s.moreSitesNearby(suggestions.length - 1)),
-                ),
+            const SizedBox(height: AppSpacing.sm),
+            // Kept as text under the map: without a network there are no
+            // tiles, and the position must still be readable.
+            Text(
+              '${dive.latitude!.toStringAsFixed(5)}, '
+              '${dive.longitude!.toStringAsFixed(5)}',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: palette.inkMuted,
+                fontFamily: 'monospace',
               ),
+            ),
           ],
+
+          // The nearest is not automatically the right one. When others are
+          // in reach, say so instead of leaving them behind a button
+          // labelled as if there were nothing to choose from.
+          if (nearby.length > 1)
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton(
+                onPressed: () => _assign(context, dive, sites, onChanged),
+                child: Text(s.moreSitesNearby(nearby.length - 1)),
+              ),
+            ),
 
           const SizedBox(height: AppSpacing.md),
           Row(
             children: [
-              TextButton.icon(
-                icon: const Icon(Icons.edit_location_alt_outlined, size: 18),
-                label: Text(
-                  selected == null ? s.assignDiveSite : s.changeDiveSite,
+              Flexible(
+                child: TextButton.icon(
+                  icon: const Icon(Icons.edit_location_alt_outlined, size: 18),
+                  label: Text(
+                    selected == null
+                        ? s.assignDiveSite
+                        : isAutomatic
+                        ? s.siteAdoptedChange
+                        : s.changeDiveSite,
+                  ),
+                  onPressed: () => _assign(context, dive, sites, onChanged),
                 ),
-                onPressed: () => _assign(context, dive, sites, onChanged),
               ),
               if (selected != null)
                 TextButton(
@@ -137,7 +179,7 @@ class DiveSiteSection extends StatelessWidget {
                 color: palette.inkMuted,
               ),
             ),
-          ] else if (selected == null && suggestions.isEmpty) ...[
+          ] else if (selected == null) ...[
             // The first dive at a new place. The site number cannot be
             // looked up from here - SSI has no open query for it - but it
             // arrives on its own once the dive is filed in the SSI app,

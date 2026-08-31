@@ -29,10 +29,14 @@ class InMemoryExportedDives extends ExportedDivesRepository {
 }
 
 /// A controller with nothing ticked, ready to drop into a provider tree.
+///
+/// [logbooks] stands in for what an SSI sync left behind, keyed by account
+/// id - the ticks the app derives rather than the ones set by hand.
 ChangeNotifierProvider<ExportedDivesController> exportedDivesProvider([
   Map<String, bool> marks = const {},
+  Map<String, List<SsiLoggedDive>> logbooks = const {},
 ]) => ChangeNotifierProvider(
-  create: (_) =>
-      ExportedDivesController(repository: InMemoryExportedDives(marks))
-        ..loadFromStorage(),
+  create: (_) => ExportedDivesController(
+    repository: InMemoryExportedDives(marks, logbooks),
+  )..loadFromStorage(),
 );

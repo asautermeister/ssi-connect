@@ -200,6 +200,9 @@ class AppStringsEn extends AppStrings {
   @override
   String diveOfDayTitle(int number) => 'Dive $number of the day';
   @override
+  String diveNumberTitle(int number) => 'Dive #$number';
+
+  @override
   String get values => 'Values';
   @override
   String get duration => 'Duration';
@@ -238,12 +241,14 @@ class AppStringsEn extends AppStrings {
   @override
   String get diveSiteName => 'Name of the site';
   @override
-  String get siteSuggestion => 'Suggestion';
+  String get siteAdoptedChange => 'Dive site adopted automatically - change';
+
   @override
-  String get useSuggestion => 'Use it';
+  String get osmAttribution => '© OpenStreetMap contributors';
+
   @override
-  String siteNearby(String name, int metres) =>
-      '$name · ${distance(metres)} away';
+  String get centreOnDive => 'Centre on the dive';
+
   @override
   String moreSitesNearby(int count) =>
       count == 1 ? '1 more site nearby' : '$count more nearby';
@@ -277,6 +282,8 @@ class AppStringsEn extends AppStrings {
   String get signInWithSsi => 'Sign in with SSI';
   @override
   String get diveSites => 'Dive sites';
+  @override
+  String get withoutRegion => 'No region';
   @override
   String get ssiLogbook => 'SSI logbook';
   @override
@@ -348,6 +355,9 @@ class AppStringsEn extends AppStrings {
   @override
   String get transferredToSsi => 'Carried over into SSI';
   @override
+  String get qrFullScreen => 'Show large';
+
+  @override
   String get qrHintBatch =>
       'In the SSI app, add a dive and choose "Scan QR code", then continue '
       'here.';
@@ -366,6 +376,17 @@ class AppStringsEn extends AppStrings {
 
   @override
   String get ssiBuddy => 'SSI Buddy';
+  @override
+  String get search => 'Search';
+  @override
+  String filteredCount(int shown, int total) => '\$shown of \$total';
+  @override
+  String get showMore => 'Show more';
+  @override
+  String syncFailedFor(String account, String message) =>
+      'SSI sync for \$account: \$message';
+  @override
+  String get signInAgain => 'Sign in again';
   @override
   String get fromAccounts => 'From the accounts';
   @override
@@ -389,7 +410,6 @@ class AppStringsEn extends AppStrings {
   @override
   String get addCentreByHand => 'Add a dive centre by hand';
   @override
-  String get showAsQr => 'Show as QR code';
   @override
   String get buddyQrHint =>
       "Scan with another device's camera to store this buddy there.";
@@ -504,8 +524,10 @@ class AppStringsEn extends AppStrings {
       "are stored encrypted in this device's keystore.";
   @override
   String get yourDataNoThirdParty =>
-      'No data is passed to third parties. The only outbound connection goes '
-      'to Garmin, to fetch your own dives.';
+      'Outbound connections go where your own data already is: to Garmin, and '
+      'to SSI if you sign in. Plus the map: it loads its tiles from '
+      'OpenStreetMap, which thereby learns where this dive was. That happens '
+      'only while you have a dive open, and without saying who you are.';
   @override
   String get yourDataNoServer =>
       'There is no server and no account with us. Removing the app deletes '
@@ -631,6 +653,10 @@ class AppStringsEn extends AppStrings {
   String get diveTypeRebreather => 'Rebreather (CCR)';
   @override
   String get diveTypeScuba => 'Scuba';
+  @override
+  String diveTypeTitle(String type) => '\$type dive';
+  @override
+  String get diveTypeScubaTitle => 'Scuba dive';
   @override
   String get waterFresh => 'Fresh water';
   @override
