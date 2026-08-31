@@ -353,6 +353,26 @@ void main() {
       expect(codedSite(), isNull);
     });
 
+    testWidgets('the diver goes green once the dive has a site', (
+      tester,
+    ) async {
+      // The one thing the map is there to help decide, said in the same
+      // green the transferred tick uses: this part is settled.
+      Color diverColour() => tester
+          .widgetList<Icon>(find.byIcon(Icons.scuba_diving))
+          .single
+          .color!;
+
+      await _pump(tester, dive: _diveAt(latitude: 36.0167, longitude: 14.2799));
+      expect(diverColour(), const Color(0xFF2E7D32));
+
+      await tester.tap(find.text('Entfernen'));
+      await tester.pumpAndSettle();
+
+      // Orange again: without a site the dive goes to SSI without one.
+      expect(diverColour(), const Color(0xFFE65100));
+    });
+
     testWidgets('the map can be moved, and found again', (tester) async {
       await _pump(tester, dive: _diveAt(latitude: 36.0167, longitude: 14.2799));
 

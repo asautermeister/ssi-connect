@@ -70,10 +70,17 @@ class DiveMap extends StatefulWidget {
   /// Marker colours do not follow the app theme, and that is deliberate:
   /// OpenStreetMap's standard tiles are light in both themes, so a marker
   /// tinted for a dark interface would be a pale icon on a pale map. These
-  /// are chosen against the tiles instead - deep orange and dark red carry
-  /// on beige land and blue water alike, and each sits on a white disc so
-  /// there is contrast even over a dark harbour.
+  /// are chosen against the tiles instead - deep orange, green and dark red
+  /// carry on beige land and blue water alike, and each sits on a white
+  /// disc so there is contrast even over a dark harbour.
+  ///
+  /// The diver takes the green once the dive has a site, and that is the
+  /// same green the transferred tick uses: on this page green means "this
+  /// part is settled". Orange is the open state - a dive without a site
+  /// goes to SSI without a `site:`, which is the one thing the map is there
+  /// to help decide.
   static const _diverColour = Color(0xFFE65100);
+  static const _diverSettledColour = Color(0xFF2E7D32);
   static const _siteColour = Color(0xFF7F1416);
   static const _otherSiteColour = Color(0xFFE0736C);
   static const _lineColour = Color(0xCC37474F);
@@ -262,10 +269,12 @@ class _DiveMapState extends State<DiveMap> {
                       // would also make it swallow taps meant for a
                       // neighbour's label underneath. Nothing here is
                       // interactive, so nothing here takes a pointer.
-                      child: const IgnorePointer(
+                      child: IgnorePointer(
                         child: _MapPin(
                           icon: Icons.scuba_diving,
-                          colour: DiveMap._diverColour,
+                          colour: site == null
+                              ? DiveMap._diverColour
+                              : DiveMap._diverSettledColour,
                         ),
                       ),
                     ),
