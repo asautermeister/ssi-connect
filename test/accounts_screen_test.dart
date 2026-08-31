@@ -19,6 +19,7 @@ import 'package:ssi_connect/ssi/dive_sites_controller.dart';
 import 'package:ssi_connect/ssi/ssi_buddies_controller.dart';
 import 'package:ssi_connect/ssi/ssi_buddy_code.dart';
 import 'package:ssi_connect/ssi/ssi_buddy_repository.dart';
+import 'package:ssi_connect/ssi/ssi_logged_dive.dart';
 import 'package:ssi_connect/ssi/ssi_sync_controller.dart';
 import 'package:ssi_connect/ui/accounts_screen.dart';
 import 'package:ssi_connect/ui/dive_detail_screen.dart';
@@ -109,6 +110,7 @@ Future<void> _pump(
   Set<String> failing = const {},
   Map<String, CachedDives> cached = const {},
   bool offline = false,
+  Map<String, List<SsiLoggedDive>> logbooks = const {},
 }) async {
   tester.view.physicalSize = const Size(1100, 2200);
   tester.view.devicePixelRatio = 1.0;
@@ -144,7 +146,7 @@ Future<void> _pump(
         ChangeNotifierProvider.value(value: accountsController),
         ChangeNotifierProvider.value(value: buddies),
         ChangeNotifierProvider.value(value: recent),
-        exportedDivesProvider(),
+        exportedDivesProvider(const {}, logbooks),
         // The SSI identity screen offers signing in to SSI, which needs
         // both of these; the sites land device-wide rather than on the
         // account.
@@ -233,7 +235,7 @@ void main() {
         dives: {
           'Andreas': [
             for (var i = 0; i < 8; i++)
-              _dive('a\$i', DateTime(2025, 11, 20).subtract(Duration(days: i))),
+              _dive('a$i', DateTime(2025, 11, 20).subtract(Duration(days: i))),
           ],
           'Marie': [_dive('m1', DateTime(2025, 11, 19))],
         },
@@ -249,6 +251,44 @@ void main() {
       // Marie's, which is a different logbook.
       expect(screen.dives, hasLength(8));
       expect(screen.index, 0);
+    });
+
+    testWidgets('a dive older than the five on show is still ticked', (
+      tester,
+    ) async {
+      // The ticks travel with the swipe, so they have to be worked out over
+      // every loaded dive rather than over the preview. Matched over five,
+      // everything past the fifth arrived on the detail page unticked even
+      // though SSI had it.
+      await _pump(
+        tester,
+        accounts: [_account('Andreas')],
+        dives: {
+          'Andreas': [
+            for (var i = 0; i < 8; i++)
+              _dive(
+                'a$i',
+                DateTime(2025, 11, 20, 9).subtract(Duration(days: i)),
+              ),
+          ],
+        },
+        logbooks: {
+          'Andreas': [
+            // The eighth dive back - well outside the five on the screen.
+            SsiLoggedDive(dateTime: DateTime(2025, 11, 13, 9), depthMeters: 28),
+          ],
+        },
+      );
+
+      await tester.tap(find.text('Do, 20.11.2025'));
+      await tester.pumpAndSettle();
+
+      final screen = tester.widget<DiveDetailScreen>(
+        find.byType(DiveDetailScreen),
+      );
+      expect(screen.dives.where((d) => d.inLogbook).map((d) => d.dive.id), [
+        'a7',
+      ]);
     });
 
     testWidgets('the account card names its most recent dive', (tester) async {

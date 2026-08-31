@@ -127,8 +127,15 @@ class _RecentDives extends StatelessWidget {
     final theme = Theme.of(context);
     final s = AppStrings.of(context);
     final recent = controller.recent(accounts);
+    // Matched over every loaded dive, not over the five on show. Two
+    // reasons, and the second is the one that bit: the match is one-to-one
+    // across an account's dives, so a five-dive subset could hand an entry
+    // to a different dive than the full list would - and the ticks travel
+    // with the swipe, which runs through all of them. Computed over five,
+    // everything older than the fifth arrived without a tick.
+    final all = controller.merged(accounts);
     final inLogbook = context.watch<ExportedDivesController>().matchedAcross(
-      recent,
+      all,
     );
 
     return Column(
@@ -182,7 +189,7 @@ class _RecentDives extends StatelessWidget {
               // right - swiping out of them after the fifth would stop for
               // no reason the screen ever gave. The card narrows this to
               // the diver whose dive was tapped.
-              siblings: controller.merged(accounts),
+              siblings: all,
               siblingsInLogbook: inLogbook,
             ),
             const SizedBox(height: AppSpacing.md),
