@@ -69,65 +69,6 @@ so ist, liefert ausgerechnet der Weg für den Bootstag weniger als der
 einzelne QR-Code – das gehört behoben, bevor der Einstieg wieder
 prominent wird.
 
-### Den SSI-Bereich neu ordnen
-
-*Das Aktualisierungsverhalten ist gebaut. Der Umzug der Anzeige nach SSI
-Buddy, die Suche und die Herkunft stehen noch aus.*
-
-Der SSI-Teil liegt heute an drei Orten, ohne dass einer davon der
-offensichtliche wäre: die **Anmeldung** beim Account, der **Abgleich**
-samt Zahlen unter „Einstellungen → SSI-Logbuch", die **Buddy-Liste** als
-eigener Eintrag auf der Startseite.
-
-**Erledigt: das Aktualisierungsverhalten.** Garmin und SSI werden
-gemeinsam über dieselbe Geste geholt, mit Zeitstempeln je Account statt
-einer Signatur über alle:
-
-* **60 s** Mindestabstand für jeden Abruf, auch beim Herunterziehen — die
-  Zahl stammt aus der SSI-App.
-* **15 min**, ab wann ein Bildschirm beim Öffnen von allein nachlädt.
-  Getrennte Fenster für Garmin und SSI braucht es nicht: die App wird
-  abends nach dem Tauchtag benutzt, nicht während.
-* **Umfang folgt der Ansicht.** In der Ansicht eines Accounts wird nur
-  dieser aktualisiert.
-* Der Knopf „Jetzt abgleichen" bleibt in den Einstellungen, aber **nur im
-  Diagnose-Modus** — als Notausgang, nicht als Weg.
-
-**Danach umzuziehen.** SSI Buddy ist eigentlich der Bildschirm für „alles,
-was aus SSI kommt", er heißt nur nicht so:
-
-1. **Tauchplätze als eigener Abschnitt.** Heute kann man die bekannten
-   Plätze nirgends ansehen — sie tauchen nur im Zuordnen-Dialog auf.
-   Nicht alle auf einmal: die ersten zehn, dann „mehr".
-2. **Kein Status-Block**, aber eine **Fehlerzeile**, wenn ein Abgleich
-   scheitert. Der wichtigste Fall ist der abgelaufene SSI-Token: die
-   Sitzung wird verworfen, das Logbuch vergessen, die grünen Haken
-   verschwinden — künftig hinter einem beiläufigen Herunterziehen. Mit dem
-   Konto im Klartext und einem „Erneut anmelden".
-3. **Einstellungen werden wieder, was sie sind:** Design, Sprache,
-   Diagnose.
-4. **Umbenennen**, wenn Plätze dort liegen: „SSI" mit den Abschnitten
-   Meine Codes / Mittaucher / Tauchbasen / Tauchplätze.
-
-### Suche in SSI Buddy
-
-*Entwurf steht, wird mit dem Umzug oben gebaut.*
-
-Ein Feld für den ganzen Bildschirm, nicht eines je Abschnitt: beim Tippen
-weiß man nicht, ob „Ras" ein Platz, eine Basis oder ein Nachname ist.
-
-* Sichtbar erst ab **8 Einträgen** — dieselbe Schwelle wie im
-  Tauchplatz-Dialog, damit die App eine Regel hat und nicht zwei.
-* Filtert **alle Abschnitte gleichzeitig**; leere Abschnitte verschwinden
-  während der Suche, statt als leere Überschrift stehen zu bleiben.
-* Gesucht wird nur, **was auf der Karte steht**: Name und Nummer
-  (Mitglieds-, Basis-, Platznummer). Nicht die E-Mail — ein Treffer, den
-  man auf der Karte nicht sieht, sieht aus wie ein Fehler.
-* Die Überschrift zählt mit („3 von 41"), sonst wirkt eine gefilterte
-  Liste wie eine kurze.
-* Während der Suche gilt die 10er-Grenze der Tauchplätze nicht, sondern
-  das Suchergebnis.
-
 ### Herkunft eines Buddy-Eintrags
 
 *Später nochmal ansehen.*

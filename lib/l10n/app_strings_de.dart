@@ -387,6 +387,17 @@ class AppStringsDe extends AppStrings {
   @override
   String get ssiBuddy => 'SSI Buddy';
   @override
+  String get search => 'Suchen';
+  @override
+  String filteredCount(int shown, int total) => '$shown von $total';
+  @override
+  String get showMore => 'Mehr anzeigen';
+  @override
+  String syncFailedFor(String account, String message) =>
+      'SSI-Abgleich für $account: $message';
+  @override
+  String get signInAgain => 'Erneut anmelden';
+  @override
   String get fromAccounts => 'Aus den Accounts';
   @override
   String get stored => 'Gespeichert';

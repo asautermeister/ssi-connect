@@ -217,6 +217,17 @@ abstract class AppStrings {
   // ------------------------------------------------------------- buddies
 
   String get ssiBuddy;
+
+  /// One search field for the whole SSI screen; the sections say how much
+  /// of them survived it.
+  String get search;
+  String filteredCount(int shown, int total);
+  String get showMore;
+
+  /// A logbook that could not be read, and the way back in.
+  String syncFailedFor(String account, String message);
+  String get signInAgain;
+
   String get fromAccounts;
   String get stored;
   String get alsoStored;

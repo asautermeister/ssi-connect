@@ -7,7 +7,11 @@ import 'package:ssi_connect/accounts/account_repository.dart';
 import 'package:ssi_connect/accounts/accounts_controller.dart';
 import 'package:ssi_connect/accounts/models/garmin_account.dart';
 import 'package:ssi_connect/garmin/models/garmin_session.dart';
+import 'package:ssi_connect/ssi/dive_site.dart';
+import 'package:ssi_connect/ssi/dive_site_repository.dart';
+import 'package:ssi_connect/ssi/dive_sites_controller.dart';
 import 'package:ssi_connect/ssi/ssi_buddies_controller.dart';
+import 'package:ssi_connect/ssi/ssi_sync_controller.dart';
 import 'package:ssi_connect/ssi/ssi_buddy_code.dart';
 import 'package:ssi_connect/ssi/ssi_buddy_repository.dart';
 import 'package:ssi_connect/ssi/ssi_center_code.dart';
@@ -73,6 +77,7 @@ Future<SsiBuddiesController> _pump(
   List<SsiBuddyCode> buddies, {
   List<GarminAccount> accounts = const [],
   List<SsiCenterCode> centers = const [],
+  List<DiveSite> sites = const [],
 }) async {
   tester.view.physicalSize = const Size(1000, 1800);
   tester.view.devicePixelRatio = 1.0;
@@ -97,6 +102,14 @@ Future<SsiBuddiesController> _pump(
         ChangeNotifierProvider.value(value: controller),
         ChangeNotifierProvider.value(value: centersController),
         ChangeNotifierProvider.value(value: accountsController),
+        // The screen now also lists the dive sites the logbooks brought,
+        // and says so when a logbook could not be read.
+        ChangeNotifierProvider(
+          create: (_) =>
+              DiveSitesController(repository: _StoredSites(sites))
+                ..loadFromStorage(),
+        ),
+        ChangeNotifierProvider(create: (_) => SsiSyncController()),
       ],
       child: MaterialApp(
         locale: const Locale('de'),
@@ -115,6 +128,21 @@ Future<SsiBuddiesController> _pump(
   await tester.pumpAndSettle();
   return controller;
 }
+
+class _StoredSites extends DiveSiteRepository {
+  _StoredSites(this.stored);
+
+  final List<DiveSite> stored;
+
+  @override
+  Future<List<DiveSite>> loadAll() async => stored;
+
+  @override
+  Future<void> saveAll(List<DiveSite> sites) async {}
+}
+
+DiveSite _site(String name, {String id = '1'}) =>
+    DiveSite(siteId: id, name: name, latitude: 36.0, longitude: 14.0);
 
 void main() {
   group('SsiBuddiesScreen', () {
@@ -324,6 +352,91 @@ void main() {
       // member back.
       expect(screen.payload, original);
       expect(SsiBuddyCode.tryParse(screen.payload)!.memberId, '7');
+    });
+
+    testWidgets('lists the dive sites, ten of them to begin with', (
+      tester,
+    ) async {
+      // A well-travelled logbook brings hundreds. Enough to see they are
+      // there, the rest on request.
+      await _pump(
+        tester,
+        const [],
+        // Zero-padded: the list is sorted by name, and "Platz 10" would
+        // otherwise sort before "Platz 2".
+        sites: [
+          for (var i = 0; i < 14; i++)
+            _site('Platz ${i.toString().padLeft(2, '0')}', id: '$i'),
+        ],
+      );
+
+      expect(find.text('Tauchplätze'), findsOneWidget);
+      expect(find.text('Platz 00'), findsOneWidget);
+
+      // Scrolled to the foot of the list: the tenth site is the last one
+      // there, and the eleventh was never handed to the list at all. (A
+      // list only builds what is near the viewport, so absence is only
+      // evidence once the bottom is on screen.)
+      // The search field holds a scrollable of its own, so the list has to
+      // be named rather than found by type.
+      final list = find.byType(Scrollable).first;
+      await tester.scrollUntilVisible(
+        find.text('Mehr anzeigen'),
+        300,
+        scrollable: list,
+      );
+      expect(find.text('Platz 09'), findsOneWidget);
+      expect(find.text('Platz 10'), findsNothing);
+
+      await tester.tap(find.text('Mehr anzeigen'));
+      await tester.pumpAndSettle();
+      await tester.scrollUntilVisible(
+        find.text('Platz 13'),
+        300,
+        scrollable: list,
+      );
+
+      expect(find.text('Platz 13'), findsOneWidget);
+      expect(find.text('Mehr anzeigen'), findsNothing);
+    });
+
+    testWidgets('one search field narrows every section at once', (
+      tester,
+    ) async {
+      // Typing "Ras" one does not know whether it is a place, a centre or a
+      // surname - so one field, not one per section.
+      await _pump(
+        tester,
+        [
+          for (var i = 0; i < 8; i++)
+            SsiBuddyCode(memberId: '$i', firstName: 'Marco', lastName: '$i'),
+        ],
+        sites: [
+          _site('Ras il-Hobz'),
+          _site('Xatt l-Ahmar', id: '2'),
+        ],
+      );
+
+      await tester.enterText(find.byType(TextField), 'ras');
+      await tester.pumpAndSettle();
+
+      expect(find.text('Ras il-Hobz'), findsOneWidget);
+      expect(find.text('Xatt l-Ahmar'), findsNothing);
+      // The buddies section is gone rather than standing there empty.
+      expect(find.text('Gespeichert'), findsNothing);
+      // And the heading says how much of the section survived, so a
+      // narrowed list is not mistaken for a short one.
+      expect(find.text('1 von 2'), findsOneWidget);
+    });
+
+    testWidgets('a logbook that could not be read says so', (tester) async {
+      // The expired-token case: the session is dropped and the logbook
+      // forgotten, so green ticks disappear - now behind an ordinary
+      // pull-to-refresh, where nothing else would mention it.
+      await _pump(tester, const [], sites: [_site('Ras il-Hobz')]);
+
+      expect(find.textContaining('SSI-Abgleich'), findsNothing);
+      expect(find.text('Erneut anmelden'), findsNothing);
     });
   });
 }

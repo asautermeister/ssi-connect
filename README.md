@@ -64,8 +64,7 @@ Kamera der SSI-App scannt.
   als eine Zahl in Metern. Bis zu drei weitere bekannte Plätze im Umkreis von 15 km stehen
   als hellere Pins dabei; ein Tipp darauf ordnet den Tauchgang diesem Platz zu.
   Die Plätze gelten geräteweit, die Anmeldungen pro Person – ein Tauchplatz ist ein Ort, und
-  den teilt die Familie. Unter „Einstellungen → SSI-Logbuch" stehen die bekannten Plätze,
-  die verbundenen Konten und der Zeitpunkt des letzten Abgleichs
+  den teilt die Familie. Alle bekannten Plätze stehen unter „SSI Buddy“
 - **„In SSI übernommen"**: unter dem QR-Code lässt sich abhaken, dass der Tauchgang drüben
   angekommen ist; in der Liste steht dann ein grüner Haken neben dem Datum, in der
   Detailansicht neben der Art des Tauchgangs. Wer sein SSI-Konto
@@ -74,9 +73,15 @@ Kamera der SSI-App scannt.
   Hand hat immer Vorrang, in beide Richtungen. Nie abgeleitet wird er aus dem Export selbst:
   ein angezeigter QR-Code ist kein Beleg dafür, dass ihn jemand gescannt hat, und ein Haken,
   der zu früh kommt, markiert genau den Tauchgang, der danach übersprungen wird
-- **SSI Buddy**: eine Liste aller SSI-Codes, die das Gerät kennt – die Accounts mit hinterlegter
+- **SSI Buddy**: alles, was aus SSI kommt, an einem Ort – die Accounts mit hinterlegter
   Nummer, die Mittaucher (aus dem SSI-Logbuch übernommen oder abgescannt, bei Profis inklusive
-  SSI Professional Nr.) und unter „Tauchbasen" die Basen selbst. Jeder Eintrag lässt sich wieder
+  SSI Professional Nr.), unter „Tauchbasen“ die Basen und unter „Tauchplätze“ die
+  bekannten Plätze (die ersten zehn, der Rest auf Knopfdruck – ein vielgereistes Logbuch bringt
+  hunderte). Ab neun Einträgen erscheint ein Suchfeld, das **alle** Abschnitte zugleich
+  einengt: beim Tippen weiß man nicht, ob „Ras“ ein Platz, eine Basis oder ein Nachname
+  ist. Konnte ein Logbuch nicht gelesen werden, steht das hier – mit dem Konto im Klartext und
+  einem „Erneut anmelden“; der häufigste Fall ist ein abgelaufener SSI-Token, und mit ihm
+  verschwinden die automatischen Haken. Jeder Eintrag lässt sich wieder
   als QR-Code anzeigen, damit ein anderes Gerät ihn einlesen kann; der Scanner erkennt selbst,
   ob ein Buddy- oder ein Basis-Code vor der Kamera ist. Aus dem Logbuch übernommen wird nur,
   was auch in einem gescannten Buddy-QR-Code steht – Nummer, Name, E-Mail, SSI Professional
