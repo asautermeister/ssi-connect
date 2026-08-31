@@ -50,7 +50,7 @@ class RecentDiveCard extends StatelessWidget {
   /// tapped, or at best jump between people mid-swipe. "Previous dive"
   /// means the diver's previous dive; the family shares a tablet, not a
   /// logbook.
-  DiveDetailScreen _detailScreen() {
+  DiveDetailScreen _detailScreen({bool openAtCode = false}) {
     final mine = [
       for (final sibling in siblings)
         if (sibling.account.id == entry.account.id) sibling,
@@ -63,10 +63,15 @@ class RecentDiveCard extends StatelessWidget {
     // screen: the five on show and the full list are separate reads.
     final index = mine.indexWhere((s) => s.dive.id == entry.dive.id);
     if (index < 0) {
-      return DiveDetailScreen.single(
-        dive: entry.dive,
-        diver: entry.account.ssiIdentity,
-        inLogbook: inSsiLogbook,
+      return DiveDetailScreen(
+        dives: [
+          (
+            dive: entry.dive,
+            diver: entry.account.ssiIdentity,
+            inLogbook: inSsiLogbook,
+          ),
+        ],
+        openAtCode: openAtCode,
       );
     }
     return DiveDetailScreen(
@@ -79,6 +84,7 @@ class RecentDiveCard extends StatelessWidget {
           ),
       ],
       index: index,
+      openAtCode: openAtCode,
     );
   }
 
@@ -156,8 +162,20 @@ class RecentDiveCard extends StatelessWidget {
             ],
           ),
           const SizedBox(width: AppSpacing.sm),
-          // Says where the tap goes, so the card isn't a guess.
-          Icon(Icons.qr_code_2, size: 20, color: theme.colorScheme.primary),
+          // The card goes to the dive; this goes to its code. It was only
+          // a picture before, saying where the tap led - which stopped
+          // being true when the card started opening the detail page.
+          IconButton(
+            icon: const Icon(Icons.qr_code_2, size: 20),
+            color: theme.colorScheme.primary,
+            tooltip: s.qrForSsi,
+            visualDensity: VisualDensity.compact,
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => _detailScreen(openAtCode: true),
+              ),
+            ),
+          ),
         ],
       ),
     );

@@ -172,19 +172,67 @@ void main() {
       expect(find.text('SSI-Nr. 3902893'), findsOneWidget);
     });
 
-    testWidgets('the code is also reachable from the options menu', (
+    testWidgets('a contact row is one target, its options are on the code', (
       tester,
     ) async {
       await _pump(tester, [
         const SsiBuddyCode(memberId: '99', firstName: 'Cem'),
       ]);
 
-      await tester.tap(find.byIcon(Icons.more_horiz));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Als QR-Code zeigen'));
+      // Nothing on the row competes with "show me the code".
+      expect(find.byIcon(Icons.more_horiz), findsNothing);
+      expect(find.byIcon(Icons.qr_code_2), findsOneWidget);
+
+      await tester.tap(find.text('Cem'));
       await tester.pumpAndSettle();
 
-      expect(find.byType(QrDisplayScreen), findsOneWidget);
+      await tester.tap(find.byIcon(Icons.more_horiz));
+      await tester.pumpAndSettle();
+      expect(find.text('Bearbeiten'), findsOneWidget);
+      expect(find.text('Entfernen'), findsOneWidget);
+    });
+
+    testWidgets('editing from the code page redraws the code', (tester) async {
+      // The code on screen is the thing being scanned - a correction made
+      // behind it must not leave the old one standing.
+      await _pump(tester, [
+        const SsiBuddyCode(memberId: '99', firstName: 'Cem'),
+      ]);
+
+      await tester.tap(find.text('Cem'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byIcon(Icons.more_horiz));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Bearbeiten'));
+      await tester.pumpAndSettle();
+
+      await tester.enterText(find.widgetWithText(TextField, 'Nachname'), 'Yil');
+      await tester.tap(find.text('Speichern'));
+      await tester.pumpAndSettle();
+
+      final screen = tester.widget<QrDisplayScreen>(
+        find.byType(QrDisplayScreen),
+      );
+      expect(screen.payload, 'buddy;99;firstName:Cem;lastName:Yil');
+    });
+
+    testWidgets('removing from the code page leaves no code behind', (
+      tester,
+    ) async {
+      await _pump(tester, [
+        const SsiBuddyCode(memberId: '99', firstName: 'Cem'),
+      ]);
+
+      await tester.tap(find.text('Cem'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byIcon(Icons.more_horiz));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Entfernen'));
+      await tester.pumpAndSettle();
+
+      // Back on the list, and the buddy is gone from it.
+      expect(find.byType(QrDisplayScreen), findsNothing);
+      expect(find.text('Cem'), findsNothing);
     });
 
     testWidgets('lists accounts that have an SSI number', (tester) async {
@@ -230,10 +278,15 @@ void main() {
         accounts: [_account('Andreas', ssiMemberId: '3902893')],
       );
 
+      expect(find.text('GARMIN-ACCOUNT'), findsOneWidget);
+
+      await tester.tap(find.text('Andreas'));
+      await tester.pumpAndSettle();
+
       // Its number belongs to the account screen; a delete here would be
       // ambiguous about what it deletes.
+      expect(find.byType(QrDisplayScreen), findsOneWidget);
       expect(find.byIcon(Icons.more_horiz), findsNothing);
-      expect(find.text('GARMIN-ACCOUNT'), findsOneWidget);
     });
 
     testWidgets('someone with an account and a scan is listed once', (
@@ -317,15 +370,15 @@ void main() {
       );
     });
 
-    testWidgets('a centre can be removed from its options menu', (
-      tester,
-    ) async {
+    testWidgets('a centre can be removed from its code page', (tester) async {
       await _pump(
         tester,
         const [],
         centers: const [SsiCenterCode(centerId: '718019', name: 'Nero-Sport')],
       );
 
+      await tester.tap(find.text('Nero-Sport'));
+      await tester.pumpAndSettle();
       await tester.tap(find.byIcon(Icons.more_horiz));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Entfernen'));

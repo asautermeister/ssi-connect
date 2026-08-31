@@ -408,7 +408,6 @@ class AppStringsEn extends AppStrings {
   @override
   String get addCentreByHand => 'Add a dive centre by hand';
   @override
-  String get showAsQr => 'Show as QR code';
   @override
   String get buddyQrHint =>
       "Scan with another device's camera to store this buddy there.";

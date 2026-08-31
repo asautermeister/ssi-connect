@@ -167,6 +167,7 @@ class QrDisplayScreen extends StatelessWidget {
     required this.caption,
     required this.hint,
     this.footer,
+    this.actions,
   });
 
   final String title;
@@ -175,6 +176,13 @@ class QrDisplayScreen extends StatelessWidget {
   final String hint;
   final Widget? footer;
 
+  /// Top-right actions on the code's own page.
+  ///
+  /// What can be done with a contact lives here rather than on its row in
+  /// the list: the row's job is to open the code, and an options button
+  /// next to it competes with that one tap.
+  final List<Widget>? actions;
+
   @override
   Widget build(BuildContext context) {
     return Theme(
@@ -182,7 +190,11 @@ class QrDisplayScreen extends StatelessWidget {
       child: Builder(
         builder: (context) => Scaffold(
           backgroundColor: Colors.white,
-          appBar: AppBar(backgroundColor: Colors.white, title: Text(title)),
+          appBar: AppBar(
+            backgroundColor: Colors.white,
+            title: Text(title),
+            actions: actions,
+          ),
           body: SafeArea(
             child: QrScanSurface(
               payload: payload,

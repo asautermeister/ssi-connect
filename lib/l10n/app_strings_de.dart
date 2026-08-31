@@ -421,7 +421,6 @@ class AppStringsDe extends AppStrings {
   @override
   String get addCentreByHand => 'Tauchbasis von Hand eintragen';
   @override
-  String get showAsQr => 'Als QR-Code zeigen';
   @override
   String get buddyQrHint =>
       'Mit der Kamera eines anderen Geräts scannen, um diesen Buddy dort zu '

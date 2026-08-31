@@ -238,7 +238,6 @@ abstract class AppStrings {
   String get noBuddiesYetBody;
   String get addBuddyByHand;
   String get addCentreByHand;
-  String get showAsQr;
   String get buddyQrHint;
   String get centreQrHint;
   String savedConfirmation(String name);

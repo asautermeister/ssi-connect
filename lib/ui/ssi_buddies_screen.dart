@@ -451,7 +451,7 @@ class _EmptyBuddies extends StatelessWidget {
   }
 }
 
-enum _BuddyAction { showQr, edit, remove }
+enum _BuddyAction { edit, remove }
 
 class _BuddyCard extends StatelessWidget {
   const _BuddyCard({required this.buddy});
@@ -474,7 +474,7 @@ class _BuddyCard extends StatelessWidget {
     return AppCard(
       // Tapping shows the code, which is the thing you do with a buddy
       // when someone else wants to save them.
-      onTap: () => _showQr(context, buddy),
+      onTap: () => _showQr(context, buddy, saved: true),
       child: Row(
         children: [
           CircleAvatar(
@@ -507,24 +507,9 @@ class _BuddyCard extends StatelessWidget {
               ],
             ),
           ),
-          PopupMenuButton<_BuddyAction>(
-            icon: const Icon(Icons.more_horiz),
-            tooltip: s.options,
-            onSelected: (action) => switch (action) {
-              _BuddyAction.showQr => _showQr(context, buddy),
-              _BuddyAction.edit => enterBuddyManually(context, existing: buddy),
-              _BuddyAction.remove =>
-                context.read<SsiBuddiesController>().remove(buddy.memberId),
-            },
-            itemBuilder: (context) => [
-              PopupMenuItem(
-                value: _BuddyAction.showQr,
-                child: Text(s.showAsQr),
-              ),
-              PopupMenuItem(value: _BuddyAction.edit, child: Text(s.edit)),
-              PopupMenuItem(value: _BuddyAction.remove, child: Text(s.remove)),
-            ],
-          ),
+          // Says what the tap does. Editing and removing live on the code's
+          // own page, so the row stays a single target.
+          Icon(Icons.qr_code_2, size: 20, color: theme.colorScheme.primary),
         ],
       ),
     );
@@ -580,27 +565,7 @@ class _CenterCard extends StatelessWidget {
               ],
             ),
           ),
-          PopupMenuButton<_BuddyAction>(
-            icon: const Icon(Icons.more_horiz),
-            tooltip: s.options,
-            onSelected: (action) => switch (action) {
-              _BuddyAction.showQr => _showCenterQr(context, center),
-              _BuddyAction.edit => enterCenterManually(
-                context,
-                existing: center,
-              ),
-              _BuddyAction.remove =>
-                context.read<SsiCentersController>().remove(center.centerId),
-            },
-            itemBuilder: (context) => [
-              PopupMenuItem(
-                value: _BuddyAction.showQr,
-                child: Text(s.showAsQr),
-              ),
-              PopupMenuItem(value: _BuddyAction.edit, child: Text(s.edit)),
-              PopupMenuItem(value: _BuddyAction.remove, child: Text(s.remove)),
-            ],
-          ),
+          Icon(Icons.qr_code_2, size: 20, color: theme.colorScheme.primary),
         ],
       ),
     );
@@ -610,32 +575,133 @@ class _CenterCard extends StatelessWidget {
 /// Shows the member as the same kind of code the SSI app shows under
 /// "Dein QR-Code", so another device can scan them straight into its own
 /// buddy list - including this app's scanner.
-void _showQr(BuildContext context, SsiBuddyCode buddy) {
-  final s = AppStrings.of(context);
+///
+/// [saved] marks an entry this app owns: those get edit and remove on the
+/// code's page. An account's number is not one of them - it belongs to the
+/// account, and deleting it here would be ambiguous about what it deletes.
+void _showQr(BuildContext context, SsiBuddyCode buddy, {bool saved = false}) {
   Navigator.of(context).push(
     MaterialPageRoute(
-      builder: (_) => QrDisplayScreen(
-        title: buddy.displayName(s),
-        payload: buddy.toPayload(),
-        caption: s.ssiNumber(buddy.memberId),
-        hint: s.buddyQrHint,
-      ),
+      builder: (context) => saved
+          ? _SavedBuddyQr(memberId: buddy.memberId)
+          : _buddyQr(context, buddy),
     ),
   );
 }
 
-void _showCenterQr(BuildContext context, SsiCenterCode center) {
+QrDisplayScreen _buddyQr(
+  BuildContext context,
+  SsiBuddyCode buddy, {
+  List<Widget>? actions,
+}) {
   final s = AppStrings.of(context);
+  return QrDisplayScreen(
+    title: buddy.displayName(s),
+    payload: buddy.toPayload(),
+    caption: s.ssiNumber(buddy.memberId),
+    hint: s.buddyQrHint,
+    actions: actions,
+  );
+}
+
+/// The code of a saved buddy, read live from the list.
+///
+/// Watching rather than holding a copy: an edit made from this page has to
+/// change the code that is on screen, and a removal has to take the page
+/// with it instead of leaving a code for someone who is gone.
+class _SavedBuddyQr extends StatelessWidget {
+  const _SavedBuddyQr({required this.memberId});
+
+  final String memberId;
+
+  @override
+  Widget build(BuildContext context) {
+    final s = AppStrings.of(context);
+    final buddies = context.watch<SsiBuddiesController>().buddies;
+    final index = buddies.indexWhere((b) => b.memberId == memberId);
+    // Removed, or edited into a different member number: there is nothing
+    // left to show under this one.
+    if (index == -1) return _popBack(context);
+
+    final buddy = buddies[index];
+    return _buddyQr(
+      context,
+      buddy,
+      actions: [
+        PopupMenuButton<_BuddyAction>(
+          icon: const Icon(Icons.more_horiz),
+          tooltip: s.options,
+          onSelected: (action) => switch (action) {
+            _BuddyAction.edit => enterBuddyManually(context, existing: buddy),
+            _BuddyAction.remove => context.read<SsiBuddiesController>().remove(
+              memberId,
+            ),
+          },
+          itemBuilder: (context) => [
+            PopupMenuItem(value: _BuddyAction.edit, child: Text(s.edit)),
+            PopupMenuItem(value: _BuddyAction.remove, child: Text(s.remove)),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+void _showCenterQr(BuildContext context, SsiCenterCode center) {
   Navigator.of(context).push(
     MaterialPageRoute(
-      builder: (_) => QrDisplayScreen(
-        title: center.displayName(s),
-        payload: center.toPayload(),
-        caption: s.centreNumberLine(center.centerId),
-        hint: s.centreQrHint,
-      ),
+      builder: (_) => _SavedCenterQr(centerId: center.centerId),
     ),
   );
+}
+
+/// Same as [_SavedBuddyQr], for a base.
+class _SavedCenterQr extends StatelessWidget {
+  const _SavedCenterQr({required this.centerId});
+
+  final String centerId;
+
+  @override
+  Widget build(BuildContext context) {
+    final s = AppStrings.of(context);
+    final centers = context.watch<SsiCentersController>().centers;
+    final index = centers.indexWhere((c) => c.centerId == centerId);
+    if (index == -1) return _popBack(context);
+
+    final center = centers[index];
+    return QrDisplayScreen(
+      title: center.displayName(s),
+      payload: center.toPayload(),
+      caption: s.centreNumberLine(center.centerId),
+      hint: s.centreQrHint,
+      actions: [
+        PopupMenuButton<_BuddyAction>(
+          icon: const Icon(Icons.more_horiz),
+          tooltip: s.options,
+          onSelected: (action) => switch (action) {
+            _BuddyAction.edit => enterCenterManually(context, existing: center),
+            _BuddyAction.remove => context.read<SsiCentersController>().remove(
+              centerId,
+            ),
+          },
+          itemBuilder: (context) => [
+            PopupMenuItem(value: _BuddyAction.edit, child: Text(s.edit)),
+            PopupMenuItem(value: _BuddyAction.remove, child: Text(s.remove)),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+/// Leaves the page once what it was showing is gone. White rather than
+/// empty: this is on screen for the length of the pop animation, and the
+/// code's page is white.
+Widget _popBack(BuildContext context) {
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    if (context.mounted) Navigator.of(context).maybePop();
+  });
+  return const Scaffold(backgroundColor: Colors.white);
 }
 
 /// Scans either kind of code and files it where it belongs. Which list an

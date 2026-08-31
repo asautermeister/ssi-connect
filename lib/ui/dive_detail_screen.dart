@@ -35,7 +35,12 @@ typedef DetailDive = ({Dive dive, SsiBuddyCode? diver, bool inLogbook});
 /// Each dive is its own page with its own state - which site it is filed
 /// at is a decision about that dive, not about this screen.
 class DiveDetailScreen extends StatefulWidget {
-  const DiveDetailScreen({super.key, required this.dives, this.index = 0});
+  const DiveDetailScreen({
+    super.key,
+    required this.dives,
+    this.index = 0,
+    this.openAtCode = false,
+  });
 
   /// One dive on its own, with nothing to swipe to.
   DiveDetailScreen.single({
@@ -54,6 +59,10 @@ class DiveDetailScreen extends StatefulWidget {
   /// Which of them to open on.
   final int index;
 
+  /// Whether to arrive already scrolled down to the code. For the QR icon
+  /// in a list, which promises the code rather than the dive.
+  final bool openAtCode;
+
   @override
   State<DiveDetailScreen> createState() => _DiveDetailScreenState();
 }
@@ -61,6 +70,21 @@ class DiveDetailScreen extends StatefulWidget {
 class _DiveDetailScreenState extends State<DiveDetailScreen> {
   late final _pages = PageController(initialPage: widget.index);
   late int _current = widget.index;
+
+  /// Only the page that was opened starts at the code, and only the first
+  /// time. Swiping away and back is navigation, not a fresh request for
+  /// the code, and landing at the bottom then would be a surprise.
+  late bool _openAtCode = widget.openAtCode;
+
+  @override
+  void initState() {
+    super.initState();
+    if (_openAtCode) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) setState(() => _openAtCode = false);
+      });
+    }
+  }
 
   @override
   void dispose() {
@@ -121,54 +145,93 @@ class _DiveDetailScreenState extends State<DiveDetailScreen> {
         reverse: true,
         itemCount: dives.length,
         onPageChanged: (index) => setState(() => _current = index),
-        itemBuilder: (_, index) => _DiveDetailPage(entry: dives[index]),
+        itemBuilder: (_, index) => _DiveDetailPage(
+          entry: dives[index],
+          openAtCode: _openAtCode && index == widget.index,
+        ),
       ),
     );
   }
 }
 
 class _DiveDetailPage extends StatefulWidget {
-  const _DiveDetailPage({required this.entry});
+  const _DiveDetailPage({required this.entry, this.openAtCode = false});
 
   final DetailDive entry;
+
+  /// Whether to open already scrolled down to the code, for someone who
+  /// tapped the QR icon rather than the dive.
+  final bool openAtCode;
 
   @override
   State<_DiveDetailPage> createState() => _DiveDetailPageState();
 }
 
-class _DiveDetailPageState extends State<_DiveDetailPage> {
+class _DiveDetailPageState extends State<_DiveDetailPage>
+    with SingleTickerProviderStateMixin {
   final _scroll = ScrollController();
+
+  /// Drives the scroll to the code by hand, for the reason below.
+  late final _toCode = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 400),
+  );
+
+  @override
+  void initState() {
+    super.initState();
+    _toCode.addListener(_followTheEnd);
+    if (widget.openAtCode) {
+      // Straight there, no animation: this page was opened *at* the code,
+      // and a long scroll from the top would only be a journey nobody
+      // asked for. Two frames, because the end of the list is only known
+      // once what is below the fold has been laid out.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted || !_scroll.hasClients) return;
+        _scroll.jumpTo(_scroll.position.maxScrollExtent);
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted || !_scroll.hasClients) return;
+          _scroll.jumpTo(_scroll.position.maxScrollExtent);
+        });
+      });
+    }
+  }
 
   @override
   void dispose() {
+    _toCode.dispose();
     _scroll.dispose();
     super.dispose();
   }
 
+  /// Moves towards wherever the end of the list is *now*.
+  ///
+  /// Re-read on every frame rather than fixed at the start, which is what
+  /// makes this smooth: the map and the code below the fold have no
+  /// measured height until they are laid out, so the end of the list moves
+  /// while one is travelling towards it. A normal `animateTo` aims at the
+  /// end as it was when the gesture began and then has to correct itself in
+  /// visible jerks; this simply follows.
+  void _followTheEnd() {
+    if (!_scroll.hasClients) return;
+    final end = _scroll.position.maxScrollExtent;
+    _scroll.jumpTo(
+      _from + (end - _from) * Curves.easeOutCubic.transform(_toCode.value),
+    );
+  }
+
+  /// Where the scroll stood when the jump to the code began.
+  double _from = 0;
+
   /// Down to the code, which is the last thing on the page.
   ///
-  /// Scrolled to the end rather than to the widget: a long list only builds
-  /// what is near the viewport, so the card one is jumping to may not exist
-  /// yet to be scrolled to. The bottom is where it is either way.
-  ///
-  /// And the bottom moves while one travels towards it. The map and the
-  /// code below the fold have no measured height until they are laid out,
-  /// so the end of the list is further down once they are - which left the
-  /// code half on screen. Hence the follow-up hops: short, and only while
-  /// the end keeps receding.
-  Future<void> _toTheCode() async {
-    var target = _scroll.position.maxScrollExtent;
-    for (var hop = 0; hop < 4; hop++) {
-      await _scroll.animateTo(
-        target,
-        duration: Duration(milliseconds: hop == 0 ? 350 : 120),
-        curve: Curves.easeOutCubic,
-      );
-      if (!mounted) return;
-      final end = _scroll.position.maxScrollExtent;
-      if ((end - target).abs() < 1) return;
-      target = end;
-    }
+  /// Aimed at the end of the list rather than at the card: a long list only
+  /// builds what is near the viewport, so the widget one is jumping to may
+  /// not exist yet to be scrolled to. The bottom is where it is either way.
+  void _toTheCode() {
+    if (!_scroll.hasClients) return;
+    _from = _scroll.position.pixels;
+    _toCode.forward(from: 0);
   }
 
   /// Chosen for this dive only, and only for this visit. The pairing of
