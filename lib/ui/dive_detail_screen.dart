@@ -277,13 +277,6 @@ class _DiveDetailPageState extends State<_DiveDetailPage> {
                   ),
                 ],
               ),
-              const SizedBox(height: AppSpacing.lg),
-              StatTile(
-                label: s.maxDepthLabel,
-                value: Fmt.meters(dive.maxDepthMeters),
-                unit: 'm',
-                emphasis: StatEmphasis.hero,
-              ),
               if (dive.locationName != null) ...[
                 const SizedBox(height: AppSpacing.lg),
                 Row(
@@ -325,6 +318,17 @@ class _DiveDetailPageState extends State<_DiveDetailPage> {
           padding: const EdgeInsets.all(AppSpacing.xl),
           child: Column(
             children: [
+              // Leading the values rather than the page: it is still the
+              // number one looks for first, so it keeps the hero size and
+              // the full width - but among the measurements it belongs to,
+              // not above the card that says which dive this is.
+              StatTile(
+                label: s.maxDepthLabel,
+                value: Fmt.meters(dive.maxDepthMeters),
+                unit: 'm',
+                emphasis: StatEmphasis.hero,
+              ),
+              const SizedBox(height: AppSpacing.xl),
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
