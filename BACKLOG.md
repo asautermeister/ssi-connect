@@ -54,58 +54,40 @@ Erledigt und deshalb hier nicht mehr aufgeführt: das fehlende Escaping
 der QR-Payloads, die Personendaten Dritter im API-Log, `allowBackup` und
 vier nicht mehr aufgerufene Member. Steht im Git-Log.
 
-### Built-in Kotlin: Schritt 1 ist getan, der Rest steht an
+### Built-in Kotlin: die KGP-Deklaration in settings.gradle.kts
 
-Beim Start warnt Flutter, dass `mobile_scanner` das Kotlin-Gradle-Plugin
-(KGP) anwendet und künftige Flutter-Versionen damit nicht mehr bauen.
-Dieselbe Sache hat den Build zerlegt, als `mobile_scanner` kurzzeitig auf
-7.4.2 stand – das Plugin ist deshalb fest auf 7.4.0 genagelt.
+Erledigt sind Flutter 3.47.8, `android.builtInKotlin=true` und
+`mobile_scanner` ^7.4.2 – damit wendet kein Plugin mehr das
+Kotlin-Gradle-Plugin an, und AGP 9 übersetzt deren Kotlin selbst.
 
-Naheliegend wäre, `android.builtInKotlin=false` aus
-`android/gradle.properties` zu entfernen. Flutters eigene Anleitung sagt
-dazu:
+Übrig bleibt eine Zeile in `android/settings.gradle.kts`:
 
-> Flutter 3.44 added support for AGP 9 with built-in Kotlin disabled
-> (`android.builtInKotlin=false`), while enabling built-in Kotlin
-> (`android.builtInKotlin=true`) requires Flutter 3.47 or later.
+```kotlin
+id("org.jetbrains.kotlin.android") version "2.3.20" apply false
+```
 
-Deshalb ist **Flutter inzwischen auf 3.47.8** angehoben – das war die
-Voraussetzung, nicht die Lösung. **Die Warnung bleibt**, und zwar
-erwartbar: der Warntext steht in 3.47 wortgleich im SDK
-(`FlutterPluginUtils.kt`), und die Projektvorlage von 3.47 schreibt
-weiterhin `android.builtInKotlin=false`. Auch die neue Version stellt
-also nichts von selbst um.
+Sie macht KGP nur verfügbar, angewendet wird es von niemandem mehr. Das
+App-Modul selbst wendet es ohnehin nie an – `app/build.gradle.kts` lädt
+nur `com.android.application` und das Flutter-Plugin, und sein
+`kotlin { compilerOptions { jvmTarget } }`-Block ist genau die Form, auf
+die die Migrationsanleitung hinausläuft.
 
-**Was noch fehlt:**
+Rauswerfen ist naheliegend, aber **ungeprüft**: ohne Android-SDK lässt
+sich hier kein Gradle-Build ausführen, und analyze plus Tests sagen über
+Gradle nichts. Ein eigener Commit wert, kein Beifang.
 
-1. `android.builtInKotlin=true` in `android/gradle.properties`.
-2. `org.jetbrains.kotlin.android` aus `android/settings.gradle.kts`
-   entfernen. Der `kotlin { compilerOptions { jvmTarget } }`-Block in
-   `app/build.gradle.kts` hat schon die Form, die die Anleitung verlangt.
-3. Erst dann `mobile_scanner` auf 7.4.2+ und den Pin in `pubspec.yaml`
-   wieder löschen.
+Zwei Dinge, falls es doch klemmt:
 
-Das App-Modul selbst wendet KGP **nicht** an – `app/build.gradle.kts`
-lädt nur `com.android.application` und das Flutter-Plugin. Der einzige
-KGP-Anwender ist `mobile_scanner`, die App-seitige Migration ist also
-klein.
-
-Jeder dieser Schritte braucht einen echten Gerätebuild – ohne
-Android-SDK ist davon nichts prüfbar, und analyze plus Tests sagen dazu
-nichts.
-
-Zwei Dinge für den Fall, dass es klemmt:
-
-- `mobile_scanner` 7.4.2 hat auf Built-in Kotlin migriert, deklariert
-  aber weiterhin `flutter: ">=3.29.0"`. Flutters Anleitung verlangt von
-  einem so migrierten Plugin ausdrücklich `>=3.44.0`. Das Paket
-  verspricht Verträglichkeit mit Versionen, die nicht leisten können,
-  was sein Build-Skript voraussetzt.
+- Flutters Warnung über Plugins, die KGP anwenden, ist ein **rein
+  textueller Scan** über die Build-Skripte der Plugins
+  (`FlutterPluginUtils.kt`, ausdrücklich dokumentiert). Sie wertet keine
+  Bedingung aus: 7.4.0 trug ein `apply plugin: 'kotlin-android'` in
+  einem `if`, das längst nicht mehr zutraf, und wurde trotzdem gemeldet.
+  Eine Warnung beweist also nicht, dass KGP wirklich angewendet wird.
 - Der Gradle-Wrapper steht auf **9.7.1**, Flutter kennt als höchste
-  unterstützte Version **9.3.1** – in 3.44 wie in 3.47. Das ist nicht
-  neu und läuft offensichtlich, ist aber ungeprüftes Gebiet und wäre bei
-  merkwürdigem Verhalten der erste Verdacht.
-
+  unterstützte Version **9.3.1** – in 3.44 wie in 3.47. Läuft
+  offensichtlich, ist aber ungeprüftes Gebiet und wäre bei merkwürdigem
+  Verhalten der erste Verdacht.
 
 ### Kleinigkeiten an der Plattform-Konfiguration
 
