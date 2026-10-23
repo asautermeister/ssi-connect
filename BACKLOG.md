@@ -230,32 +230,69 @@ Client ein ZIP. `FitDiveImporter` liest FIT-Tauchgänge bereits – das wäre
 ein zweiter, belastbarer Weg an die Werte, falls das JSON-Summary weniger
 mitbringt als die interne Antwort heute.
 
-#### Was offen ist, bevor man anfängt
+#### An einem echten Konto geprüft (23.10.2026)
 
-1. **Liefert das JSON dieselben Tauchfelder?** Maximaltiefe, Grundzeit,
-   Deko-Flag, Wasserart und vor allem der Sub-Typ (Apnoe, CCR, Single /
-   Multi Gas) treiben Abzeichen, Filter und QR-Payload. Ein echter
-   Tauchgang über beide Wege abgeholt und verglichen beantwortet das in
-   zehn Minuten – dieselbe Methode, die die SSI-Felder geklärt hat.
-2. **Nimmt `activityType=diving` dort dieselben Werte an?** Der Parameter
-   heißt gleich; ob die Sub-Typ-Regel gleich ist, sagt die Spec nicht.
-3. **Deckt die Lizenz eine verteilte App?** Die Personal-Stufe ist für
+Ein Personal API Key, fünf echte Tauchgänge über
+`/activitylist-service/activities/search/activities?activityType=diving`
+geholt und Feld für Feld gegen das verglichen, was `GarminActivity`
+liest. **Es ist dieselbe Antwort, Name für Name und Einheit für
+Einheit.**
+
+| gebraucht | kommt an als |
+|---|---|
+| Sub-Typ | `activityType.typeKey` – `apnea_diving`, `single_gas_diving` |
+| Maximaltiefe | `maxDepth` – **in Zentimetern**, `2600.0` = 26 m |
+| Ø-Tiefe | `avgDepth`, ebenfalls Zentimeter |
+| Wassertemperatur | `minTemperature` in °C |
+| Abtauchzähler | `diveCount` |
+| Wasserart | `summarizedDiveInfo.waterDensity` = `1025.0` → Salz |
+| Deko | `isDecoDive` |
+| Position | `startLatitude` / `startLongitude` |
+| Start | `startTimeLocal`, Leerzeichen statt `T` |
+
+Auch die Zentimeter-Eigenart ist identisch – genau die, die in
+`garmin_activity.dart` dokumentiert ist. `activityType=diving` nimmt
+dieselben Werte an und liefert die Sub-Typen mit. Damit sind Frage 1 und
+2 beantwortet: **der Activity-Client bliebe unverändert.**
+
+**Eine echte Lücke: die Tauchgangsnummer fehlt.** Weder in der Liste noch
+in der Detail-Antwort gibt es `diveNumber` oder etwas Gleichwertiges –
+nur `diveCount` (Abtauchvorgänge), `qualifyingDive` und `isDecoDive`. Die
+Überschrift der Detailseite („Tauchgang #260") fiele also auf den Typ
+zurück. Ob die interne Schnittstelle sie heute wirklich liefert, ist der
+Gegentest, der noch fehlt.
+
+**Unerwarteter Fund: die Detail-Antwort trägt `diveInfo`** mit genau den
+Feldern, die der QR-Code heute leer lässt, weil ein Tauchcomputer sie
+nicht aufzeichnet: `buddy`, `visibility`, `current`, `entryType`,
+`surfaceCondition`, `exposureSuit`, `suitThickness`, `weight`. Beim
+geprüften Konto alle `null` – wer sie aber in Garmin Connect pflegt,
+könnte sie von dort in den SSI-Export tragen. Eigene Entscheidung,
+eigener Eintrag wert.
+
+Nebenbei: die Antwort nennt auf **jedem** Eintrag `ownerDisplayName`,
+`ownerFullName` und drei Links aufs Profilfoto. Die sind inzwischen in
+der Log-Redaktion.
+
+#### Was noch offen ist
+
+1. **Deckt die Lizenz eine verteilte App?** Die Personal-Stufe ist für
    Werkzeuge gedacht, die man selbst betreibt. Jeder Nutzer mit eigenem
    Schlüssel auf dem eigenen Gerät trifft das dem Sinn nach – es ist aber
    die Art Klausel, die man liest, bevor man umbaut. Die Startup-Stufe
    wäre die formale Alternative, arbeitet aber push-basiert mit
    Callback-URL und setzt damit einen Server voraus, den diese App nicht
    hat und nicht haben will.
-4. **Ablauf des Schlüssels.** Spätestens nach einem Jahr muss jede Person
+2. **Ablauf des Schlüssels.** Spätestens nach einem Jahr muss jede Person
    einen neuen erzeugen. Die App müsste das vorher sichtbar machen,
    statt eines Tages still keine Tauchgänge mehr zu laden.
+3. **Die Tauchgangsnummer**, siehe oben.
 
 #### Reihenfolge, wenn es losgeht
 
-Der alte Weg bleibt bestehen, solange das nicht geklärt ist – ein
-zweiter Anmeldeweg neben dem bestehenden, nicht als Ersatz. Erst wenn an
-einem echten Konto belegt ist, dass die Tauchfelder vollständig
-ankommen, lohnt die Frage, ob der SSO-Fluss ganz verschwindet.
+Ein zweiter Anmeldeweg neben dem bestehenden, nicht als Ersatz. Dass die
+Felder ankommen, ist jetzt belegt; was den SSO-Fluss endgültig überflüssig
+macht, ist die Lizenzfrage, nicht die Technik.
 
 ### Das Übertragen mehrerer Tauchgänge neu zugänglich machen
 

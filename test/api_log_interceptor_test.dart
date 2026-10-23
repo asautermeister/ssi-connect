@@ -122,6 +122,27 @@ void main() {
       expect(text, contains('deleted'));
     });
 
+    test('Garmin names the account holder on every activity', () {
+      // Confirmed against a real answer: every entry in the activity list
+      // carries the owner's name and three links to their profile photo.
+      final text = redact({
+        'activityId': 24144747784,
+        'ownerId': 12345,
+        'ownerDisplayName': 'wolfblade',
+        'ownerFullName': 'Andreas Sautermeister',
+        'ownerProfileImageUrlSmall': 'https://garmin.example/s.png',
+        'maxDepth': 2600.0,
+      });
+
+      expect(text, isNot(contains('wolfblade')));
+      expect(text, isNot(contains('Sautermeister')));
+      expect(text, isNot(contains('s.png')));
+      // The id stays: it identifies the account in a log without naming
+      // anyone, which is exactly what diagnosing needs.
+      expect(text, contains('ownerId'));
+      expect(text, contains('2600'));
+    });
+
     test('dive values are not mistaken for personal data', () {
       final text = redact({
         'maxDepth': 1149.3,

@@ -67,6 +67,15 @@ class ApiLogInterceptor extends Interceptor {
     'city',
     'phone',
     'image',
+    // Garmin names the account holder on every activity it returns, and
+    // links three sizes of their profile photo. Their own data rather
+    // than a stranger's, but the log is still something that gets pasted
+    // into a chat.
+    'ownerdisplayname',
+    'ownerfullname',
+    'ownerprofileimageurlsmall',
+    'ownerprofileimageurlmedium',
+    'ownerprofileimageurllarge',
   };
 
   static const _maxBodyChars = 1200;
