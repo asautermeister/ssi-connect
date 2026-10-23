@@ -42,6 +42,120 @@ niemand weiß, welche Tauchgänge einen haben.
 
 ## Ideen
 
+### Auf Garmins offizielle Personal API umstellen
+
+Garmin hat sein Connect Developer Program am 21.10.2026 umgebaut und
+dabei erstmals eine **Personal**-Stufe geöffnet: kostenlos, lesend, nur
+die eigenen Daten, Pull statt Push. Damit entfällt der Grund, aus dem die
+App heute die interne App-Schnittstelle nachbaut – es gibt jetzt eine für
+Privatpersonen.
+
+Die rekonstruierte Spec liegt unter
+`docs/garmin-connect-personal-api.openapi.json` (27 Pfade). Sie ist aus
+zwei Quellen gebaut: der gespeicherten Swagger-Seite und Garmins eigenem
+Python-Client (`github.com/garmin/connect-personal-api-python`,
+Apache-2.0). **Request- und Response-Schemas fehlen bewusst** – die Seite
+wurde mit zugeklappten Modellen gespeichert, die Properties standen nie
+darin, und erfundene Felder wären schlimmer als keine.
+
+**Der Befund, der den Umbau klein macht: es sind dieselben Pfade.**
+
+```
+/activitylist-service/activities/search/activities   ← nutzen wir schon
+/activity-service/activity/{activityId}              ← nutzen wir schon
+```
+
+Das Programm ist kein Neubau, sondern dieselbe Connect-API auf einem
+dokumentierten Host (`personal.connectapi.garmin.com`) mit offizieller
+Anmeldung. `GarminActivityClient` bliebe in der Sache, wie er ist.
+
+In der Schema-Liste stehen außerdem `DiveInfoDTO`, `DiveSettingsDTO`,
+`DiveGasDTO`, `SummarizedDiveInfoDTO` und `SummarizedDiveGasDTO` – die
+Tauchdaten sind also Teil des offiziellen Modells und nicht etwas, das
+der offizielle Weg wegschneidet. **Welche Felder genau, ist offen** und
+muss an einem echten Tauchgang geprüft werden, bevor irgendetwas
+umgebaut wird.
+
+#### Was sich ändert
+
+| | heute | mit Personal API |
+|---|---|---|
+| Anmeldung | E-Mail + Passwort über `sso.garmin.com`, MFA, Cookie-Jar | Schlüssel aus Connect, einmal eingefügt |
+| Token | `accessToken` + `refreshToken`, Laufzeit unbekannt | Bearer bis 24 h, **kein** Refresh-Token |
+| Erneuern | `GarminAuthClient.refresh(session)` | neues Token gegen denselben Schlüssel |
+| Bricht bei | Cloudflare/WAF, geänderten Interna | Ablauf des Schlüssels (max. 1 Jahr) |
+
+#### Wo der Code aufgeht
+
+Die Nähte liegen günstig, weil es jeweils genau eine Stelle ist:
+
+- **`GarminActivityClient._get`** setzt als einzige Stelle den
+  `Authorization`-Header und die Basis-URL. Beides sind Felder, keine
+  Logik.
+- **`AccountsController.ensureFreshSession`** ist der einzige Ort, an dem
+  eine Sitzung erneuert wird. Daraus würde „habe ich ein Token, das noch
+  mindestens eine Stunde gilt? sonst hol ein neues" – nach demselben
+  Muster, das `PersonalApiAuthenticator` in Garmins Client verwendet.
+- **`GarminSession`** verliert `refreshToken` und `diClientId` und
+  bekommt stattdessen den Schlüssel und das Ablaufdatum des Tokens (das
+  im `exp`-Claim des JWT steht, also ablesbar ist statt geraten).
+- **`GarminAuthClient` entfällt fast vollständig** – SSO-Formular,
+  MFA-Fluss, Service-Ticket, die Liste der internen Client-IDs. Übrig
+  bleibt ein `POST` mit `Authorization: ApiKey <key>`, dessen Antwort das
+  rohe JWT als Text ist, nicht als JSON.
+
+Der Name des Accounts kommt heute aus der Anmeldung. Ohne Login liefert
+ihn `/userprofile-service/userprofile/settings` – derselbe Aufruf könnte
+prüfen, ob ein eingefügter Schlüssel überhaupt gültig ist, bevor er
+gespeichert wird.
+
+#### Was dabei besser wird
+
+**Keine fremden Passwörter mehr.** Heute tippt jeder Mittaucher sein
+Garmin-Passwort in ein Tablet, das ihm nicht gehört. Ein Personal Key
+wird von jeder Person im eigenen Account erzeugt, ist lesend, zeitlich
+begrenzt und jederzeit widerrufbar. Für eine App, die ausdrücklich
+mehrere Konten auf einem geteilten Gerät führt, ist das die ehrlichere
+Bauform – und der Mehr-Account-Gedanke bleibt unverändert, nur die
+Zugangsart pro Konto ändert sich.
+
+**Der Login-Bruch verschwindet.** `garmin_auth_client.dart` warnt heute
+selbst, dass die Anmeldung an einer WAF scheitern kann und das kein
+Fehler ist, den man wegretryen soll. Diese Fehlerklasse fällt weg.
+
+**Die FIT-Datei kommt offiziell.**
+`GET /download-service/files/activity/{activityId}` liefert laut Garmins
+Client ein ZIP. `FitDiveImporter` liest FIT-Tauchgänge bereits – das wäre
+ein zweiter, belastbarer Weg an die Werte, falls das JSON-Summary weniger
+mitbringt als die interne Antwort heute.
+
+#### Was offen ist, bevor man anfängt
+
+1. **Liefert das JSON dieselben Tauchfelder?** Maximaltiefe, Grundzeit,
+   Deko-Flag, Wasserart und vor allem der Sub-Typ (Apnoe, CCR, Single /
+   Multi Gas) treiben Abzeichen, Filter und QR-Payload. Ein echter
+   Tauchgang über beide Wege abgeholt und verglichen beantwortet das in
+   zehn Minuten – dieselbe Methode, die die SSI-Felder geklärt hat.
+2. **Nimmt `activityType=diving` dort dieselben Werte an?** Der Parameter
+   heißt gleich; ob die Sub-Typ-Regel gleich ist, sagt die Spec nicht.
+3. **Deckt die Lizenz eine verteilte App?** Die Personal-Stufe ist für
+   Werkzeuge gedacht, die man selbst betreibt. Jeder Nutzer mit eigenem
+   Schlüssel auf dem eigenen Gerät trifft das dem Sinn nach – es ist aber
+   die Art Klausel, die man liest, bevor man umbaut. Die Startup-Stufe
+   wäre die formale Alternative, arbeitet aber push-basiert mit
+   Callback-URL und setzt damit einen Server voraus, den diese App nicht
+   hat und nicht haben will.
+4. **Ablauf des Schlüssels.** Spätestens nach einem Jahr muss jede Person
+   einen neuen erzeugen. Die App müsste das vorher sichtbar machen,
+   statt eines Tages still keine Tauchgänge mehr zu laden.
+
+#### Reihenfolge, wenn es losgeht
+
+Der alte Weg bleibt bestehen, solange das nicht geklärt ist – ein
+zweiter Anmeldeweg neben dem bestehenden, nicht als Ersatz. Erst wenn an
+einem echten Konto belegt ist, dass die Tauchfelder vollständig
+ankommen, lohnt die Frage, ob der SSO-Fluss ganz verschwindet.
+
 ### Das Übertragen mehrerer Tauchgänge neu zugänglich machen
 
 Der Weg dorthin ist ausgebaut – das Auswahl-Symbol in der Tauchgangs-Liste
