@@ -43,7 +43,14 @@ dependencies:
   fit_tool: ^1.0.5
   file_picker: ^12.3.0
   dio_cookie_manager: ^3.5.0
-  mobile_scanner: ^7.4.0
+  # Pinned, not a range: 7.4.2 rewrote the plugin's Android build from
+  # Groovy to Kotlin DSL and leaves compiling its own .kt sources to AGP's
+  # built-in Kotlin. This project sets android.builtInKotlin=false (the
+  # Flutter template does), so the plugin applies KGP imperatively instead
+  # - and in that combination its MobileScannerPlugin class never reached
+  # the compile classpath: the build failed in GeneratedPluginRegistrant
+  # with "cannot find symbol MobileScannerPlugin". 7.4.0 builds.
+  mobile_scanner: 7.4.0
   flutter_map: ^8.3.2
   latlong2: ^0.10.1
 
