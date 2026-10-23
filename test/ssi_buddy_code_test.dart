@@ -229,4 +229,64 @@ void main() {
       );
     });
   });
+
+  group('SsiBuddyCode payload injection', () {
+    test('a semicolon in a name does not become another field', () {
+      // The attack this closes: names arrive with the SSI logbook import,
+      // so they are whatever the other person wrote in their own profile -
+      // and this device hands them on as a QR code. A crafted last name
+      // would otherwise show that person as an SSI Professional on
+      // whatever scans it.
+      const buddy = SsiBuddyCode(
+        memberId: '99',
+        firstName: 'Cem',
+        lastName: 'Yilmaz;leaderNr:110890',
+      );
+
+      final payload = buddy.toPayload();
+      expect(payload, 'buddy;99;firstName:Cem;lastName:Yilmaz,leaderNr:110890');
+
+      // Read back, it is one member with no professional number - which is
+      // the property that matters, not the exact spelling above.
+      final parsed = SsiBuddyCode.tryParse(payload)!;
+      expect(parsed.leaderNumber, isNull);
+      expect(parsed.isProfessional, isFalse);
+      expect(parsed.lastName, 'Yilmaz,leaderNr:110890');
+    });
+
+    test('every free-text field is covered, the number included', () {
+      const buddy = SsiBuddyCode(
+        memberId: '9;9',
+        firstName: 'A;b',
+        lastName: 'C;d',
+        email: 'e;f@example.com',
+        leaderNumber: '1;2',
+      );
+
+      // Five values, so five segments plus the marker - no more.
+      expect(buddy.toPayload().split(';'), hasLength(6));
+    });
+
+    test('a line break cannot split the payload either', () {
+      const buddy = SsiBuddyCode(memberId: '7', lastName: 'A\r\nB');
+
+      expect(buddy.toPayload(), isNot(contains('\n')));
+      expect(buddy.toPayload(), 'buddy;7;lastName:A,B');
+    });
+
+    test('an ordinary name is left exactly as it is', () {
+      // The centre name SSI itself writes carries a comma; nothing about
+      // this may touch it.
+      const buddy = SsiBuddyCode(
+        memberId: '3902893',
+        firstName: 'Andreas',
+        lastName: 'Sautermeister',
+      );
+
+      expect(
+        buddy.toPayload(),
+        'buddy;3902893;firstName:Andreas;lastName:Sautermeister',
+      );
+    });
+  });
 }

@@ -368,4 +368,29 @@ void main() {
       expect(payload, contains('datetime:202401050703'));
     });
   });
+
+  group('SsiQrPayloadBuilder injection', () {
+    test("a diver's name cannot add fields to the dive payload", () {
+      // The dive payload carries the diver's name, and that name came from
+      // their own SSI profile by way of a logbook import. A crafted one
+      // must not be able to reach into the dive's own fields - deco:1
+      // would file the dive as a decompression dive on whatever scans it.
+      final payload = SsiQrPayloadBuilder.build(
+        strings: _s,
+        _dive(
+          dateTime: DateTime(2025, 11, 7, 10, 50),
+          maxDepthMeters: 28.0,
+          duration: const Duration(minutes: 54),
+        ),
+        diver: const SsiBuddyCode(
+          memberId: '3902893',
+          firstName: 'Andreas',
+          lastName: 'Sautermeister;deco:1',
+        ),
+      );
+
+      expect(payload, contains('user_lastname:Sautermeister,deco:1'));
+      expect(payload, isNot(contains(';deco:1')));
+    });
+  });
 }

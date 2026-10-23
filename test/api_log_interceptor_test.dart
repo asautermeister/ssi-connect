@@ -79,5 +79,59 @@ void main() {
       expect(text, isNot(contains('nested-secret')));
       expect(text, contains('SUCCESSFUL'));
     });
+
+    test("a buddy's personal data does not reach the log", () {
+      // The real shape of one logbook_buddies entry. The log is built to
+      // be copied out and pasted somewhere - the import already drops date
+      // of birth, city, phone and photo on purpose, and the log must not
+      // become the way they leave the device instead.
+      final text = redact({
+        'logbook_buddies': [
+          {
+            'buddy_master_id': 3902893,
+            'firstname': 'Andreas',
+            'lastname': 'Sautermeister',
+            'email': 'andreas@example.com',
+            'dob': '1984-04-10',
+            'city': 'Oberhaching',
+            'phone': '+49 170 1234567',
+            'image': 'https://my.divessi.com/img/3902893.png',
+            'deleted': 0,
+          },
+        ],
+      });
+
+      for (final personal in const [
+        'Andreas',
+        'Sautermeister',
+        'andreas@example.com',
+        '1984-04-10',
+        'Oberhaching',
+        '1234567',
+        '3902893.png',
+      ]) {
+        expect(text, isNot(contains(personal)), reason: personal);
+      }
+
+      // The shape still has to be readable, or the log stops being useful:
+      // which fields came back, and the member number that identifies the
+      // entry without naming anybody.
+      expect(text, contains('firstname'));
+      expect(text, contains('buddy_master_id'));
+      expect(text, contains('3902893'));
+      expect(text, contains('deleted'));
+    });
+
+    test('dive values are not mistaken for personal data', () {
+      final text = redact({
+        'maxDepth': 1149.3,
+        'locationName': 'Zakynthos',
+        'minTemperature': 22.0,
+      });
+
+      expect(text, contains('1149.3'));
+      expect(text, contains('Zakynthos'));
+      expect(text, contains('22'));
+    });
   });
 }

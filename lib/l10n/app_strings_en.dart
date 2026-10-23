@@ -198,8 +198,6 @@ class AppStringsEn extends AppStrings {
   String diveOfDayAndType(int number, String type) => 'Dive $number · $type';
 
   @override
-  String diveOfDayTitle(int number) => 'Dive $number of the day';
-  @override
   String diveNumberTitle(int number) => 'Dive #$number';
 
   @override
@@ -286,12 +284,6 @@ class AppStringsEn extends AppStrings {
   String get withoutRegion => 'No region';
   @override
   String get ssiLogbook => 'SSI logbook';
-  @override
-  String knownDiveSites(int count) =>
-      count == 1 ? '1 dive site known' : '$count dive sites known';
-  @override
-  String knownBuddies(int count) =>
-      count == 1 ? '1 buddy stored' : '$count buddies stored';
   @override
   String lastSyncedAt(String timestamp) => 'Last synced: $timestamp';
   @override

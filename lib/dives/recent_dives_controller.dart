@@ -110,9 +110,6 @@ class RecentDivesController extends ChangeNotifier {
   /// True once a load has been started, whatever came of it.
   bool get hasLoaded => _started && !isLoading;
 
-  /// When [accountId] was last asked, or null if never.
-  DateTime? lastAttemptAt(String accountId) => _lastAttemptAt[accountId];
-
   /// Accounts whose fetch failed. The screen names them rather than
   /// pretending they simply have no dives.
   int get failedCount => _byAccountId.values.where((l) => l.hasError).length;

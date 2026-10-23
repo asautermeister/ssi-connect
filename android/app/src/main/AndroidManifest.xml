@@ -7,7 +7,14 @@
     <application
         android:label="SSI Connect"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/ic_launcher"
+        android:allowBackup="false"
+        android:fullBackupContent="false">
+        <!-- No backup: everything this app stores sits in the encrypted
+             keystore, whose keys are not part of a backup. A restore would
+             bring back blobs that no key on the new device can open. The
+             dives come back from Garmin anyway, and the SSI numbers from
+             the next sync. -->
         <activity
             android:name=".MainActivity"
             android:exported="true"

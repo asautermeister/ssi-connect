@@ -136,7 +136,6 @@ abstract class AppStrings {
 
   // ------------------------------------------------------------ dive detail
 
-  String diveOfDayTitle(int number);
   String diveNumberTitle(int number);
   String get values;
   String get duration;
@@ -181,8 +180,6 @@ abstract class AppStrings {
   /// or imported before the region was kept.
   String get withoutRegion;
   String get ssiLogbook;
-  String knownDiveSites(int count);
-  String knownBuddies(int count);
   String lastSyncedAt(String timestamp);
   String ssiBuddiesImported(int added);
   String get noSsiAccountConnected;

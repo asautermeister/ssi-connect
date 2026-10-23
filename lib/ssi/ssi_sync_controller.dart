@@ -75,8 +75,6 @@ class SsiSyncController extends ChangeNotifier {
   /// it is what decides whether a given account is due at all.
   final _lastSyncAt = <String, DateTime>{};
 
-  DateTime? lastSyncAtFor(String accountId) => _lastSyncAt[accountId];
-
   /// The oldest of them, which is the honest answer to "how current is what
   /// I see?" when several logbooks feed one screen. Null until the first
   /// sync of the first account.

@@ -121,4 +121,25 @@ void main() {
       );
     });
   });
+
+  group('SsiCenterCode payload injection', () {
+    test('a semicolon in the name does not become another field', () {
+      const center = SsiCenterCode(centerId: '718019', name: 'Nero;name:X');
+
+      expect(center.toPayload(), 'center;718019;name:Nero,name:X');
+      expect(SsiCenterCode.tryParse(center.toPayload())!.name, 'Nero,name:X');
+    });
+
+    test("SSI's own comma in a centre name survives untouched", () {
+      const center = SsiCenterCode(
+        centerId: '718019',
+        name: 'Nero-Sport Diving Center, Zakynthos',
+      );
+
+      expect(
+        center.toPayload(),
+        'center;718019;name:Nero-Sport Diving Center, Zakynthos',
+      );
+    });
+  });
 }
