@@ -6,6 +6,36 @@ Git-Log.
 
 ## Fehler
 
+### Das Trennzeichen der QR-Payloads wird nicht escaped
+
+SSIs Format trennt Felder mit `;`. Beim Bauen eines Payloads werden
+Freitexte unverändert eingesetzt:
+
+```dart
+if (firstName != null) 'firstName:$firstName',        // ssi_buddy_code.dart
+['center', centerId, if (name != null) 'name:$name']  // ssi_center_code.dart
+fields.add('user_lastname:$lastName');                // ssi_qr_payload_builder.dart
+```
+
+Ein Nachname `Müller;leaderNr:110890` erzeugt beim Empfänger ein
+zusätzliches Feld – der Buddy erschiene dort als SSI Professional.
+
+**Der Weg dorthin ist real, nicht konstruiert:** Namen kommen aus dem
+SSI-Logbuch-Import, stammen also aus dem Profil der anderen Person, und
+dieses Gerät reicht sie als QR-Code weiter. Von Hand eingetippt geht es
+genauso.
+
+Das **Parsen ist sauber** – `tryParse` trennt zuerst an `;`, ein
+Semikolon kann also beim Scannen nicht in ein Feld geraten. Die Lücke
+sitzt ausschließlich im Bauen, und damit an drei Stellen, die
+zusammengehören.
+
+Zu klären ist, was an die Stelle des Zeichens tritt. Weglassen ändert
+den Namen still; ein Ersatzzeichen (etwa ein Komma, das SSI selbst in
+Basis-Namen verwendet) bleibt lesbar. Was SSI tut, wenn ein echter Name
+ein Semikolon enthält, weiß niemand – eher nichts, weil deren eigenes
+Formular es vermutlich nicht zulässt.
+
 ### Der zugeordnete Tauchplatz wird nicht gespeichert
 
 Nichts sieht kaputt aus, aber eine ausdrückliche Entscheidung geht
@@ -39,6 +69,85 @@ beim Übernahme-Haken.
 **Nebeneffekt, wenn es liegt:** Damit wäre auch ein Filter „ohne
 Tauchplatz" auf der Tauchgangs-Liste möglich, der heute nicht geht, weil
 niemand weiß, welche Tauchgänge einen haben.
+
+## Aufräumen und Härten
+
+Aus einem Durchgang durch den ganzen Code am 23.10.2026, einmal auf
+Sicherheit (an OWASP entlang) und einmal auf Überflüssiges. **Nichts
+davon ist kritisch**, und vieles ist ausdrücklich in Ordnung: keine
+TLS-Overrides, kein Cleartext-Traffic, keine ATS-Ausnahme, der
+Cookie-Jar nur im Speicher, `Authorization`-Header nie im Log, nur die
+Kamera-Berechtigung, und alle sieben Ablagen ohne Ausnahme über
+`FlutterSecureStorage`.
+
+### Personendaten Dritter landen im API-Log
+
+`ApiLogInterceptor` redigiert Geheimnisse gründlich – aber nur
+*Schlüssel*, nicht *Inhalte*. Die Antwort auf `get_divelog` enthält
+`logbook_buddies` mit Namen, Mitgliedsnummern und Mailadressen anderer
+Personen; die ersten 1200 Zeichen davon stehen im Log. Und das Log ist
+zum Kopieren und Teilen gebaut.
+
+Das steht quer zur eigenen Linie: beim Buddy-Import werden Geburtsdatum,
+Stadt, Telefon und Foto bewusst verworfen – über das Log kann genau
+diese Art Daten das Gerät trotzdem verlassen. Entweder bekannte
+PII-Schlüssel mitredigieren (`email`, `firstname`, `lastname`) oder beim
+Kopieren darauf hinweisen.
+
+### Kleinigkeiten an der Plattform-Konfiguration
+
+- **`android:allowBackup` ist nicht gesetzt**, Android nimmt damit
+  `true`. Die Schlüssel liegen im Keystore und werden nicht mitgesichert,
+  ein Angreifer bekäme aus dem Backup also nur unlesbare Blobs. Das
+  eigentliche Problem ist die Wiederherstellung: verschlüsselte Daten
+  ohne passenden Schlüssel. `false` ist die ehrlichere Angabe.
+- **Secure Storage ohne explizite Optionen.** An allen sieben Stellen
+  steht `const FlutterSecureStorage()`, nirgends `AndroidOptions` oder
+  `IOSOptions`. Damit gilt der Paket-Default – und der hat sich zwischen
+  Hauptversionen schon geändert. Explizit gesetzt kann ein Update die
+  Ablage nicht stillschweigend abschwächen.
+- **Der Query-String wird im Log nicht redigiert.** `_fullUrl` schreibt
+  Query-Werte wörtlich. Heute harmlos: dort stehen nur `clientId`,
+  `locale`, `service`, `activityType`, `limit`, `start` – Passwort und
+  Token reisen im Body. Es ist Vorsorge für den Tag, an dem ein Endpunkt
+  doch ein Token in die URL legt.
+
+### Nicht mehr aufgerufener Code
+
+Von Hand nachgeprüft, Fehlalarme sind aussortiert (`AccountColor`-Werte
+sind über `AccountColor.values` im Farbwähler erreichbar,
+`isSupported`/`shouldReload` sind Framework-Overrides).
+
+| Ort | Was |
+|---|---|
+| `garmin_activity_client.dart:102` | `getActivityDetail` – nirgends aufgerufen. Die App benutzt den Detail-Endpunkt gar nicht, nur die Liste |
+| `recent_dives_controller.dart:114` | `lastAttemptAt(accountId)` – nie gelesen |
+| `ssi_sync_controller.dart:78` | `lastSyncAtFor(accountId)` – nie aufgerufen; benutzt wird nur der Gesamt-Getter `lastSyncAt` |
+| `app_strings*.dart` | `diveOfDayTitle`, `knownDiveSites`, `knownBuddies` – je drei Dateien, nirgends benutzt |
+
+Nur aus Tests heraus erreichbar, in `lib` tot: `AppInfo.versionName`,
+`SsiBuddyCode.isProfessional`, `RecentDivesController.hasLoaded`,
+`SsiSyncController.lastBuddyCount`. **Nicht blind löschen** – wo der Test
+eine Eigenschaft absichert, ist er der Grund für die Existenz. Bei
+`versionName` sieht es nach einem Rest aus.
+
+`SsiSyncController.busyAccountId` wird ebenfalls nie gelesen, gehört aber
+nicht hierher: es ist die halbe Verkabelung für den Fortschrittsbalken
+weiter unten und sollte dort verwendet statt hier entfernt werden.
+
+### Drei fast identische Repositories
+
+`ssi_buddy_repository`, `ssi_center_repository` und `dive_site_repository`
+sind je 37–43 Zeilen und unterscheiden sich nach Umbenennen in vier:
+Schlüssel, Typ, Doc-Kommentar. Eine generische Basis über
+`toJson`/`fromJson` ließe je sechs Zeilen Unterklasse übrig, die ihren
+eigenen Kommentar behält – rund 60 Zeilen weniger.
+
+**Die drei Controller dagegen nicht zusammenlegen.** `save`,
+`addAllNew`, `remove` und `_sorted` sehen zwar gleich aus, aber
+`DiveSitesController` hat eigene Logik bekommen (Umkreis-Suche,
+Region-Nachtrag beim Import). Eine gemeinsame Basis würde die
+Unterschiede verstecken statt sie zu zeigen.
 
 ## Ideen
 
