@@ -54,6 +54,47 @@ Erledigt und deshalb hier nicht mehr aufgeführt: das fehlende Escaping
 der QR-Payloads, die Personendaten Dritter im API-Log, `allowBackup` und
 vier nicht mehr aufgerufene Member. Steht im Git-Log.
 
+### Built-in Kotlin: geht erst nach dem Flutter-Update
+
+Beim Start warnt Flutter, dass `mobile_scanner` das Kotlin-Gradle-Plugin
+(KGP) anwendet und künftige Flutter-Versionen damit nicht mehr bauen.
+Dieselbe Sache hat den Build zerlegt, als `mobile_scanner` kurzzeitig auf
+7.4.2 stand – das Plugin ist deshalb fest auf 7.4.0 genagelt.
+
+Naheliegend wäre, `android.builtInKotlin=false` aus
+`android/gradle.properties` zu entfernen. **Das geht heute nicht.**
+Flutters eigene Anleitung sagt:
+
+> Flutter 3.44 added support for AGP 9 with built-in Kotlin disabled
+> (`android.builtInKotlin=false`), while enabling built-in Kotlin
+> (`android.builtInKotlin=true`) requires Flutter 3.47 or later.
+
+Dieses Projekt ist auf **3.44.8** festgelegt. Das Flag steht also richtig,
+und zwar nicht aus Versehen: Flutter schreibt es selbst in bestehende
+Projekte (`disable_built_in_kotlin_migration.dart` im SDK). Die Warnung
+ist auf dieser Version erwartbar und folgenlos – die App läuft.
+
+**Die Reihenfolge, wenn es angegangen wird:**
+
+1. Flutter 3.44.8 → 3.47.x (aktuell ist 3.47.8). Das ist der eigentliche
+   Schritt, alles andere hängt daran.
+2. `android.builtInKotlin=true` setzen.
+3. `org.jetbrains.kotlin.android` aus `android/settings.gradle.kts`
+   entfernen. Der `kotlin { compilerOptions { jvmTarget } }`-Block in
+   `app/build.gradle.kts` hat schon die Form, die die Anleitung verlangt.
+4. Erst dann `mobile_scanner` auf 7.4.2+ und den Pin in `pubspec.yaml`
+   wieder löschen.
+
+Jeder Schritt braucht einen echten Gerätebuild – ohne Android-SDK ist
+davon nichts prüfbar, und analyze plus Tests sagen dazu nichts.
+
+Eine Unstimmigkeit nebenbei, falls das Plugin erneut Ärger macht:
+`mobile_scanner` 7.4.2 hat auf Built-in Kotlin migriert, deklariert aber
+weiterhin `flutter: ">=3.29.0"`. Flutters Anleitung verlangt von einem so
+migrierten Plugin ausdrücklich `>=3.44.0`. Das Paket verspricht also
+Verträglichkeit mit Flutter-Versionen, die nicht leisten können, was sein
+Build-Skript voraussetzt.
+
 ### Kleinigkeiten an der Plattform-Konfiguration
 
 - **Secure Storage: der Paket-Default ist richtig, nicht zu „härten".**
