@@ -56,12 +56,20 @@ vier nicht mehr aufgerufene Member. Steht im Git-Log.
 
 ### Built-in Kotlin ist umgestellt
 
-Erledigt: Flutter 3.47.8, `android.builtInKotlin=true`, `mobile_scanner`
-^7.4.2 und die KGP-Deklaration aus `android/settings.gradle.kts`. Kein
-Plugin wendet das Kotlin-Gradle-Plugin mehr an, AGP 9 übersetzt alles
-Kotlin selbst, und die Warnung beim Start ist weg.
+Erledigt: Flutter 3.47.8, `android.builtInKotlin=true` und
+`mobile_scanner` ^7.4.2. Kein Plugin wendet das Kotlin-Gradle-Plugin
+mehr an, AGP 9 übersetzt alles Kotlin selbst, die Warnung beim Start ist
+weg.
 
-Zwei Dinge, die beim nächsten Gradle-Ärger Zeit sparen:
+**Die KGP-Deklaration in `android/settings.gradle.kts` muss trotzdem
+bleiben.** Sie wurde einmal entfernt, weil sie niemand mehr anwendet –
+und der Build brach sofort: die Zeile legt zugleich die Kotlin-Version
+des Projekts fest, und der Flutter-Gradle-Plugin prüft die. Ohne sie
+greift die Version, die AGP 9.0.1 mitbringt (2.2.10), und die liegt
+unter Flutters Minimum von 2.2.20. `apply false` heißt eben nicht
+„wirkungslos".
+
+Drei Dinge, die beim nächsten Gradle-Ärger Zeit sparen:
 
 - Flutters Warnung über Plugins, die KGP anwenden, ist ein **rein
   textueller Scan** über die Build-Skripte der Plugins
@@ -70,6 +78,9 @@ Zwei Dinge, die beim nächsten Gradle-Ärger Zeit sparen:
   `apply plugin: 'kotlin-android'` in einem `if`, das nicht mehr zutraf,
   und wurde trotzdem gemeldet. Eine Warnung beweist also nicht, dass KGP
   wirklich angewendet wird – und ihr Ausbleiben nicht das Gegenteil.
+- Scheitert der Build, hängt Flutter eine Box über `android.newDsl` an.
+  Die erschien auch beim Kotlin-Versionsfehler, mit dem sie nichts zu
+  tun hatte. Erst die Zeile unter „What went wrong" lesen.
 - Der Gradle-Wrapper steht auf **9.7.1**, Flutter kennt als höchste
   unterstützte Version **9.3.1** – in 3.44 wie in 3.47. Läuft
   offensichtlich, ist aber ungeprüftes Gebiet und wäre bei merkwürdigem
