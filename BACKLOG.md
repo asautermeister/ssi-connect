@@ -54,36 +54,22 @@ Erledigt und deshalb hier nicht mehr aufgeführt: das fehlende Escaping
 der QR-Payloads, die Personendaten Dritter im API-Log, `allowBackup` und
 vier nicht mehr aufgerufene Member. Steht im Git-Log.
 
-### Built-in Kotlin: die KGP-Deklaration in settings.gradle.kts
+### Built-in Kotlin ist umgestellt
 
-Erledigt sind Flutter 3.47.8, `android.builtInKotlin=true` und
-`mobile_scanner` ^7.4.2 – damit wendet kein Plugin mehr das
-Kotlin-Gradle-Plugin an, und AGP 9 übersetzt deren Kotlin selbst.
+Erledigt: Flutter 3.47.8, `android.builtInKotlin=true`, `mobile_scanner`
+^7.4.2 und die KGP-Deklaration aus `android/settings.gradle.kts`. Kein
+Plugin wendet das Kotlin-Gradle-Plugin mehr an, AGP 9 übersetzt alles
+Kotlin selbst, und die Warnung beim Start ist weg.
 
-Übrig bleibt eine Zeile in `android/settings.gradle.kts`:
-
-```kotlin
-id("org.jetbrains.kotlin.android") version "2.3.20" apply false
-```
-
-Sie macht KGP nur verfügbar, angewendet wird es von niemandem mehr. Das
-App-Modul selbst wendet es ohnehin nie an – `app/build.gradle.kts` lädt
-nur `com.android.application` und das Flutter-Plugin, und sein
-`kotlin { compilerOptions { jvmTarget } }`-Block ist genau die Form, auf
-die die Migrationsanleitung hinausläuft.
-
-Rauswerfen ist naheliegend, aber **ungeprüft**: ohne Android-SDK lässt
-sich hier kein Gradle-Build ausführen, und analyze plus Tests sagen über
-Gradle nichts. Ein eigener Commit wert, kein Beifang.
-
-Zwei Dinge, falls es doch klemmt:
+Zwei Dinge, die beim nächsten Gradle-Ärger Zeit sparen:
 
 - Flutters Warnung über Plugins, die KGP anwenden, ist ein **rein
   textueller Scan** über die Build-Skripte der Plugins
-  (`FlutterPluginUtils.kt`, ausdrücklich dokumentiert). Sie wertet keine
-  Bedingung aus: 7.4.0 trug ein `apply plugin: 'kotlin-android'` in
-  einem `if`, das längst nicht mehr zutraf, und wurde trotzdem gemeldet.
-  Eine Warnung beweist also nicht, dass KGP wirklich angewendet wird.
+  (`FlutterPluginUtils.kt`, dort ausdrücklich begründet). Sie wertet
+  keine Bedingung aus: `mobile_scanner` 7.4.0 trug ein
+  `apply plugin: 'kotlin-android'` in einem `if`, das nicht mehr zutraf,
+  und wurde trotzdem gemeldet. Eine Warnung beweist also nicht, dass KGP
+  wirklich angewendet wird – und ihr Ausbleiben nicht das Gegenteil.
 - Der Gradle-Wrapper steht auf **9.7.1**, Flutter kennt als höchste
   unterstützte Version **9.3.1** – in 3.44 wie in 3.47. Läuft
   offensichtlich, ist aber ungeprüftes Gebiet und wäre bei merkwürdigem

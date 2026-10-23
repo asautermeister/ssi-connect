@@ -20,7 +20,10 @@ pluginManagement {
 plugins {
     id("dev.flutter.flutter-plugin-loader") version "1.0.0"
     id("com.android.application") version "9.0.1" apply false
-    id("org.jetbrains.kotlin.android") version "2.3.20" apply false
+    // No Kotlin Gradle Plugin: with android.builtInKotlin=true, AGP 9
+    // compiles the Kotlin in this app and in every plugin, and none of
+    // them asks for KGP any more. Declaring it here would only make it
+    // available to something that no longer exists.
 }
 
 include(":app")
