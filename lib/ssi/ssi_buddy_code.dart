@@ -1,4 +1,5 @@
 import '../l10n/app_strings.dart';
+import 'ssi_payload_fields.dart';
 
 /// A diver's identity as encoded in the QR code the SSI app shows under
 /// "Dein QR-Code".
@@ -79,12 +80,12 @@ class SsiBuddyCode {
   /// a parser that trims values would read them as empty strings.
   String toPayload() {
     final fields = <String>[
-      if (firstName != null) 'firstName:$firstName',
-      if (lastName != null) 'lastName:$lastName',
-      if (email != null) 'email:$email',
-      if (leaderNumber != null) 'leaderNr:$leaderNumber',
+      if (firstName != null) 'firstName:${ssiPayloadValue(firstName!)}',
+      if (lastName != null) 'lastName:${ssiPayloadValue(lastName!)}',
+      if (email != null) 'email:${ssiPayloadValue(email!)}',
+      if (leaderNumber != null) 'leaderNr:${ssiPayloadValue(leaderNumber!)}',
     ];
-    return ['buddy', memberId, ...fields].join(';');
+    return ['buddy', ssiPayloadValue(memberId), ...fields].join(';');
   }
 
   Map<String, dynamic> toJson() => {

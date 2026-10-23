@@ -1,4 +1,5 @@
 import '../l10n/app_strings.dart';
+import 'ssi_payload_fields.dart';
 
 /// A dive centre as encoded in the QR code the SSI app shows for it.
 ///
@@ -32,8 +33,11 @@ class SsiCenterCode {
 
   /// The payload as SSI writes it, so the centre can be shown as a QR code
   /// for someone else's app to scan.
-  String toPayload() =>
-      ['center', centerId, if (name != null) 'name:$name'].join(';');
+  String toPayload() => [
+    'center',
+    ssiPayloadValue(centerId),
+    if (name != null) 'name:${ssiPayloadValue(name!)}',
+  ].join(';');
 
   Map<String, dynamic> toJson() => {
     'centerId': centerId,

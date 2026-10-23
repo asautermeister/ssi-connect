@@ -3,6 +3,7 @@ import '../models/dive.dart';
 import '../models/dive_type.dart';
 import 'dive_site.dart';
 import 'ssi_buddy_code.dart';
+import 'ssi_payload_fields.dart';
 
 /// Builds the text payload the official SSI app (com.divessi.ssi) expects
 /// when scanning a QR code to import a dive.
@@ -196,11 +197,15 @@ class SsiQrPayloadBuilder {
     if (diver != null) {
       // Names are echoed alongside the id exactly as SSI's own export
       // does; the id is what actually identifies the member.
-      fields.add('user_master_id:${diver.memberId}');
+      fields.add('user_master_id:${ssiPayloadValue(diver.memberId)}');
       final firstName = diver.firstName;
       final lastName = diver.lastName;
-      if (firstName != null) fields.add('user_firstname:$firstName');
-      if (lastName != null) fields.add('user_lastname:$lastName');
+      if (firstName != null) {
+        fields.add('user_firstname:${ssiPayloadValue(firstName)}');
+      }
+      if (lastName != null) {
+        fields.add('user_lastname:${ssiPayloadValue(lastName)}');
+      }
     }
 
     return 'dive;noid;${fields.join(';')}';

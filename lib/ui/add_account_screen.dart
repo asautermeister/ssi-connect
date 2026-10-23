@@ -4,6 +4,7 @@ import '../l10n/app_strings.dart';
 import 'package:provider/provider.dart';
 
 import '../accounts/accounts_controller.dart';
+import '../accounts/models/garmin_account.dart';
 import '../garmin/garmin_auth_exceptions.dart';
 import '../garmin/models/garmin_session.dart';
 
@@ -11,8 +12,18 @@ import '../garmin/models/garmin_session.dart';
 /// first, then - only if Garmin asks for it - an MFA code field. Kept as one
 /// screen rather than a separate MFA route since it's really one flow with
 /// an optional extra step, not two independent destinations.
+///
+/// With [reconnect] set it signs an account that already exists back in.
+/// Same flow, same two steps, one different ending: the session lands on
+/// that account instead of creating a new one, so its colour, its SSI
+/// identity and its cached dives survive. That matters because Garmin's
+/// refresh token expires on a timescale nobody documents, and before this
+/// the only way out was to delete the account and set it up from scratch.
 class AddAccountScreen extends StatefulWidget {
-  const AddAccountScreen({super.key});
+  const AddAccountScreen({super.key, this.reconnect});
+
+  /// The account to sign in again, or null to add a new one.
+  final GarminAccount? reconnect;
 
   @override
   State<AddAccountScreen> createState() => _AddAccountScreenState();
@@ -22,9 +33,15 @@ enum _Step { credentials, mfa }
 
 class _AddAccountScreenState extends State<AddAccountScreen> {
   final _nameController = TextEditingController();
-  final _emailController = TextEditingController();
+  late final _emailController = TextEditingController(
+    // Signing in again is only ever this one account: a different address
+    // would put a stranger's session on this person's entry.
+    text: widget.reconnect?.email ?? '',
+  );
   final _passwordController = TextEditingController();
   final _mfaController = TextEditingController();
+
+  bool get _isReconnect => widget.reconnect != null;
 
   _Step _step = _Step.credentials;
   GarminMfaContext? _mfaContext;
@@ -56,12 +73,7 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
       if (!mounted) return;
       switch (result) {
         case GarminLoginSuccess(:final session):
-          await controller.addAccountFromSuccess(
-            email: _emailController.text.trim(),
-            session: session,
-            displayName: _nameController.text,
-          );
-          if (mounted) Navigator.of(context).pop();
+          await _store(session);
         case GarminLoginMfaRequired(:final mfaContext):
           setState(() {
             _mfaContext = mfaContext;
@@ -78,6 +90,22 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
     }
   }
 
+  /// The one place a finished login is stored, whichever step produced it.
+  Future<void> _store(GarminSession session) async {
+    final controller = context.read<AccountsController>();
+    final existing = widget.reconnect;
+    if (existing != null) {
+      await controller.reconnect(accountId: existing.id, session: session);
+    } else {
+      await controller.addAccountFromSuccess(
+        email: _emailController.text.trim(),
+        session: session,
+        displayName: _nameController.text,
+      );
+    }
+    if (mounted) Navigator.of(context).pop();
+  }
+
   Future<void> _submitMfa() async {
     final mfaContext = _mfaContext;
     if (mfaContext == null) return;
@@ -88,13 +116,11 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
     });
     final controller = context.read<AccountsController>();
     try {
-      await controller.completeMfaAndAddAccount(
-        email: _emailController.text.trim(),
+      final session = await controller.completeMfa(
         context: mfaContext,
         code: _mfaController.text.trim(),
-        displayName: _nameController.text,
       );
-      if (mounted) Navigator.of(context).pop();
+      await _store(session);
     } on GarminAuthException catch (e) {
       setState(() {
         _error = e.message;
@@ -109,7 +135,9 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
   Widget build(BuildContext context) {
     final s = AppStrings.of(context);
     return Scaffold(
-      appBar: AppBar(title: Text(s.addGarminAccount)),
+      appBar: AppBar(
+        title: Text(_isReconnect ? s.signInAgain : s.addGarminAccount),
+      ),
       body: Padding(
         padding: const EdgeInsets.all(24),
         child: ConstrainedBox(
@@ -157,17 +185,22 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
   }
 
   List<Widget> _credentialsFields(AppStrings s) => [
-    TextField(
-      controller: _nameController,
-      decoration: InputDecoration(
-        labelText: s.name,
-        helperText: s.nameOptionalHint,
+    // Signing in again keeps the name it already has, and the address is
+    // not a choice - it is which account this is.
+    if (!_isReconnect) ...[
+      TextField(
+        controller: _nameController,
+        decoration: InputDecoration(
+          labelText: s.name,
+          helperText: s.nameOptionalHint,
+        ),
+        textCapitalization: TextCapitalization.words,
       ),
-      textCapitalization: TextCapitalization.words,
-    ),
-    const SizedBox(height: 12),
+      const SizedBox(height: 12),
+    ],
     TextField(
       controller: _emailController,
+      readOnly: _isReconnect,
       decoration: InputDecoration(labelText: s.garminEmail),
       keyboardType: TextInputType.emailAddress,
       autofillHints: const [AutofillHints.email],

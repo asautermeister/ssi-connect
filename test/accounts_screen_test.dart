@@ -108,6 +108,7 @@ Future<void> _pump(
   required List<GarminAccount> accounts,
   Map<String, List<Dive>> dives = const {},
   Set<String> failing = const {},
+  Set<String> expired = const {},
   Map<String, CachedDives> cached = const {},
   bool offline = false,
   Map<String, List<SsiLoggedDive>> logbooks = const {},
@@ -130,6 +131,12 @@ Future<void> _pump(
       throw GarminAuthException(
         GarminAuthErrorType.offline,
         'Keine Internetverbindung.',
+      );
+    }
+    if (expired.contains(account.id)) {
+      throw GarminAuthException(
+        GarminAuthErrorType.invalidCredentials,
+        'Sitzung abgelaufen - bitte Account neu verbinden.',
       );
     }
     if (failing.contains(account.id)) throw StateError('nicht erreichbar');
@@ -556,6 +563,44 @@ void main() {
       // disappear along with the account list.
       expect(find.text('FIT-Datei importieren'), findsOneWidget);
       expect(find.text('Zuletzt getaucht'), findsNothing);
+    });
+
+    testWidgets('an expired session says so and offers the way back in', (
+      tester,
+    ) async {
+      // What happened on the test device: Garmin stopped accepting the
+      // session, nothing loaded any more, and no screen said what to do.
+      await _pump(
+        tester,
+        accounts: [_account('Andreas')],
+        expired: {'Andreas'},
+      );
+
+      expect(find.textContaining('Sitzung abgelaufen'), findsOneWidget);
+
+      await tester.tap(find.textContaining('Sitzung abgelaufen'));
+      await tester.pumpAndSettle();
+
+      // The sign-in screen, already pointed at this account: the address
+      // is filled in and cannot be changed, and no name field - the
+      // account keeps the one it has.
+      expect(find.text('Erneut anmelden'), findsWidgets);
+      expect(find.text('Andreas@example.com'), findsOneWidget);
+      expect(find.text('Name'), findsNothing);
+    });
+
+    testWidgets('a working account is not told its session expired', (
+      tester,
+    ) async {
+      await _pump(
+        tester,
+        accounts: [_account('Andreas')],
+        dives: {
+          'Andreas': [_dive('a1', DateTime(2025, 11, 8))],
+        },
+      );
+
+      expect(find.textContaining('Sitzung abgelaufen'), findsNothing);
     });
   });
 }

@@ -99,24 +99,6 @@ class GarminActivityClient {
     return results;
   }
 
-  Future<GarminActivity> getActivityDetail(
-    GarminSession session,
-    String activityId,
-  ) async {
-    final response = await _get(
-      session,
-      '/activity-service/activity/$activityId',
-    );
-    final data = response.data;
-    if (data is! Map) {
-      throw GarminAuthException(
-        GarminAuthErrorType.connectionError,
-        'Unerwartete Antwort beim Laden der Tauchgangs-Details.',
-      );
-    }
-    return GarminActivity(data.cast<String, dynamic>());
-  }
-
   Future<Response<dynamic>> _get(
     GarminSession session,
     String path, {

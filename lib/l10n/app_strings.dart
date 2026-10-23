@@ -136,7 +136,6 @@ abstract class AppStrings {
 
   // ------------------------------------------------------------ dive detail
 
-  String diveOfDayTitle(int number);
   String diveNumberTitle(int number);
   String get values;
   String get duration;
@@ -181,8 +180,6 @@ abstract class AppStrings {
   /// or imported before the region was kept.
   String get withoutRegion;
   String get ssiLogbook;
-  String knownDiveSites(int count);
-  String knownBuddies(int count);
   String lastSyncedAt(String timestamp);
   String ssiBuddiesImported(int added);
   String get noSsiAccountConnected;
@@ -231,6 +228,9 @@ abstract class AppStrings {
   /// A logbook that could not be read, and the way back in.
   String syncFailedFor(String account, String message);
   String get signInAgain;
+
+  /// Named on the account whose Garmin session Garmin no longer accepts.
+  String get sessionExpired;
 
   String get fromAccounts;
   String get stored;

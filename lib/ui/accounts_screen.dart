@@ -265,7 +265,14 @@ class _EmptyAccounts extends StatelessWidget {
   }
 }
 
-enum _AccountAction { rename, color, ssiIdentity, clearCache, remove }
+enum _AccountAction {
+  rename,
+  signInAgain,
+  color,
+  ssiIdentity,
+  clearCache,
+  remove,
+}
 
 class _AccountCard extends StatelessWidget {
   const _AccountCard({required this.account, required this.dives});
@@ -314,6 +321,10 @@ class _AccountCard extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(_diveSummary(dives, s), style: theme.textTheme.bodySmall),
                 const SizedBox(height: AppSpacing.xs),
+                // An expired session is the one failure the person has to
+                // act on, so it is named here rather than left to an empty
+                // list and a pull that keeps failing.
+                if (dives.needsSignIn) _ExpiredSession(account: account),
                 if (account.hasSsiIdentity)
                   Text(
                     s.ssiNumber(account.ssiMemberId!),
@@ -332,6 +343,11 @@ class _AccountCard extends StatelessWidget {
             tooltip: s.options,
             onSelected: (action) => switch (action) {
               _AccountAction.rename => _rename(context),
+              _AccountAction.signInAgain => Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => AddAccountScreen(reconnect: account),
+                ),
+              ),
               _AccountAction.color => _pickColor(context),
               _AccountAction.ssiIdentity => Navigator.of(context).push(
                 MaterialPageRoute(
@@ -345,6 +361,10 @@ class _AccountCard extends StatelessWidget {
               PopupMenuItem(
                 value: _AccountAction.rename,
                 child: Text(s.renameAccount),
+              ),
+              PopupMenuItem(
+                value: _AccountAction.signInAgain,
+                child: Text(s.signInAgain),
               ),
               PopupMenuItem(
                 value: _AccountAction.color,
@@ -601,6 +621,48 @@ class _RenameDialogState extends State<_RenameDialog> {
           child: Text(s.save),
         ),
       ],
+    );
+  }
+}
+
+/// "Sitzung abgelaufen · Erneut anmelden" under an account whose refresh
+/// token Garmin no longer accepts.
+///
+/// In the card rather than behind the options menu: this is the state the
+/// person is actually in when nothing loads any more, and the way out has
+/// to be where they are looking.
+class _ExpiredSession extends StatelessWidget {
+  const _ExpiredSession({required this.account});
+
+  final GarminAccount account;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final s = AppStrings.of(context);
+
+    return InkWell(
+      onTap: () => Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => AddAccountScreen(reconnect: account)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            Icons.key_off_outlined,
+            size: 14,
+            color: theme.colorScheme.error,
+          ),
+          const SizedBox(width: AppSpacing.xs),
+          Text(
+            '${s.sessionExpired} · ${s.signInAgain}',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.error,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

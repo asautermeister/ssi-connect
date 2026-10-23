@@ -117,9 +117,11 @@ deshalb ist die App als Tablet-/Zweitgerät-App gedacht und nicht als Handy-App 
 
 ## Wichtige Einschränkungen
 
-- Der Garmin-Login nutzt eine **inoffizielle, reverse-engineerte Schnittstelle** (Garmin bietet
-  keine öffentliche Consumer-API an). Das kann jederzeit durch Änderungen bei Garmin brechen –
-  in dem Fall hilft der FIT-Datei-Import als Fallback.
+- Der Garmin-Login nutzt eine **inoffizielle, reverse-engineerte Schnittstelle**. Das kann
+  jederzeit durch Änderungen bei Garmin brechen – in dem Fall hilft der FIT-Datei-Import als
+  Fallback. Seit dem 21.10.2026 gibt es mit der **Personal API** erstmals einen offiziellen
+  Weg für Privatpersonen; ein Umstieg ist noch nicht erfolgt, siehe `BACKLOG.md` und
+  `docs/garmin-connect-personal-api.openapi.json`.
 - Das SSI-QR-Format ist ebenfalls nicht offiziell dokumentiert, sondern wurde anhand echter
   Exporte aus der SSI-App rekonstruiert (siehe `lib/ssi/ssi_qr_payload_builder.dart`).
 - Fehlt ein Wert in der Quelle, bleibt das entsprechende Feld im QR-Code leer, statt geraten zu

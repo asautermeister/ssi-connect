@@ -42,6 +42,42 @@ class ApiLogInterceptor extends Interceptor {
   /// anything ending in "p" - `"temp":26` among them.
   static const _minTextScrubKeyLength = 3;
 
+  /// Other people's personal data, matched as whole map keys only.
+  ///
+  /// These are not secrets - nothing breaks if they leak - but the log
+  /// exists to be copied out of the app and pasted into a chat or an
+  /// issue, and SSI's `logbook_buddies` answers with the name, member
+  /// number, mail address, date of birth, city, telephone number and photo
+  /// of every diver in the logbook.
+  ///
+  /// That would undo a decision the import already took: it keeps four
+  /// fields and drops date of birth, address, telephone and photo on
+  /// purpose, because a family tablet is no place to accumulate them. The
+  /// log must not be the way they leave the device instead.
+  ///
+  /// Keys only, never a textual scrub: these appear in JSON answers, and
+  /// scrubbing "city" or "image" through free text would mangle prose and
+  /// URLs that have nothing to do with a person.
+  static const _personalKeys = {
+    'firstname',
+    'lastname',
+    'email',
+    'authenticated_email',
+    'dob',
+    'city',
+    'phone',
+    'image',
+    // Garmin names the account holder on every activity it returns, and
+    // links three sizes of their profile photo. Their own data rather
+    // than a stranger's, but the log is still something that gets pasted
+    // into a chat.
+    'ownerdisplayname',
+    'ownerfullname',
+    'ownerprofileimageurlsmall',
+    'ownerprofileimageurlmedium',
+    'ownerprofileimageurllarge',
+  };
+
   static const _maxBodyChars = 1200;
 
   @override
@@ -123,5 +159,8 @@ class ApiLogInterceptor extends Interceptor {
     return result;
   }
 
-  bool _isSecret(String key) => _secretKeys.contains(key.toLowerCase());
+  bool _isSecret(String key) {
+    final lower = key.toLowerCase();
+    return _secretKeys.contains(lower) || _personalKeys.contains(lower);
+  }
 }

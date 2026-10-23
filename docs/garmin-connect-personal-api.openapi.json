@@ -1,0 +1,1227 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Garmin Connect Personal API",
+    "version": "1.0.0",
+    "summary": "Read-only pull access to one's own Garmin Connect data.",
+    "description": "Reconstructed, not official. Paths and operation summaries come from the Personal API Swagger page as saved on 2026-10-23; parameters, the base URL and the token exchange come from Garmin's own Python client (github.com/garmin/connect-personal-api-python, Apache-2.0).\n\nWhat is deliberately absent: request and response schemas. The saved page listed the model *names* only - it was saved with every model collapsed, so no property was ever in the page - and inventing them would produce a document that looks authoritative and is wrong. The names are kept under `x-garmin-schema-names` so nothing is lost.\n\nVerify against the live Swagger docs before relying on it."
+  },
+  "servers": [
+    {
+      "url": "https://personal.connectapi.garmin.com"
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "The token from the token endpoint. Valid up to 24 hours, no refresh token."
+      },
+      "personalApiKey": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "Authorization",
+        "description": "The personal API key, as `ApiKey <key>`. Created in Garmin Connect on the web under Settings, and valid for 30, 90 or 180 days or one year."
+      }
+    }
+  },
+  "paths": {
+    "/activity-service/activity/{activityId}": {
+      "get": {
+        "tags": [
+          "activity-service"
+        ],
+        "summary": "Retrieve an activity's summary, metadata, measurements, split summary, and associated workouts.",
+        "operationId": "activity_service_activity_activityId_",
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid or expired bearer token."
+          }
+        },
+        "x-source": "path and summary from the Swagger page; parameters verified against Garmin's Python client",
+        "parameters": [
+          {
+            "name": "activityId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ]
+      }
+    },
+    "/activity-service/activity/{activityId}/workouts": {
+      "get": {
+        "tags": [
+          "activity-service"
+        ],
+        "summary": "Workouts associated with an activity.",
+        "operationId": "activity_service_activity_activityId_workouts",
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid or expired bearer token."
+          }
+        },
+        "x-source": "path and summary from the Swagger page; parameters verified against Garmin's Python client",
+        "parameters": [
+          {
+            "name": "activityId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ]
+      }
+    },
+    "/activitylist-service/activities/search/activities": {
+      "get": {
+        "tags": [
+          "activitylist-service"
+        ],
+        "summary": "Search a user's activities with filters and pagination, returning matching activity summaries.",
+        "operationId": "activitylist_service_activities_search_activities",
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid or expired bearer token."
+          }
+        },
+        "x-source": "path and summary from the Swagger page; parameters verified against Garmin's Python client",
+        "parameters": [
+          {
+            "name": "start",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 0
+            },
+            "description": "Offset."
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 20
+            }
+          },
+          {
+            "name": "startDate",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "example": "2026-10-23"
+            }
+          },
+          {
+            "name": "endDate",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "example": "2026-10-23"
+            }
+          },
+          {
+            "name": "activityType",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "example": "diving"
+            },
+            "description": "Parent activity type key. Sub-types such as apnea_diving are rejected; they come back under their parent and keep their own activityType.typeKey."
+          }
+        ]
+      }
+    },
+    "/biometric-service/heartRateZones/v2": {
+      "get": {
+        "tags": [
+          "biometric-service"
+        ],
+        "summary": "Heart-rate zones.",
+        "operationId": "biometric_service_heartRateZones_v2",
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid or expired bearer token."
+          }
+        },
+        "x-source": "path and summary from the Swagger page; parameters verified against Garmin's Python client"
+      }
+    },
+    "/download-service/files/activity/{activityId}": {
+      "get": {
+        "tags": [
+          "download-service"
+        ],
+        "summary": "Download activity file.",
+        "operationId": "download_service_files_activity_activityId_",
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "content": {
+              "application/zip": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid or expired bearer token."
+          }
+        },
+        "x-source": "path and summary from the Swagger page; parameters verified against Garmin's Python client",
+        "parameters": [
+          {
+            "name": "activityId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ]
+      }
+    },
+    "/fitnessage-service/fitnessage/v2/{calendarDate}": {
+      "get": {
+        "tags": [
+          "fitnessage-service"
+        ],
+        "summary": "Fitness age for a date.",
+        "operationId": "fitnessage_service_fitnessage_v2_calendarDate_",
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid or expired bearer token."
+          }
+        },
+        "x-source": "path and summary from the Swagger page; parameters verified against Garmin's Python client",
+        "parameters": [
+          {
+            "name": "calendarDate",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "example": "2026-10-23"
+            }
+          }
+        ]
+      }
+    },
+    "/goal-service/goal/user/effective/weightgoal/{startDate}/{endDate}": {
+      "get": {
+        "tags": [
+          "goal-service"
+        ],
+        "summary": "Get effective weight goals.",
+        "operationId": "goal_service_goal_user_effective_weightgoal_startDate_endDate_",
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid or expired bearer token."
+          }
+        },
+        "x-source": "path and summary from the Swagger page; parameters verified against Garmin's Python client",
+        "parameters": [
+          {
+            "name": "startDate",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "example": "2026-10-23"
+            }
+          },
+          {
+            "name": "endDate",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "example": "2026-10-23"
+            }
+          }
+        ]
+      }
+    },
+    "/hrv-service/hrv/daily/{fromDate}/{toDate}": {
+      "get": {
+        "tags": [
+          "hrv-service"
+        ],
+        "summary": "Daily HRV summaries for a range.",
+        "operationId": "hrv_service_hrv_daily_fromDate_toDate_",
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid or expired bearer token."
+          }
+        },
+        "x-source": "path and summary from the Swagger page; parameters verified against Garmin's Python client",
+        "parameters": [
+          {
+            "name": "fromDate",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "example": "2026-10-23"
+            }
+          },
+          {
+            "name": "toDate",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "example": "2026-10-23"
+            }
+          }
+        ]
+      }
+    },
+    "/hrv-service/hrv/{calendarDate}": {
+      "get": {
+        "tags": [
+          "hrv-service"
+        ],
+        "summary": "HRV for a date.",
+        "operationId": "hrv_service_hrv_calendarDate_",
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid or expired bearer token."
+          }
+        },
+        "x-source": "path and summary from the Swagger page; parameters verified against Garmin's Python client",
+        "parameters": [
+          {
+            "name": "calendarDate",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "example": "2026-10-23"
+            }
+          }
+        ]
+      }
+    },
+    "/nutrition-service/food/logs/{date}": {
+      "get": {
+        "tags": [
+          "nutrition-service"
+        ],
+        "summary": "Food logs for a date.",
+        "operationId": "nutrition_service_food_logs_date_",
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid or expired bearer token."
+          }
+        },
+        "x-source": "path and summary from the Swagger page; parameters verified against Garmin's Python client",
+        "parameters": [
+          {
+            "name": "date",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "example": "2026-10-23"
+            }
+          }
+        ]
+      }
+    },
+    "/periodichealth-service/menstrualcycle/dayview/{calendarDate}": {
+      "get": {
+        "tags": [
+          "periodichealth-service"
+        ],
+        "summary": "Get detailed menstrual cycle day view.",
+        "operationId": "periodichealth_service_menstrualcycle_dayview_calendarDate_",
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid or expired bearer token."
+          }
+        },
+        "x-source": "path and summary from the Swagger page; parameters verified against Garmin's Python client",
+        "parameters": [
+          {
+            "name": "calendarDate",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "example": "2026-10-23"
+            }
+          },
+          {
+            "name": "todayDate",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "example": "2026-10-23"
+            }
+          }
+        ]
+      }
+    },
+    "/periodichealth-service/menstrualcycle/summary/{calendarDate}": {
+      "get": {
+        "tags": [
+          "periodichealth-service"
+        ],
+        "summary": "Get menstrual cycle summary for a date.",
+        "operationId": "periodichealth_service_menstrualcycle_summary_calendarDate_",
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid or expired bearer token."
+          }
+        },
+        "x-source": "path and summary from the Swagger page; parameters verified against Garmin's Python client",
+        "parameters": [
+          {
+            "name": "calendarDate",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "example": "2026-10-23"
+            }
+          }
+        ]
+      }
+    },
+    "/personalapitoken-service/personal-api/personal-api-key/token": {
+      "post": {
+        "tags": [
+          "personalapitoken-service"
+        ],
+        "summary": "Exchange a personal API key for a bearer token.",
+        "description": "Send the key as `Authorization: ApiKey <key>`. The answer is the raw JWT as text, not JSON; its `exp` claim carries the expiry. There is no refresh token - ask for a new one.",
+        "operationId": "personal_api_key_token",
+        "security": [
+          {
+            "personalApiKey": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The bearer token, as plain text.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid API key."
+          }
+        },
+        "x-source": "Garmin's Python client (auth.py, constants.py)"
+      }
+    },
+    "/sleep-service/sleep/dailySleep": {
+      "get": {
+        "tags": [
+          "sleep-service"
+        ],
+        "summary": "Daily sleep for a date.",
+        "operationId": "sleep_service_sleep_dailySleep",
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid or expired bearer token."
+          }
+        },
+        "x-source": "path and summary from the Swagger page; parameters verified against Garmin's Python client",
+        "parameters": [
+          {
+            "name": "date",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "example": "2026-10-23"
+            }
+          }
+        ]
+      }
+    },
+    "/sleep-service/sleep/dailySleepSummariesByDate": {
+      "get": {
+        "tags": [
+          "sleep-service"
+        ],
+        "summary": "Daily sleep summaries for a range.",
+        "operationId": "sleep_service_sleep_dailySleepSummariesByDate",
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid or expired bearer token."
+          }
+        },
+        "x-source": "path and summary from the Swagger page; parameters verified against Garmin's Python client",
+        "parameters": [
+          {
+            "name": "startDate",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "example": "2026-10-23"
+            }
+          },
+          {
+            "name": "endDate",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "example": "2026-10-23"
+            }
+          }
+        ]
+      }
+    },
+    "/userprofile-service/userprofile/settings": {
+      "get": {
+        "tags": [
+          "userprofile-service"
+        ],
+        "summary": "The current user's profile settings.",
+        "operationId": "userprofile_service_userprofile_settings",
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid or expired bearer token."
+          }
+        },
+        "x-source": "path and summary from the Swagger page; parameters verified against Garmin's Python client"
+      }
+    },
+    "/usersummary-service/stats/hydration/daily/{startDate}/{endDate}": {
+      "get": {
+        "tags": [
+          "usersummary-service"
+        ],
+        "summary": "Daily hydration statistics.",
+        "operationId": "usersummary_service_stats_hydration_daily_startDate_endDate_",
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid or expired bearer token."
+          }
+        },
+        "x-source": "path and summary from the Swagger page; parameters verified against Garmin's Python client",
+        "parameters": [
+          {
+            "name": "startDate",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "example": "2026-10-23"
+            }
+          },
+          {
+            "name": "endDate",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "example": "2026-10-23"
+            }
+          }
+        ]
+      }
+    },
+    "/usersummary-service/stats/steps/daily/{startDate}/{endDate}": {
+      "get": {
+        "tags": [
+          "usersummary-service"
+        ],
+        "summary": "Daily step statistics.",
+        "operationId": "usersummary_service_stats_steps_daily_startDate_endDate_",
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid or expired bearer token."
+          }
+        },
+        "x-source": "path and summary from the Swagger page; parameters verified against Garmin's Python client",
+        "parameters": [
+          {
+            "name": "startDate",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "example": "2026-10-23"
+            }
+          },
+          {
+            "name": "endDate",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "example": "2026-10-23"
+            }
+          }
+        ]
+      }
+    },
+    "/usersummary-service/stats/stress/daily/{startDate}/{endDate}": {
+      "get": {
+        "tags": [
+          "usersummary-service"
+        ],
+        "summary": "Daily stress statistics.",
+        "operationId": "usersummary_service_stats_stress_daily_startDate_endDate_",
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid or expired bearer token."
+          }
+        },
+        "x-source": "path and summary from the Swagger page; parameters verified against Garmin's Python client",
+        "parameters": [
+          {
+            "name": "startDate",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "example": "2026-10-23"
+            }
+          },
+          {
+            "name": "endDate",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "example": "2026-10-23"
+            }
+          }
+        ]
+      }
+    },
+    "/usersummary-service/usersummary/daily": {
+      "get": {
+        "tags": [
+          "usersummary-service"
+        ],
+        "summary": "User daily summary.",
+        "operationId": "usersummary_service_usersummary_daily",
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid or expired bearer token."
+          }
+        },
+        "x-source": "path from the Swagger page only - parameters beyond the path itself are not known"
+      }
+    },
+    "/usersummary-service/v2/dailysummaries": {
+      "get": {
+        "tags": [
+          "usersummary-service"
+        ],
+        "summary": "User daily summaries for a range.",
+        "operationId": "usersummary_service_v2_dailysummaries",
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid or expired bearer token."
+          }
+        },
+        "x-source": "path and summary from the Swagger page; parameters verified against Garmin's Python client",
+        "parameters": [
+          {
+            "name": "startDate",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "example": "2026-10-23"
+            }
+          },
+          {
+            "name": "endDate",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "example": "2026-10-23"
+            }
+          }
+        ]
+      }
+    },
+    "/weight-service/weight/all/{startDate}/{endDate}": {
+      "get": {
+        "tags": [
+          "weight-service"
+        ],
+        "summary": "All weight entries for a range.",
+        "operationId": "weight_service_weight_all_startDate_endDate_",
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid or expired bearer token."
+          }
+        },
+        "x-source": "path from the Swagger page only - parameters beyond the path itself are not known",
+        "parameters": [
+          {
+            "name": "startDate",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "example": "2026-10-23"
+            }
+          },
+          {
+            "name": "endDate",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "example": "2026-10-23"
+            }
+          }
+        ]
+      }
+    },
+    "/weight-service/weight/range/{startDate}/{endDate}": {
+      "get": {
+        "tags": [
+          "weight-service"
+        ],
+        "summary": "Weight measurements for a range.",
+        "operationId": "weight_service_weight_range_startDate_endDate_",
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid or expired bearer token."
+          }
+        },
+        "x-source": "path and summary from the Swagger page; parameters verified against Garmin's Python client",
+        "parameters": [
+          {
+            "name": "startDate",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "example": "2026-10-23"
+            }
+          },
+          {
+            "name": "endDate",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "example": "2026-10-23"
+            }
+          },
+          {
+            "name": "includeAll",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": true
+            }
+          }
+        ]
+      }
+    },
+    "/wellness-service/wellness/bodyBattery/reports/daily": {
+      "get": {
+        "tags": [
+          "wellness-service"
+        ],
+        "summary": "Daily Body Battery report.",
+        "operationId": "wellness_service_wellness_bodyBattery_reports_daily",
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid or expired bearer token."
+          }
+        },
+        "x-source": "path and summary from the Swagger page; parameters verified against Garmin's Python client",
+        "parameters": [
+          {
+            "name": "startDate",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "example": "2026-10-23"
+            }
+          },
+          {
+            "name": "endDate",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "example": "2026-10-23"
+            }
+          },
+          {
+            "name": "chunks",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ]
+      }
+    },
+    "/wellness-service/wellness/daily/spo2acclimation/{calendarDate}": {
+      "get": {
+        "tags": [
+          "wellness-service"
+        ],
+        "summary": "Daily SpO2 and acclimation.",
+        "operationId": "wellness_service_wellness_daily_spo2acclimation_calendarDate_",
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid or expired bearer token."
+          }
+        },
+        "x-source": "path and summary from the Swagger page; parameters verified against Garmin's Python client",
+        "parameters": [
+          {
+            "name": "calendarDate",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "example": "2026-10-23"
+            }
+          }
+        ]
+      }
+    },
+    "/wellness-service/wellness/dailyHeartRate": {
+      "get": {
+        "tags": [
+          "wellness-service"
+        ],
+        "summary": "Daily heart rate.",
+        "operationId": "wellness_service_wellness_dailyHeartRate",
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid or expired bearer token."
+          }
+        },
+        "x-source": "path and summary from the Swagger page; parameters verified against Garmin's Python client",
+        "parameters": [
+          {
+            "name": "date",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "example": "2026-10-23"
+            }
+          }
+        ]
+      }
+    },
+    "/wellnessactivity-service/activity/summary/range/{fromDate}/{untilDate}": {
+      "get": {
+        "tags": [
+          "wellnessactivity-service"
+        ],
+        "summary": "Wellness activity summaries for a range.",
+        "operationId": "wellnessactivity_service_activity_summary_range_fromDate_untilDate_",
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid or expired bearer token."
+          }
+        },
+        "x-source": "path and summary from the Swagger page; parameters verified against Garmin's Python client",
+        "parameters": [
+          {
+            "name": "fromDate",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "example": "2026-10-23"
+            }
+          },
+          {
+            "name": "untilDate",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "example": "2026-10-23"
+            }
+          }
+        ]
+      }
+    }
+  },
+  "x-garmin-schema-names": [
+    "ActivitySummaryDTO",
+    "ActivityTypeDTO",
+    "EventTypeDTO",
+    "AccessControlRuleDTO",
+    "TimeZoneUnitDTO",
+    "MetadataDTO",
+    "ApplicationFormatDTO",
+    "UserInfoDto",
+    "SensorInfoDTO",
+    "ActivityImageDTO",
+    "EBikeAssistModeInfoDTO",
+    "CalendarEventInfoDTO",
+    "SummaryDTO",
+    "UnitDTO",
+    "DiveInfoDTO",
+    "DiveSettingsDTO",
+    "DiveGasDTO",
+    "SplitSummaryDTO",
+    "GradeValueDTO",
+    "VideoGameInfoDTO",
+    "DeviceDisplayUnitsDTO",
+    "ActivityWorkoutDTO",
+    "WorkoutStepDTO",
+    "SummarizedActivityDTO",
+    "ActivityCommentDTO",
+    "SummarizedExerciseSet",
+    "SummarizedDiveInfoDTO",
+    "SummarizedDiveGasDTO",
+    "MinimalSplitSummaryDTO",
+    "HeartRateZonesDTO",
+    "FitnessAgeDTO",
+    "FitnessAgeComponent",
+    "UserGoalsRangeDTO",
+    "UserGoalDTO",
+    "ConnectDate",
+    "ConnectTimestamp",
+    "UserGoalHighLowRangeDTO",
+    "HrvChartDTO",
+    "HrvSummaryDTO",
+    "BaselineScoreDTO",
+    "HrvReadingDTO",
+    "HrvDailySummaryDTO",
+    "DailyNutritionSummaryDTO",
+    "ThinNutritionContentDTO",
+    "NutritionGoalsDTO",
+    "LocalTime",
+    "FoodDTO",
+    "FoodImageDTO",
+    "FoodMetadataDTO",
+    "NutritionContentDTO",
+    "MealDetailsDTO",
+    "LoggedFoodDTO",
+    "MealDTO",
+    "MenstrualCycleSummaryDTO",
+    "MenstrualCycleAnalysisDTO",
+    "CycleTypeAnalysisDTO",
+    "OverlapCycle",
+    "DetailedMenstrualCycleDayDTO",
+    "DailyMenstrualCycleLogDTO",
+    "BabyMovementDTO",
+    "WeightGoalRangeDTO",
+    "DailySleepDTO",
+    "SleepScoreItem",
+    "SleepNeedDTO",
+    "DailyNapDTO",
+    "SleepAlignmentDto",
+    "UserSettingsDTO",
+    "DayOfWeekDTO",
+    "UnitFormatDTO",
+    "HydrationContainer",
+    "UserDailyHydrationDTO",
+    "StepsDailyStatDTO",
+    "MultiValueWellnessChartItemDTO",
+    "UserDailySummaryDto",
+    "BodyBatteryDynamicFeedbackEventDTO",
+    "BodyBatteryActivityEventDTO",
+    "ApiDocumentListUserDailySummaryV2DTO",
+    "UserDailySummaryV2DTO",
+    "WellnessChronologyV2DTO",
+    "MovementV2DTO",
+    "MovementValueV2DTO",
+    "CaloriesV2DTO",
+    "HeartRateV2DTO",
+    "IntensityMinutesV2DTO",
+    "StressV2DTO",
+    "BodyBatteryV2DTO",
+    "BodyBatteryActivityEventV2DTO",
+    "HydrationV2DTO",
+    "RespirationV2DTO",
+    "PulseOxV2DTO",
+    "JetLagV2DTO",
+    "DateWeightDTO",
+    "WeightRangeDTO",
+    "WeightAverageDTO",
+    "BodyBatteryDailyReportDTO",
+    "BodyBatteryValueDescriptorDTO",
+    "DailySpO2AndAcclimationDTO",
+    "SPO2ValueDescriptorDTO",
+    "SPO2AcclimationValueDescriptorDTO",
+    "MonitoringEnvironmentValueDescriptorDTO",
+    "DailyHeartRateDTO",
+    "HeartRateValueDescriptorDTO",
+    "WellnessActivitySummaryDTO",
+    "SummaryTypeDataDTO",
+    "TimeInZoneDTO",
+    "DeviceMetaDataDTO",
+    "GarminUUID"
+  ]
+}

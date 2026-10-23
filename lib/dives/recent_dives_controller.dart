@@ -40,6 +40,16 @@ class AccountDives {
       error is GarminAuthException &&
       (error! as GarminAuthException).type == GarminAuthErrorType.offline;
 
+  /// Garmin refused the session and no refresh will bring it back.
+  ///
+  /// The one failure a pull-to-refresh cannot fix, and the only one where
+  /// there is something for the person to do - so the account says so and
+  /// offers the way back in, instead of showing an empty list forever.
+  bool get needsSignIn =>
+      error is GarminAuthException &&
+      (error! as GarminAuthException).type ==
+          GarminAuthErrorType.invalidCredentials;
+
   Dive? get latest => dives.isEmpty ? null : dives.first;
 }
 
@@ -109,9 +119,6 @@ class RecentDivesController extends ChangeNotifier {
 
   /// True once a load has been started, whatever came of it.
   bool get hasLoaded => _started && !isLoading;
-
-  /// When [accountId] was last asked, or null if never.
-  DateTime? lastAttemptAt(String accountId) => _lastAttemptAt[accountId];
 
   /// Accounts whose fetch failed. The screen names them rather than
   /// pretending they simply have no dives.

@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ssi_connect/accounts/account_repository.dart';
 import 'package:ssi_connect/accounts/accounts_controller.dart';
+import 'package:ssi_connect/accounts/models/account_color.dart';
 import 'package:ssi_connect/accounts/models/garmin_account.dart';
 import 'package:ssi_connect/garmin/models/garmin_session.dart';
 import 'package:ssi_connect/ssi/ssi_buddy_code.dart';
@@ -114,6 +115,62 @@ void main() {
       final updated = controller.accounts.single;
       expect(updated.ssiMemberId, '3902893');
       expect(updated.session.accessToken, 'a');
+    });
+  });
+
+  group('AccountsController.reconnect', () {
+    test('a fresh session lands on the account that already exists', () async {
+      // The reported failure: Garmin stopped accepting the refresh token on
+      // the test device, nothing loaded any more, and the only way out was
+      // to delete the account and set it up again from scratch.
+      final repository = _InMemoryRepository();
+      final controller = AccountsController(repository: repository);
+      final account = await controller.addAccountFromSuccess(
+        email: 'a@example.com',
+        session: _session,
+        displayName: 'Andreas',
+      );
+      await controller.setSsiIdentity(
+        account.id,
+        const SsiBuddyCode(memberId: '3902893', firstName: 'Andreas'),
+      );
+      await controller.setColor(account.id, AccountColor.blue);
+
+      await controller.reconnect(
+        accountId: account.id,
+        session: const GarminSession(
+          accessToken: 'fresh',
+          refreshToken: 'fresh-r',
+          diClientId: 'c',
+        ),
+      );
+
+      // One account, not two, and the same one: everything hanging off its
+      // id has to survive, or signing in again costs the SSI number, the
+      // colour and the cached dives.
+      final updated = controller.accounts.single;
+      expect(updated.id, account.id);
+      expect(updated.session.accessToken, 'fresh');
+      expect(updated.session.refreshToken, 'fresh-r');
+      expect(updated.displayName, 'Andreas');
+      expect(updated.ssiMemberId, '3902893');
+      expect(updated.color, AccountColor.blue);
+
+      // And it reached storage, not just memory.
+      expect(repository.saved[account.id]!.session.accessToken, 'fresh');
+    });
+
+    test('an unknown id changes nothing', () async {
+      final controller = AccountsController(repository: _InMemoryRepository());
+      await controller.addAccountFromSuccess(
+        email: 'a@example.com',
+        session: _session,
+      );
+
+      await controller.reconnect(accountId: 'nobody', session: _session);
+
+      expect(controller.accounts, hasLength(1));
+      expect(controller.accounts.single.session.accessToken, 'a');
     });
   });
 }

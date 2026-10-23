@@ -40,7 +40,259 @@ beim Übernahme-Haken.
 Tauchplatz" auf der Tauchgangs-Liste möglich, der heute nicht geht, weil
 niemand weiß, welche Tauchgänge einen haben.
 
+## Aufräumen und Härten
+
+Aus einem Durchgang durch den ganzen Code am 23.10.2026, einmal auf
+Sicherheit (an OWASP entlang) und einmal auf Überflüssiges. **Nichts
+davon ist kritisch**, und vieles ist ausdrücklich in Ordnung: keine
+TLS-Overrides, kein Cleartext-Traffic, keine ATS-Ausnahme, der
+Cookie-Jar nur im Speicher, `Authorization`-Header nie im Log, nur die
+Kamera-Berechtigung, und alle sieben Ablagen ohne Ausnahme über
+`FlutterSecureStorage`.
+
+Erledigt und deshalb hier nicht mehr aufgeführt: das fehlende Escaping
+der QR-Payloads, die Personendaten Dritter im API-Log, `allowBackup` und
+vier nicht mehr aufgerufene Member. Steht im Git-Log.
+
+### Built-in Kotlin ist umgestellt
+
+Erledigt: Flutter 3.47.8, `android.builtInKotlin=true` und
+`mobile_scanner` ^7.4.2. Kein Plugin wendet das Kotlin-Gradle-Plugin
+mehr an, AGP 9 übersetzt alles Kotlin selbst, die Warnung beim Start ist
+weg.
+
+**Die KGP-Deklaration in `android/settings.gradle.kts` muss trotzdem
+bleiben.** Sie wurde einmal entfernt, weil sie niemand mehr anwendet –
+und der Build brach sofort: die Zeile legt zugleich die Kotlin-Version
+des Projekts fest, und der Flutter-Gradle-Plugin prüft die. Ohne sie
+greift die Version, die AGP 9.0.1 mitbringt (2.2.10), und die liegt
+unter Flutters Minimum von 2.2.20. `apply false` heißt eben nicht
+„wirkungslos".
+
+Drei Dinge, die beim nächsten Gradle-Ärger Zeit sparen:
+
+- Flutters Warnung über Plugins, die KGP anwenden, ist ein **rein
+  textueller Scan** über die Build-Skripte der Plugins
+  (`FlutterPluginUtils.kt`, dort ausdrücklich begründet). Sie wertet
+  keine Bedingung aus: `mobile_scanner` 7.4.0 trug ein
+  `apply plugin: 'kotlin-android'` in einem `if`, das nicht mehr zutraf,
+  und wurde trotzdem gemeldet. Eine Warnung beweist also nicht, dass KGP
+  wirklich angewendet wird – und ihr Ausbleiben nicht das Gegenteil.
+- Scheitert der Build, hängt Flutter eine Box über `android.newDsl` an.
+  Die erschien auch beim Kotlin-Versionsfehler, mit dem sie nichts zu
+  tun hatte. Erst die Zeile unter „What went wrong" lesen.
+- Der Gradle-Wrapper steht auf **9.7.1**, Flutter kennt als höchste
+  unterstützte Version **9.3.1** – in 3.44 wie in 3.47. Läuft
+  offensichtlich, ist aber ungeprüftes Gebiet und wäre bei merkwürdigem
+  Verhalten der erste Verdacht.
+
+### Kleinigkeiten an der Plattform-Konfiguration
+
+- **Secure Storage: der Paket-Default ist richtig, nicht zu „härten".**
+  Hier stand vorher die Empfehlung, `encryptedSharedPreferences: true`
+  explizit zu setzen – **das wäre falsch gewesen.** In der eingesetzten
+  Version 10.3.1 verschlüsselt der Default auf Android bereits mit
+  AES-GCM und einem RSA-OAEP-gewickelten Schlüssel aus dem
+  Android-Keystore, und `encryptedSharedPreferences` ist ausdrücklich
+  deprecated und fliegt in v11 raus. Auf iOS ist der Default
+  `KeychainAccessibility.unlocked` mit `synchronizable: false`, also
+  lesbar nur bei entsperrtem Gerät und nicht in der iCloud.
+  Die einzige verbleibende Schraube wäre `unlocked_this_device`, womit
+  ein verschlüsseltes iTunes-Backup die Einträge nicht auf ein anderes
+  Gerät tragen könnte. Kleine Verbesserung, aber **ungetestet auf iOS**
+  nichts, was man an der Zugangsdaten-Ablage dreht.
+- **Der Query-String wird im Log nicht redigiert.** `_fullUrl` schreibt
+  Query-Werte wörtlich. Heute harmlos: dort stehen nur `clientId`,
+  `locale`, `service`, `activityType`, `limit`, `start` – Passwort und
+  Token reisen im Body. Es ist Vorsorge für den Tag, an dem ein Endpunkt
+  doch ein Token in die URL legt.
+
+### Nicht mehr aufgerufener Code
+
+Die vier eindeutigen Fälle sind entfernt. Was bleibt, ist das, wo
+Löschen die falsche Antwort wäre:
+
+Nur aus Tests heraus erreichbar, in `lib` tot: `AppInfo.versionName`,
+`SsiBuddyCode.isProfessional`, `RecentDivesController.hasLoaded`,
+`SsiSyncController.lastBuddyCount`. **Nicht blind löschen** – wo der Test
+eine Eigenschaft absichert, ist er der Grund für die Existenz. Bei
+`versionName` sieht es nach einem Rest aus.
+
+`SsiSyncController.busyAccountId` wird nie gelesen, gehört aber nicht
+hierher: es ist die halbe Verkabelung für den Fortschrittsbalken weiter
+unten und sollte dort verwendet statt hier entfernt werden.
+
+Fehlalarme, damit der nächste Durchgang sie nicht erneut herleitet:
+`AccountColor`-Werte sind über `AccountColor.values` im Farbwähler
+erreichbar, `isSupported`/`shouldReload` sind Framework-Overrides von
+`LocalizationsDelegate`.
+
+### Drei fast identische Repositories
+
+`ssi_buddy_repository`, `ssi_center_repository` und `dive_site_repository`
+sind je 37–43 Zeilen und unterscheiden sich nach Umbenennen in vier:
+Schlüssel, Typ, Doc-Kommentar. Eine generische Basis über
+`toJson`/`fromJson` ließe je sechs Zeilen Unterklasse übrig, die ihren
+eigenen Kommentar behält – rund 60 Zeilen weniger.
+
+**Die drei Controller dagegen nicht zusammenlegen.** `save`,
+`addAllNew`, `remove` und `_sorted` sehen zwar gleich aus, aber
+`DiveSitesController` hat eigene Logik bekommen (Umkreis-Suche,
+Region-Nachtrag beim Import). Eine gemeinsame Basis würde die
+Unterschiede verstecken statt sie zu zeigen.
+
 ## Ideen
+
+### Auf Garmins offizielle Personal API umstellen
+
+Garmin hat sein Connect Developer Program am 21.10.2026 umgebaut und
+dabei erstmals eine **Personal**-Stufe geöffnet: kostenlos, lesend, nur
+die eigenen Daten, Pull statt Push. Damit entfällt der Grund, aus dem die
+App heute die interne App-Schnittstelle nachbaut – es gibt jetzt eine für
+Privatpersonen.
+
+Die rekonstruierte Spec liegt unter
+`docs/garmin-connect-personal-api.openapi.json` (27 Pfade). Sie ist aus
+zwei Quellen gebaut: der gespeicherten Swagger-Seite und Garmins eigenem
+Python-Client (`github.com/garmin/connect-personal-api-python`,
+Apache-2.0). **Request- und Response-Schemas fehlen bewusst** – die Seite
+wurde mit zugeklappten Modellen gespeichert, die Properties standen nie
+darin, und erfundene Felder wären schlimmer als keine.
+
+**Der Befund, der den Umbau klein macht: es sind dieselben Pfade.**
+
+```
+/activitylist-service/activities/search/activities   ← nutzen wir schon
+/activity-service/activity/{activityId}              ← nutzen wir schon
+```
+
+Das Programm ist kein Neubau, sondern dieselbe Connect-API auf einem
+dokumentierten Host (`personal.connectapi.garmin.com`) mit offizieller
+Anmeldung. `GarminActivityClient` bliebe in der Sache, wie er ist.
+
+In der Schema-Liste stehen außerdem `DiveInfoDTO`, `DiveSettingsDTO`,
+`DiveGasDTO`, `SummarizedDiveInfoDTO` und `SummarizedDiveGasDTO` – die
+Tauchdaten sind also Teil des offiziellen Modells und nicht etwas, das
+der offizielle Weg wegschneidet. **Welche Felder genau, ist offen** und
+muss an einem echten Tauchgang geprüft werden, bevor irgendetwas
+umgebaut wird.
+
+#### Was sich ändert
+
+| | heute | mit Personal API |
+|---|---|---|
+| Anmeldung | E-Mail + Passwort über `sso.garmin.com`, MFA, Cookie-Jar | Schlüssel aus Connect, einmal eingefügt |
+| Token | `accessToken` + `refreshToken`, Laufzeit unbekannt | Bearer bis 24 h, **kein** Refresh-Token |
+| Erneuern | `GarminAuthClient.refresh(session)` | neues Token gegen denselben Schlüssel |
+| Bricht bei | Cloudflare/WAF, geänderten Interna | Ablauf des Schlüssels (max. 1 Jahr) |
+
+#### Wo der Code aufgeht
+
+Die Nähte liegen günstig, weil es jeweils genau eine Stelle ist:
+
+- **`GarminActivityClient._get`** setzt als einzige Stelle den
+  `Authorization`-Header und die Basis-URL. Beides sind Felder, keine
+  Logik.
+- **`AccountsController.ensureFreshSession`** ist der einzige Ort, an dem
+  eine Sitzung erneuert wird. Daraus würde „habe ich ein Token, das noch
+  mindestens eine Stunde gilt? sonst hol ein neues" – nach demselben
+  Muster, das `PersonalApiAuthenticator` in Garmins Client verwendet.
+- **`GarminSession`** verliert `refreshToken` und `diClientId` und
+  bekommt stattdessen den Schlüssel und das Ablaufdatum des Tokens (das
+  im `exp`-Claim des JWT steht, also ablesbar ist statt geraten).
+- **`GarminAuthClient` entfällt fast vollständig** – SSO-Formular,
+  MFA-Fluss, Service-Ticket, die Liste der internen Client-IDs. Übrig
+  bleibt ein `POST` mit `Authorization: ApiKey <key>`, dessen Antwort das
+  rohe JWT als Text ist, nicht als JSON.
+
+Der Name des Accounts kommt heute aus der Anmeldung. Ohne Login liefert
+ihn `/userprofile-service/userprofile/settings` – derselbe Aufruf könnte
+prüfen, ob ein eingefügter Schlüssel überhaupt gültig ist, bevor er
+gespeichert wird.
+
+#### Was dabei besser wird
+
+**Keine fremden Passwörter mehr.** Heute tippt jeder Mittaucher sein
+Garmin-Passwort in ein Tablet, das ihm nicht gehört. Ein Personal Key
+wird von jeder Person im eigenen Account erzeugt, ist lesend, zeitlich
+begrenzt und jederzeit widerrufbar. Für eine App, die ausdrücklich
+mehrere Konten auf einem geteilten Gerät führt, ist das die ehrlichere
+Bauform – und der Mehr-Account-Gedanke bleibt unverändert, nur die
+Zugangsart pro Konto ändert sich.
+
+**Der Login-Bruch verschwindet.** `garmin_auth_client.dart` warnt heute
+selbst, dass die Anmeldung an einer WAF scheitern kann und das kein
+Fehler ist, den man wegretryen soll. Diese Fehlerklasse fällt weg.
+
+**Die FIT-Datei kommt offiziell.**
+`GET /download-service/files/activity/{activityId}` liefert laut Garmins
+Client ein ZIP. `FitDiveImporter` liest FIT-Tauchgänge bereits – das wäre
+ein zweiter, belastbarer Weg an die Werte, falls das JSON-Summary weniger
+mitbringt als die interne Antwort heute.
+
+#### An einem echten Konto geprüft (23.10.2026)
+
+Ein Personal API Key, fünf echte Tauchgänge über
+`/activitylist-service/activities/search/activities?activityType=diving`
+geholt und Feld für Feld gegen das verglichen, was `GarminActivity`
+liest. **Es ist dieselbe Antwort, Name für Name und Einheit für
+Einheit.**
+
+| gebraucht | kommt an als |
+|---|---|
+| Sub-Typ | `activityType.typeKey` – `apnea_diving`, `single_gas_diving` |
+| Maximaltiefe | `maxDepth` – **in Zentimetern**, `2600.0` = 26 m |
+| Ø-Tiefe | `avgDepth`, ebenfalls Zentimeter |
+| Wassertemperatur | `minTemperature` in °C |
+| Abtauchzähler | `diveCount` |
+| Wasserart | `summarizedDiveInfo.waterDensity` = `1025.0` → Salz |
+| Deko | `isDecoDive` |
+| Position | `startLatitude` / `startLongitude` |
+| Start | `startTimeLocal`, Leerzeichen statt `T` |
+
+Auch die Zentimeter-Eigenart ist identisch – genau die, die in
+`garmin_activity.dart` dokumentiert ist. `activityType=diving` nimmt
+dieselben Werte an und liefert die Sub-Typen mit. Damit sind Frage 1 und
+2 beantwortet: **der Activity-Client bliebe unverändert.**
+
+**Eine echte Lücke: die Tauchgangsnummer fehlt.** Weder in der Liste noch
+in der Detail-Antwort gibt es `diveNumber` oder etwas Gleichwertiges –
+nur `diveCount` (Abtauchvorgänge), `qualifyingDive` und `isDecoDive`. Die
+Überschrift der Detailseite („Tauchgang #260") fiele also auf den Typ
+zurück. Ob die interne Schnittstelle sie heute wirklich liefert, ist der
+Gegentest, der noch fehlt.
+
+**Unerwarteter Fund: die Detail-Antwort trägt `diveInfo`** mit genau den
+Feldern, die der QR-Code heute leer lässt, weil ein Tauchcomputer sie
+nicht aufzeichnet: `buddy`, `visibility`, `current`, `entryType`,
+`surfaceCondition`, `exposureSuit`, `suitThickness`, `weight`. Beim
+geprüften Konto alle `null` – wer sie aber in Garmin Connect pflegt,
+könnte sie von dort in den SSI-Export tragen. Eigene Entscheidung,
+eigener Eintrag wert.
+
+Nebenbei: die Antwort nennt auf **jedem** Eintrag `ownerDisplayName`,
+`ownerFullName` und drei Links aufs Profilfoto. Die sind inzwischen in
+der Log-Redaktion.
+
+#### Was noch offen ist
+
+1. **Deckt die Lizenz eine verteilte App?** Die Personal-Stufe ist für
+   Werkzeuge gedacht, die man selbst betreibt. Jeder Nutzer mit eigenem
+   Schlüssel auf dem eigenen Gerät trifft das dem Sinn nach – es ist aber
+   die Art Klausel, die man liest, bevor man umbaut. Die Startup-Stufe
+   wäre die formale Alternative, arbeitet aber push-basiert mit
+   Callback-URL und setzt damit einen Server voraus, den diese App nicht
+   hat und nicht haben will.
+2. **Ablauf des Schlüssels.** Spätestens nach einem Jahr muss jede Person
+   einen neuen erzeugen. Die App müsste das vorher sichtbar machen,
+   statt eines Tages still keine Tauchgänge mehr zu laden.
+3. **Die Tauchgangsnummer**, siehe oben.
+
+#### Reihenfolge, wenn es losgeht
+
+Ein zweiter Anmeldeweg neben dem bestehenden, nicht als Ersatz. Dass die
+Felder ankommen, ist jetzt belegt; was den SSO-Fluss endgültig überflüssig
+macht, ist die Lizenzfrage, nicht die Technik.
 
 ### Das Übertragen mehrerer Tauchgänge neu zugänglich machen
 
