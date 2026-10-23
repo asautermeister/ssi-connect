@@ -229,6 +229,9 @@ abstract class AppStrings {
   String syncFailedFor(String account, String message);
   String get signInAgain;
 
+  /// Named on the account whose Garmin session Garmin no longer accepts.
+  String get sessionExpired;
+
   String get fromAccounts;
   String get stored;
   String get alsoStored;

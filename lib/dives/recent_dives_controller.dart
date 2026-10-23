@@ -40,6 +40,16 @@ class AccountDives {
       error is GarminAuthException &&
       (error! as GarminAuthException).type == GarminAuthErrorType.offline;
 
+  /// Garmin refused the session and no refresh will bring it back.
+  ///
+  /// The one failure a pull-to-refresh cannot fix, and the only one where
+  /// there is something for the person to do - so the account says so and
+  /// offers the way back in, instead of showing an empty list forever.
+  bool get needsSignIn =>
+      error is GarminAuthException &&
+      (error! as GarminAuthException).type ==
+          GarminAuthErrorType.invalidCredentials;
+
   Dive? get latest => dives.isEmpty ? null : dives.first;
 }
 

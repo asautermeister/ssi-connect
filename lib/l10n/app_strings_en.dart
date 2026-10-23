@@ -380,6 +380,8 @@ class AppStringsEn extends AppStrings {
   @override
   String get signInAgain => 'Sign in again';
   @override
+  String get sessionExpired => 'Session expired';
+  @override
   String get fromAccounts => 'From the accounts';
   @override
   String get stored => 'Stored';

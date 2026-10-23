@@ -40,7 +40,7 @@ class AccountsController extends ChangeNotifier {
 
   /// Starts a login. Returns a [GarminLoginMfaRequired] if the account needs
   /// an MFA code - the caller should show a code field and call
-  /// [completeMfaAndAddAccount] with the result.
+  /// [completeMfa] with the result.
   Future<GarminLoginResult> login({
     required String email,
     required String password,
@@ -48,19 +48,32 @@ class AccountsController extends ChangeNotifier {
     return _authClient.login(email: email, password: password);
   }
 
-  Future<GarminAccount> completeMfaAndAddAccount({
-    required String email,
+  /// Finishes a login that Garmin interrupted with an MFA challenge.
+  ///
+  /// Returns the session rather than storing it: the caller knows whether
+  /// this is a new account or an existing one signing in again.
+  Future<GarminSession> completeMfa({
     required GarminMfaContext context,
     required String code,
-    String? displayName,
-  }) async {
-    final session = await _authClient.completeMfa(context: context, code: code);
-    return _addAccount(
-      email: email,
-      session: session,
-      displayName: displayName,
-    );
+  }) {
+    return _authClient.completeMfa(context: context, code: code);
   }
+
+  /// Puts a fresh session on an account that already exists.
+  ///
+  /// The way back in when the refresh token has expired - which it does,
+  /// on a timescale Garmin does not document. Everything else about the
+  /// account is deliberately left alone: the id it is known by, its
+  /// colour, its SSI identity and its cached dives all survive, because
+  /// the person is the same person. Removing the account and adding it
+  /// again would lose all of that, and that was the only way out before.
+  Future<void> reconnect({
+    required String accountId,
+    required GarminSession session,
+  }) => _updateAccount(
+    accountId,
+    (account) => account.copyWith(session: session),
+  );
 
   Future<GarminAccount> addAccountFromSuccess({
     required String email,

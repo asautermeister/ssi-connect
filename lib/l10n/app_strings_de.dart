@@ -392,6 +392,8 @@ class AppStringsDe extends AppStrings {
   @override
   String get signInAgain => 'Erneut anmelden';
   @override
+  String get sessionExpired => 'Sitzung abgelaufen';
+  @override
   String get fromAccounts => 'Aus den Accounts';
   @override
   String get stored => 'Gespeichert';
