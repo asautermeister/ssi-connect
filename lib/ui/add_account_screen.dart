@@ -8,6 +8,8 @@ import '../accounts/models/garmin_account.dart';
 import '../garmin/garmin_auth_exceptions.dart';
 import '../garmin/models/garmin_session.dart';
 import 'widgets/password_field.dart';
+import 'theme/app_theme.dart';
+import 'garmin_key_screen.dart';
 
 /// Single screen covering the whole "add a Garmin account" flow: credentials
 /// first, then - only if Garmin asks for it - an MFA code field. Kept as one
@@ -211,6 +213,24 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
       controller: _passwordController,
       label: s.garminPassword,
       onSubmitted: _submitCredentials,
+    ),
+    // The way out of typing a password into someone else's tablet at all.
+    // Offered here rather than as a first choice, because the key has to
+    // be created in a browser first and that is the longer road.
+    const SizedBox(height: AppSpacing.sm),
+    Align(
+      alignment: Alignment.centerLeft,
+      child: TextButton.icon(
+        icon: const Icon(Icons.key_outlined, size: 18),
+        label: Text(s.personalKeyUseKey),
+        onPressed: _busy
+            ? null
+            : () => Navigator.of(context).pushReplacement(
+                MaterialPageRoute(
+                  builder: (_) => GarminKeyScreen(account: widget.reconnect),
+                ),
+              ),
+      ),
     ),
   ];
 

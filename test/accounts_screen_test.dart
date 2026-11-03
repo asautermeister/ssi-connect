@@ -77,15 +77,18 @@ GarminAccount _account(
   String name, {
   String? ssiMemberId,
   AccountColor? color,
+  bool byKey = false,
 }) => GarminAccount(
   id: name,
   email: '$name@example.com',
   displayName: name,
-  session: const GarminSession(
-    accessToken: 'a',
-    refreshToken: 'r',
-    diClientId: 'c',
-  ),
+  session: byKey
+      ? const GarminSession.personal(accessToken: 'a', key: 'GCDC_a.b.c.d')
+      : const GarminSession(
+          accessToken: 'a',
+          refreshToken: 'r',
+          diClientId: 'c',
+        ),
   ssiMemberId: ssiMemberId,
   color: color,
 );
@@ -611,6 +614,27 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(tester.widget<TextField>(field).obscureText, isFalse);
+    });
+
+    testWidgets('a key account is told its key expired, not its session', (
+      tester,
+    ) async {
+      // Signing in again would not help: there is no password behind this
+      // account. What ran out is the key, and that is what has to be
+      // replaced.
+      await _pump(
+        tester,
+        accounts: [_account('Andreas', byKey: true)],
+        expired: {'Andreas'},
+      );
+
+      expect(find.textContaining('Schlüssel abgelaufen'), findsOneWidget);
+      expect(find.textContaining('Sitzung abgelaufen'), findsNothing);
+
+      await tester.tap(find.textContaining('Schlüssel abgelaufen'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Personal API Key'), findsWidgets);
     });
 
     testWidgets('a working account is not told its session expired', (

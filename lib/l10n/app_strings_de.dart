@@ -392,6 +392,48 @@ class AppStringsDe extends AppStrings {
   @override
   String get signInAgain => 'Erneut anmelden';
   @override
+  String get personalKeyTitle => 'Personal API Key';
+  @override
+  String get personalKeyIntro =>
+      'Garmin kann einen persönlichen, nur lesenden Schlüssel ausstellen. '
+      'Damit braucht die App kein Garmin-Passwort mehr.';
+  @override
+  String get personalKeyHowTo =>
+      'In Garmin Connect im Browser anmelden, unter Einstellungen den '
+      'Punkt "Personal API Key" wählen und einen Schlüssel erzeugen. Er '
+      'wird genau einmal angezeigt.';
+  @override
+  String get personalKeyUrl => 'connect.garmin.com';
+  @override
+  String get personalKeyLabel => 'Schlüssel';
+  @override
+  String get personalKeyPasteFromClipboard => 'Aus Zwischenablage einfügen';
+  @override
+  String get personalKeyClipboardEmpty =>
+      'In der Zwischenablage steht kein Garmin-Schlüssel.';
+  @override
+  String get personalKeyMalformed =>
+      'Das sieht nicht nach einem Garmin Personal API Key aus. Er beginnt '
+      'mit GCDC_.';
+  @override
+  String get personalKeyCheck => 'Prüfen und speichern';
+  @override
+  String get personalKeyChecking => 'Schlüssel wird geprüft ...';
+  @override
+  String personalKeyBelongsTo(String name) => 'Schlüssel von $name';
+  @override
+  String get personalKeyWrongAccount =>
+      'Dieser Schlüssel gehört zu einem anderen Garmin-Konto. Er würde '
+      'fremde Tauchgänge in diesen Account laden.';
+  @override
+  String get personalKeyExpired => 'Schlüssel abgelaufen';
+  @override
+  String get personalKeyReplace => 'Neuen Schlüssel hinterlegen';
+  @override
+  String get personalKeyUsePassword => 'Stattdessen mit Passwort anmelden';
+  @override
+  String get personalKeyUseKey => 'Stattdessen Personal API Key verwenden';
+  @override
   String get showPassword => 'Passwort anzeigen';
   @override
   String get hidePassword => 'Passwort verbergen';

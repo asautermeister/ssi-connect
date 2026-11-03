@@ -380,6 +380,46 @@ class AppStringsEn extends AppStrings {
   @override
   String get signInAgain => 'Sign in again';
   @override
+  String get personalKeyTitle => 'Personal API key';
+  @override
+  String get personalKeyIntro =>
+      'Garmin can issue a personal, read-only key. With one, the app needs '
+      'no Garmin password at all.';
+  @override
+  String get personalKeyHowTo =>
+      'Sign in to Garmin Connect in a browser, open Settings, choose '
+      '"Personal API Key" and create one. It is shown exactly once.';
+  @override
+  String get personalKeyUrl => 'connect.garmin.com';
+  @override
+  String get personalKeyLabel => 'Key';
+  @override
+  String get personalKeyPasteFromClipboard => 'Paste from clipboard';
+  @override
+  String get personalKeyClipboardEmpty => 'The clipboard holds no Garmin key.';
+  @override
+  String get personalKeyMalformed =>
+      'That does not look like a Garmin personal API key. They start with '
+      'GCDC_.';
+  @override
+  String get personalKeyCheck => 'Check and save';
+  @override
+  String get personalKeyChecking => 'Checking the key ...';
+  @override
+  String personalKeyBelongsTo(String name) => "$name's key";
+  @override
+  String get personalKeyWrongAccount =>
+      'This key belongs to a different Garmin account. It would load a '
+      "stranger's dives into this one.";
+  @override
+  String get personalKeyExpired => 'Key expired';
+  @override
+  String get personalKeyReplace => 'Store a new key';
+  @override
+  String get personalKeyUsePassword => 'Sign in with a password instead';
+  @override
+  String get personalKeyUseKey => 'Use a personal API key instead';
+  @override
   String get showPassword => 'Show password';
   @override
   String get hidePassword => 'Hide password';
