@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../l10n/app_strings.dart';
 import 'theme/app_theme.dart';
+import 'widgets/password_field.dart';
 
 /// Asks for SSI credentials, and returns them without keeping a copy.
 ///
@@ -20,7 +21,6 @@ class SsiSignInDialog extends StatefulWidget {
 class _SsiSignInDialogState extends State<SsiSignInDialog> {
   late final _email = TextEditingController(text: widget.initialEmail ?? '');
   final _password = TextEditingController();
-  bool _obscured = true;
 
   @override
   void dispose() {
@@ -56,21 +56,10 @@ class _SsiSignInDialogState extends State<SsiSignInDialog> {
               decoration: InputDecoration(labelText: s.ssiEmail),
             ),
             const SizedBox(height: AppSpacing.md),
-            TextField(
+            PasswordField(
               controller: _password,
-              obscureText: _obscured,
-              decoration: InputDecoration(
-                labelText: s.ssiPassword,
-                suffixIcon: IconButton(
-                  icon: Icon(
-                    _obscured
-                        ? Icons.visibility_outlined
-                        : Icons.visibility_off_outlined,
-                  ),
-                  onPressed: () => setState(() => _obscured = !_obscured),
-                ),
-              ),
-              onSubmitted: (_) => _submit(),
+              label: s.ssiPassword,
+              onSubmitted: _submit,
             ),
             const SizedBox(height: AppSpacing.md),
             Text(s.ssiPasswordNotStored, style: theme.textTheme.bodySmall),

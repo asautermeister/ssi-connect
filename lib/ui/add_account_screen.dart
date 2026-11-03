@@ -7,6 +7,7 @@ import '../accounts/accounts_controller.dart';
 import '../accounts/models/garmin_account.dart';
 import '../garmin/garmin_auth_exceptions.dart';
 import '../garmin/models/garmin_session.dart';
+import 'widgets/password_field.dart';
 
 /// Single screen covering the whole "add a Garmin account" flow: credentials
 /// first, then - only if Garmin asks for it - an MFA code field. Kept as one
@@ -206,12 +207,10 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
       autofillHints: const [AutofillHints.email],
     ),
     const SizedBox(height: 12),
-    TextField(
+    PasswordField(
       controller: _passwordController,
-      decoration: InputDecoration(labelText: s.garminPassword),
-      obscureText: true,
-      autofillHints: const [AutofillHints.password],
-      onSubmitted: (_) => _submitCredentials(),
+      label: s.garminPassword,
+      onSubmitted: _submitCredentials,
     ),
   ];
 

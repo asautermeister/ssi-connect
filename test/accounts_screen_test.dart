@@ -589,6 +589,30 @@ void main() {
       expect(find.text('Name'), findsNothing);
     });
 
+    testWidgets('the Garmin password can be checked while typing it', (
+      tester,
+    ) async {
+      // The field this was missing on: the SSI dialog always had an eye,
+      // the Garmin login did not.
+      await _pump(
+        tester,
+        accounts: [_account('Andreas')],
+        expired: {'Andreas'},
+      );
+      await tester.tap(find.textContaining('Sitzung abgelaufen'));
+      await tester.pumpAndSettle();
+
+      final field = find.widgetWithText(TextField, 'Garmin Passwort');
+      expect(field, findsOneWidget);
+      expect(tester.widget<TextField>(field).obscureText, isTrue);
+
+      await tester.enterText(field, 'geheim');
+      await tester.tap(find.byIcon(Icons.visibility_outlined));
+      await tester.pumpAndSettle();
+
+      expect(tester.widget<TextField>(field).obscureText, isFalse);
+    });
+
     testWidgets('a working account is not told its session expired', (
       tester,
     ) async {

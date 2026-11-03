@@ -229,6 +229,11 @@ abstract class AppStrings {
   String syncFailedFor(String account, String message);
   String get signInAgain;
 
+  /// Tooltip on the eye beside a password field. Names what pressing it
+  /// does, not what the field currently is.
+  String get showPassword;
+  String get hidePassword;
+
   /// Named on the account whose Garmin session Garmin no longer accepts.
   String get sessionExpired;
 

@@ -392,6 +392,10 @@ class AppStringsDe extends AppStrings {
   @override
   String get signInAgain => 'Erneut anmelden';
   @override
+  String get showPassword => 'Passwort anzeigen';
+  @override
+  String get hidePassword => 'Passwort verbergen';
+  @override
   String get sessionExpired => 'Sitzung abgelaufen';
   @override
   String get fromAccounts => 'Aus den Accounts';
