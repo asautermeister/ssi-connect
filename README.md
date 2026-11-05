@@ -127,6 +127,10 @@ deshalb ist die App als Tablet-/Zweitgerät-App gedacht und nicht als Handy-App 
 - Fehlt ein Wert in der Quelle, bleibt das entsprechende Feld im QR-Code leer, statt geraten zu
   werden. Wetter, Einstieg, Strömung und Sicht zeichnet ein Tauchcomputer nicht auf und werden
   deshalb nie befüllt.
+- **Durchschnittstiefe, Flaschengröße und Anfangs-/Enddruck lassen sich nicht übertragen** – nicht,
+  weil die Werte fehlen, sondern weil SSIs QR-Format keine Felder dafür hat. Belegt an einem Export
+  aus der SSI-App: ein Tauchgang, bei dem alle drei im Logbuch stehen, trägt in seinem QR-Code
+  dreizehn Felder und keines davon. Der Code ist eine Teilmenge des Logbuchs.
 - **Der Tauchplatz lässt sich nicht aus den Koordinaten ableiten.** SSIs Platznummern stammen aus
   einer eigenen Datenbank ohne offene Abfrage. Die App holt sie deshalb aus dem eigenen
   SSI-Logbuch – über dieselbe inoffizielle Schnittstelle, die auch die SSI-App nutzt

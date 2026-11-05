@@ -206,45 +206,6 @@ ein Tauchcomputer sie nicht aufzeichnet: `buddy`, `visibility`,
 Garmin Connect pflegt, könnte sie von dort in den SSI-Export tragen.
 Eigene Entscheidung, eigener Eintrag.
 
-### Durchschnittstiefe mit übertragen
-
-Garmin liefert sie, die App zeigt sie, der QR-Code lässt sie liegen. Was
-fehlt, ist allein der Feldname auf der SSI-Seite.
-
-**Garmin-Seite fertig:** `avgDepth` → `GarminActivity.avgDepthMeters` →
-`Dive.avgDepthMeters`, in Zentimetern wie die Maximaltiefe, auf der
-Detailseite als „Ø Tiefe" sichtbar und im Cache. Auch über die Personal
-API bestätigt (`avgDepth: 127.699...`).
-
-**SSI-Seite unbekannt.** In keinem der aufgezeichneten Exporte – den zwei
-ersten, den vier aus dem Deko-Fix – kommt eine Durchschnittstiefe vor,
-und in den Code-Tabellen aus der SSI-Konfigurationsdatei auch nicht.
-
-Ein Anhaltspunkt, mehr nicht: SSIs API nennt die Maximaltiefe
-`odin_user_log_depth_m`, im QR-Code heißt dasselbe Feld `depth_m` – das
-Präfix fällt weg. Nach dem Muster hieße die Durchschnittstiefe plausibel
-`avg_depth_m`. **Plausibel reicht hier nicht:** genau diese Art Schluss
-ist in diesem Projekt zweimal danebengegangen (Rebreather landeten als
-Extended Range, und `deco:0` las SSI als „ja"). Ein erfundenes Feld
-landet still falsch im Logbuch, und der Test
-`ssi_qr_payload_builder_test.dart` verbietet es ausdrücklich.
-
-**Zwei Wege, es zu klären:**
-
-1. *Verbindlich* – in der SSI-App einen Tauchgang exportieren, **bei dem
-   eine Durchschnittstiefe eingetragen ist**, und den Code mit
-   „SSI-Code analysieren" scannen. Die Feldliste nennt den Namen.
-2. *Hinweis* – ein `logbook_details`-Eintrag aus dem API-Log. Er trägt
-   rund 200 Felder; wie SSI die Durchschnittstiefe intern nennt, grenzt
-   den QR-Namen ein, beweist ihn aber nicht.
-
-Sobald der Name feststeht: eine Zeile im Builder plus Test.
-`Dive.avgDepthMeters` liegt bereit.
-
-Möglich ist auch, dass SSIs Import gar kein Feld dafür hat. Dann gehört
-die Durchschnittstiefe in die README-Liste der Werte, die bewusst leer
-bleiben – zu Wetter, Strömung und Sicht.
-
 ### Das Übertragen mehrerer Tauchgänge neu zugänglich machen
 
 Der Weg dorthin ist ausgebaut – das Auswahl-Symbol in der Tauchgangs-Liste

@@ -344,6 +344,11 @@ void main() {
         'airtemp_c',
         'vis_m',
         'user_leader_id',
+        // SSI's own export of a dive that has all three carries none of
+        // them: there is no field to put them in.
+        'avg_depth',
+        'cylinder',
+        'pressure',
       ]) {
         expect(
           payload,
