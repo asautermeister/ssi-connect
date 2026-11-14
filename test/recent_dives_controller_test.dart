@@ -153,6 +153,28 @@ void main() {
       expect(fetches, 1);
     });
 
+    test('asks that overlap a running fetch cost nothing either', () async {
+      // The start screen asks on every build, and load() itself causes the
+      // next build before its first await is through. Seen on a device:
+      // seven identical requests for two accounts on one start.
+      final account = _account('a');
+      final controller = _controller();
+      var fetches = 0;
+
+      Future<List<Dive>> fetch(GarminAccount _, {int start = 0}) async {
+        fetches++;
+        return [_dive('d', DateTime(2025, 11, 8))];
+      }
+
+      const window = RefreshPolicy.automaticWindow;
+      await Future.wait([
+        for (var i = 0; i < 5; i++)
+          controller.load(accounts: [account], fetch: fetch, notWithin: window),
+      ]);
+
+      expect(fetches, 1);
+    });
+
     test('a zero window always fetches', () async {
       // What a pull-to-refresh past the floor comes down to.
       final account = _account('a');

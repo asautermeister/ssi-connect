@@ -207,6 +207,14 @@ class RecentDivesController extends ChangeNotifier {
     if (due.isEmpty) return;
     _started = true;
 
+    // Claimed here, before the first await, not once the fetch begins. The
+    // start screen calls this on every build, and the notify below causes
+    // one: stamped any later, each of those calls found the account still
+    // due and sent the same request again - seven times on one start.
+    for (final account in due) {
+      _lastAttemptAt[account.id] = now;
+    }
+
     // Re-fetching the first page throws away anything paged in beyond it,
     // so the paging state starts over - but only for the accounts actually
     // being refetched.
@@ -239,7 +247,6 @@ class RecentDivesController extends ChangeNotifier {
 
   Future<void> _loadOne(GarminAccount account, DiveFetcher fetch) async {
     await _seedFromCache(account.id);
-    _lastAttemptAt[account.id] = DateTime.now();
 
     try {
       final dives = await fetch(account, start: 0);
