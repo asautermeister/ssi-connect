@@ -145,6 +145,88 @@ void main() {
     });
   });
 
+  group('AccountsController one entry per Garmin account', () {
+    test('a key for an account that is here switches it over', () async {
+      // Seen on the test device: the same person once by password and once
+      // by key, two entries, the same dives loaded twice.
+      final repository = _InMemoryRepository();
+      final controller = AccountsController(repository: repository);
+      final account = await controller.addAccountFromSuccess(
+        email: 'a@example.com',
+        session: _session,
+        displayName: 'Andreas',
+      );
+      await controller.setSsiIdentity(
+        account.id,
+        const SsiBuddyCode(memberId: '3902893', firstName: 'Andreas'),
+      );
+      await controller.setColor(account.id, AccountColor.blue);
+
+      final result = await controller.addAccountFromSuccess(
+        email: 'A@Example.com',
+        session: const GarminSession.personal(
+          accessToken: 'k',
+          key: 'GCDC_a.b.c.d',
+        ),
+        displayName: 'Andreas Sautermeister',
+      );
+
+      final only = controller.accounts.single;
+      expect(result.id, account.id);
+      expect(only.id, account.id);
+      expect(only.session.isPersonal, isTrue);
+      expect(only.displayName, 'Andreas');
+      expect(only.ssiMemberId, '3902893');
+      expect(only.color, AccountColor.blue);
+      expect(repository.saved.keys, [account.id]);
+      expect(repository.saved[account.id]!.session.isPersonal, isTrue);
+    });
+
+    test('a password for a key account switches it back', () async {
+      final controller = AccountsController(repository: _InMemoryRepository());
+      final account = await controller.addAccountFromSuccess(
+        email: 'a@example.com',
+        session: const GarminSession.personal(
+          accessToken: 'k',
+          key: 'GCDC_a.b.c.d',
+        ),
+      );
+
+      await controller.addAccountFromSuccess(
+        email: 'a@example.com',
+        session: _session,
+      );
+
+      final only = controller.accounts.single;
+      expect(only.id, account.id);
+      expect(only.session.isPersonal, isFalse);
+    });
+
+    test('a different address is a different account', () async {
+      final controller = AccountsController(repository: _InMemoryRepository());
+      await controller.addAccountFromSuccess(
+        email: 'a@example.com',
+        session: _session,
+      );
+      await controller.addAccountFromSuccess(
+        email: 'b@example.com',
+        session: _session,
+      );
+
+      expect(controller.accounts, hasLength(2));
+    });
+
+    test('without an address there is nothing to match', () async {
+      // The key route takes the address from the profile, and Garmin may
+      // leave it out. Then two entries are better than a wrong merge.
+      final controller = AccountsController(repository: _InMemoryRepository());
+      await controller.addAccountFromSuccess(email: '', session: _session);
+      await controller.addAccountFromSuccess(email: '', session: _session);
+
+      expect(controller.accounts, hasLength(2));
+    });
+  });
+
   group('AccountsController.reconnect', () {
     test('a fresh session lands on the account that already exists', () async {
       // The reported failure: Garmin stopped accepting the refresh token on

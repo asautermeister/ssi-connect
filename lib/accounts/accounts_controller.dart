@@ -79,11 +79,29 @@ class AccountsController extends ChangeNotifier {
     (account) => account.copyWith(session: session),
   );
 
+  /// Adds the Garmin account behind [email], or, if it is already here,
+  /// puts [session] on the existing entry.
+  ///
+  /// One Garmin account is one entry, signed in one way: with a password or
+  /// with a Personal API key, never both side by side. Two entries for the
+  /// same person would load the same dives twice, and only one of them would
+  /// carry the SSI number and the colour. So a second sign-in by either
+  /// route switches the existing entry over and keeps everything hanging off
+  /// its id. The name stays the one the family gave it.
+  ///
+  /// The mail address is the only thing both routes know: typed in on the
+  /// password route, read from the profile on the key route. Without one
+  /// there is nothing to compare, and a new entry is made.
   Future<GarminAccount> addAccountFromSuccess({
     required String email,
     required GarminSession session,
     String? displayName,
-  }) {
+  }) async {
+    final existing = _byEmail(email);
+    if (existing != null) {
+      await reconnect(accountId: existing.id, session: session);
+      return _accounts.firstWhere((a) => a.id == existing.id);
+    }
     return _addAccount(
       email: email,
       session: session,
@@ -239,6 +257,15 @@ class AccountsController extends ChangeNotifier {
 
   Future<void> clearSsiIdentity(String accountId) async {
     await _updateAccount(accountId, (account) => account.withoutSsiIdentity());
+  }
+
+  GarminAccount? _byEmail(String email) {
+    final wanted = email.trim().toLowerCase();
+    if (wanted.isEmpty) return null;
+    for (final account in _accounts) {
+      if (account.email.trim().toLowerCase() == wanted) return account;
+    }
+    return null;
   }
 
   Future<void> _updateAccount(
