@@ -27,6 +27,7 @@ import 'theme/app_theme.dart';
 import 'widgets/app_card.dart';
 import 'widgets/offline_banner.dart';
 import 'garmin_key_screen.dart';
+import '../features.dart';
 
 /// Start screen. Leads with the dives themselves rather than with a list of
 /// names: the reason to open this app is to hand a dive to SSI, and from
@@ -373,10 +374,13 @@ class _AccountCard extends StatelessWidget {
                 value: _AccountAction.signInAgain,
                 child: Text(s.signInAgain),
               ),
-              PopupMenuItem(
-                value: _AccountAction.personalKey,
-                child: Text(s.personalKeyTitle),
-              ),
+              // Still offered to an account that already has a key, so the
+              // key can be replaced even in a build with the switch off.
+              if (Features.personalApi || account.session.isPersonal)
+                PopupMenuItem(
+                  value: _AccountAction.personalKey,
+                  child: Text(s.personalKeyTitle),
+                ),
               PopupMenuItem(
                 value: _AccountAction.color,
                 child: Text(s.chooseColour),

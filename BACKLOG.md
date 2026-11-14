@@ -149,6 +149,12 @@ Verkabelung, Eingabe und Ablaufbehandlung stehen; die Übertragung
 zwischen Geräten per QR-Code fehlt noch, und **nichts davon ist je auf
 einem Gerät ausgeführt worden** – nur Analyzer und Tests.
 
+**Ab 1.3.2 ausgeblendet.** Die beiden Einstiege, der Button beim
+Anmelden und der Punkt im Kontomenü, stehen hinter `Features.personalApi`
+([lib/features.dart](lib/features.dart)). Zum Testen am Gerät:
+`flutter run --dart-define=PERSONAL_API=true`. Wenn die Punkte unten
+erledigt sind, entfällt der Schalter wieder.
+
 Was da ist:
 
 - `GarminPersonalApiClient` – tauscht den Schlüssel gegen ein Token
