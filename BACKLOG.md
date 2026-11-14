@@ -173,15 +173,25 @@ Was da ist:
   fremden Konto fliegt auf, bevor er fremde Tauchgänge lädt.
 - Ein abgelaufener Schlüssel sagt „Schlüssel abgelaufen" statt „Sitzung
   abgelaufen" und führt zum Schlüssel-Bildschirm statt zur Anmeldung.
+- „Schlüssel entfernen" im Kontomenü, nur bei einem Konto mit Schlüssel
+  und unabhängig vom Schalter, weil es der Weg hinaus ist. Das Konto
+  bleibt mit Name, Farbe und SSI-Nummer, ist danach abgemeldet
+  (`GarminSession.none`) und sagt „Nicht angemeldet". Die gespeicherten
+  Tauchgänge mitzulöschen ist ein Häkchen, standardmäßig aus.
+- Ein Garmin-Konto ist ein Eintrag: Wer sich mit einer Mailadresse
+  anmeldet, die schon da ist, stellt das bestehende Konto um, ob per
+  Passwort oder Schlüssel.
 
 #### Was noch fehlt
 
-1. **Am Gerät prüfen.** Vor allem: Kommt man überhaupt zum Schlüssel?
-   Erzeugt wird er in Garmin Connect **im Browser** – die App zeigt nur
-   die Adresse an, sie öffnet sie nicht. Das würde `url_launcher`
-   brauchen, eine weitere Plattform-Abhängigkeit, und davon wurde dieses
-   Projekt schon zweimal gebissen. Erst sehen, wie lästig es wirklich
-   ist.
+1. **Am Gerät prüfen – zum größten Teil erledigt (14.11.2026, Pixel 7).**
+   Zum Schlüssel kommt man: die Adresse im Browser aufrufen, bei Garmin
+   anmelden samt 2SV, Schlüssel erstellen, kopieren. Tausch, Profil und
+   Tauchgangsliste laufen gegen `personal.connectapi` mit 200. Dabei
+   aufgefallen und behoben: doppelte Konten für dieselbe Person und
+   mehrfaches Laden der ersten Seite beim Start. Offen sind noch
+   Detailansicht und QR-Code und das Entfernen des Schlüssels am Gerät.
+   `url_launcher` ist danach nicht nötig.
 2. **Etappe 3: Übertragung zwischen Geräten.** Das Gerät mit dem
    Schlüssel zeigt ihn als QR-Code, das andere scannt ihn.
    `QrScanScreen<T>` ist bereits generisch, `QrDisplayScreen` zeigt

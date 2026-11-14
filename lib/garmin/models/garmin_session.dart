@@ -45,6 +45,18 @@ class GarminSession {
        refreshToken = null,
        diClientId = null;
 
+  /// No credentials at all: the account is kept, but signed out.
+  ///
+  /// What is left after a Personal API key is removed. Name, colour and SSI
+  /// number stay on the account, and the next sign-in, by password or by a
+  /// new key, puts a real session back in place.
+  const GarminSession.none()
+    : accessToken = '',
+      refreshToken = null,
+      diClientId = null,
+      personalApiKey = null,
+      tokenExpiresAt = null;
+
   final String accessToken;
 
   /// SSO only.
@@ -62,6 +74,11 @@ class GarminSession {
   final DateTime? tokenExpiresAt;
 
   bool get isPersonal => personalApiKey != null;
+
+  /// True for [GarminSession.none]: nothing to send to Garmin, and nothing
+  /// to renew a token from.
+  bool get isSignedOut =>
+      accessToken.isEmpty && refreshToken == null && personalApiKey == null;
 
   GarminApi get api => isPersonal ? GarminApi.personal : GarminApi.internal;
 

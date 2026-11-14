@@ -40,6 +40,14 @@ class GarminDiveLoader {
     bool forceRefreshSession = false,
   }) async {
     var session = account.session;
+    // Signed out on purpose: no request, just the state that makes the
+    // account offer its way back in.
+    if (session.isSignedOut) {
+      throw GarminAuthException(
+        GarminAuthErrorType.invalidCredentials,
+        'Nicht angemeldet.',
+      );
+    }
     if (forceRefreshSession) {
       session = await refreshSession(account);
     }

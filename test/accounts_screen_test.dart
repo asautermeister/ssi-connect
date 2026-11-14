@@ -22,6 +22,7 @@ import 'package:ssi_connect/ssi/ssi_buddy_repository.dart';
 import 'package:ssi_connect/ssi/ssi_logged_dive.dart';
 import 'package:ssi_connect/ssi/ssi_sync_controller.dart';
 import 'package:ssi_connect/ui/accounts_screen.dart';
+import 'package:ssi_connect/ui/add_account_screen.dart';
 import 'package:ssi_connect/ui/dive_detail_screen.dart';
 import 'package:ssi_connect/ui/theme/app_theme.dart';
 import 'package:ssi_connect/ui/widgets/app_card.dart';
@@ -136,7 +137,9 @@ Future<void> _pump(
         'Keine Internetverbindung.',
       );
     }
-    if (expired.contains(account.id)) {
+    // As the real loader does: a signed-out account fails before sending
+    // anything.
+    if (expired.contains(account.id) || account.session.isSignedOut) {
       throw GarminAuthException(
         GarminAuthErrorType.invalidCredentials,
         'Sitzung abgelaufen - bitte Account neu verbinden.',
@@ -554,6 +557,112 @@ void main() {
       // Let the snack bar time out, so the test doesn't end with a pending
       // timer.
       await tester.pump(const Duration(seconds: 5));
+    });
+
+    group('removing a key', () {
+      Future<void> openRemoveKey(WidgetTester tester) async {
+        await tester.tap(find.byIcon(Icons.more_horiz));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Schlüssel entfernen'));
+        await tester.pumpAndSettle();
+      }
+
+      testWidgets('is only offered on an account that has a key', (
+        tester,
+      ) async {
+        await _pump(tester, accounts: [_account('Andreas')]);
+
+        await tester.tap(find.byIcon(Icons.more_horiz));
+        await tester.pumpAndSettle();
+
+        expect(find.text('Schlüssel entfernen'), findsNothing);
+      });
+
+      testWidgets('keeps the account and its dives unless asked', (
+        tester,
+      ) async {
+        await _pump(
+          tester,
+          accounts: [_account('Andreas', byKey: true)],
+          dives: {
+            'Andreas': [_dive('a1', DateTime(2025, 11, 7))],
+          },
+        );
+
+        await openRemoveKey(tester);
+        // Deleting the dives is an option, and it starts off.
+        final box = tester.widget<CheckboxListTile>(
+          find.byType(CheckboxListTile),
+        );
+        expect(box.value, isFalse);
+
+        await tester.tap(find.text('Entfernen'));
+        await tester.pumpAndSettle();
+
+        final account = tester
+            .element(find.byType(AccountsScreen))
+            .read<AccountsController>()
+            .accounts
+            .single;
+        expect(account.session.isSignedOut, isTrue);
+        expect(account.displayName, 'Andreas');
+        expect(find.text('Fr, 07.11.2025'), findsOneWidget);
+        expect(find.textContaining('Nicht angemeldet'), findsOneWidget);
+
+        await tester.pump(const Duration(seconds: 5));
+      });
+
+      testWidgets('deletes the dives too when ticked', (tester) async {
+        await _pump(
+          tester,
+          accounts: [_account('Andreas', byKey: true)],
+          dives: {
+            'Andreas': [_dive('a1', DateTime(2025, 11, 7))],
+          },
+        );
+
+        await openRemoveKey(tester);
+        await tester.tap(find.text('Gespeicherte Tauchgänge auch löschen'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Entfernen'));
+        await tester.pumpAndSettle();
+
+        expect(find.text('Fr, 07.11.2025'), findsNothing);
+        expect(find.textContaining('Nicht angemeldet'), findsOneWidget);
+
+        await tester.pump(const Duration(seconds: 5));
+      });
+
+      testWidgets('cancelling changes nothing', (tester) async {
+        await _pump(tester, accounts: [_account('Andreas', byKey: true)]);
+
+        await openRemoveKey(tester);
+        await tester.tap(find.text('Abbrechen'));
+        await tester.pumpAndSettle();
+
+        final account = tester
+            .element(find.byType(AccountsScreen))
+            .read<AccountsController>()
+            .accounts
+            .single;
+        expect(account.session.isPersonal, isTrue);
+      });
+
+      testWidgets('a signed-out account leads to the sign-in screen', (
+        tester,
+      ) async {
+        await _pump(tester, accounts: [_account('Andreas', byKey: true)]);
+
+        await openRemoveKey(tester);
+        await tester.tap(find.text('Entfernen'));
+        await tester.pumpAndSettle();
+        await tester.pump(const Duration(seconds: 5));
+
+        await tester.tap(find.textContaining('Nicht angemeldet'));
+        await tester.pumpAndSettle();
+
+        expect(find.byType(AddAccountScreen), findsOneWidget);
+      });
     });
 
     testWidgets('without accounts it still offers a way forward', (

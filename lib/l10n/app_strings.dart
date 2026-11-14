@@ -248,6 +248,14 @@ abstract class AppStrings {
   String get personalKeyReplace;
   String get personalKeyUsePassword;
   String get personalKeyUseKey;
+  String get personalKeyRemove;
+  String get personalKeyRemoveQuestion;
+  String personalKeyRemoveBody(String name);
+  String get personalKeyRemoveAlsoDives;
+  String get personalKeyRemoved;
+
+  /// Named on an account whose key was removed, so it has no session at all.
+  String get notSignedIn;
   String get showPassword;
   String get hidePassword;
 

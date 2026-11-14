@@ -79,6 +79,19 @@ class AccountsController extends ChangeNotifier {
     (account) => account.copyWith(session: session),
   );
 
+  /// Forgets the Personal API key on an account and leaves it signed out.
+  ///
+  /// The account itself stays, with its name, colour and SSI number, so a
+  /// later sign-in by either route picks up where it was. The key stays
+  /// valid at Garmin until it is deleted there; this only takes it off the
+  /// device. An account without a key is left alone.
+  Future<void> removePersonalKey(String accountId) => _updateAccount(
+    accountId,
+    (account) => account.session.isPersonal
+        ? account.copyWith(session: const GarminSession.none())
+        : account,
+  );
+
   /// Adds the Garmin account behind [email], or, if it is already here,
   /// puts [session] on the existing entry.
   ///

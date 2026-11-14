@@ -420,6 +420,22 @@ class AppStringsEn extends AppStrings {
   @override
   String get personalKeyUseKey => 'Use a personal API key instead';
   @override
+  String get personalKeyRemove => 'Remove key';
+  @override
+  String get personalKeyRemoveQuestion => 'Remove key?';
+  @override
+  String personalKeyRemoveBody(String name) =>
+      "The app forgets $name's key. The account stays, with its name, "
+      'colour and SSI number. To load dives again, sign in anew, with a '
+      'password or a new key.\n\n'
+      'At Garmin the key stays valid until you delete it in Garmin Connect.';
+  @override
+  String get personalKeyRemoveAlsoDives => 'Also delete stored dives';
+  @override
+  String get personalKeyRemoved => 'Key removed';
+  @override
+  String get notSignedIn => 'Not signed in';
+  @override
   String get showPassword => 'Show password';
   @override
   String get hidePassword => 'Hide password';

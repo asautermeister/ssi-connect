@@ -227,6 +227,75 @@ void main() {
     });
   });
 
+  group('AccountsController.removePersonalKey', () {
+    test('signs the account out and keeps everything else', () async {
+      final repository = _InMemoryRepository();
+      final controller = AccountsController(repository: repository);
+      final account = await controller.addAccountFromSuccess(
+        email: 'a@example.com',
+        session: const GarminSession.personal(
+          accessToken: 'k',
+          key: 'GCDC_a.b.c.d',
+        ),
+        displayName: 'Andreas',
+      );
+      await controller.setSsiIdentity(
+        account.id,
+        const SsiBuddyCode(memberId: '3902893', firstName: 'Andreas'),
+      );
+      await controller.setColor(account.id, AccountColor.blue);
+
+      await controller.removePersonalKey(account.id);
+
+      final only = controller.accounts.single;
+      expect(only.session.isSignedOut, isTrue);
+      expect(only.session.personalApiKey, isNull);
+      expect(only.displayName, 'Andreas');
+      expect(only.ssiMemberId, '3902893');
+      expect(only.color, AccountColor.blue);
+      // The key must be gone from storage too, not just from memory.
+      expect(repository.saved[account.id]!.session.personalApiKey, isNull);
+    });
+
+    test('a password account is left alone', () async {
+      final controller = AccountsController(repository: _InMemoryRepository());
+      final account = await controller.addAccountFromSuccess(
+        email: 'a@example.com',
+        session: _session,
+      );
+
+      await controller.removePersonalKey(account.id);
+
+      expect(controller.accounts.single.session.refreshToken, 'r');
+    });
+
+    test('a signed-out account takes a sign-in again', () async {
+      final controller = AccountsController(repository: _InMemoryRepository());
+      final account = await controller.addAccountFromSuccess(
+        email: 'a@example.com',
+        session: const GarminSession.personal(
+          accessToken: 'k',
+          key: 'GCDC_a.b.c.d',
+        ),
+      );
+      await controller.removePersonalKey(account.id);
+
+      await controller.addAccountFromSuccess(
+        email: 'a@example.com',
+        session: _session,
+      );
+
+      final only = controller.accounts.single;
+      expect(only.id, account.id);
+      expect(only.session.isSignedOut, isFalse);
+    });
+  });
+
+  test('a signed-out session survives storage', () {
+    final back = GarminSession.fromJson(const GarminSession.none().toJson());
+    expect(back.isSignedOut, isTrue);
+  });
+
   group('AccountsController.reconnect', () {
     test('a fresh session lands on the account that already exists', () async {
       // The reported failure: Garmin stopped accepting the refresh token on

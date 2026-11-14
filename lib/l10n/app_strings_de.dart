@@ -434,6 +434,24 @@ class AppStringsDe extends AppStrings {
   @override
   String get personalKeyUseKey => 'Stattdessen Personal API Key verwenden';
   @override
+  String get personalKeyRemove => 'Schlüssel entfernen';
+  @override
+  String get personalKeyRemoveQuestion => 'Schlüssel entfernen?';
+  @override
+  String personalKeyRemoveBody(String name) =>
+      'Die App vergisst den Schlüssel von $name. Der Account bleibt mit '
+      'Name, Farbe und SSI-Nummer erhalten. Um wieder Tauchgänge zu laden, '
+      'meldest du dich neu an, mit Passwort oder neuem Schlüssel.\n\n'
+      'Bei Garmin bleibt der Schlüssel gültig, bis du ihn in Garmin Connect '
+      'löschst.';
+  @override
+  String get personalKeyRemoveAlsoDives =>
+      'Gespeicherte Tauchgänge auch löschen';
+  @override
+  String get personalKeyRemoved => 'Schlüssel entfernt';
+  @override
+  String get notSignedIn => 'Nicht angemeldet';
+  @override
   String get showPassword => 'Passwort anzeigen';
   @override
   String get hidePassword => 'Passwort verbergen';
