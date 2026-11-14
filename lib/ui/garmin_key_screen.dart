@@ -79,10 +79,13 @@ class _GarminKeyScreenState extends State<GarminKeyScreen> {
       final existing = widget.account;
       if (existing != null) {
         // Putting a stranger's key on an existing entry would quietly fill
-        // it with their dives. The mail address is the one thing both
-        // sides name, so it is what gets compared.
-        final theirs = profile.email?.toLowerCase();
-        if (theirs != null && theirs != existing.email.toLowerCase()) {
+        // it with their dives. Garmin's id in the token is what tells them
+        // apart; the profile behind a key carries no mail address.
+        if (accounts.isOtherGarminUser(
+          existing,
+          session,
+          email: profile.email,
+        )) {
           setState(() {
             _busy = false;
             _error = s.personalKeyWrongAccount;

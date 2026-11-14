@@ -178,9 +178,14 @@ Was da ist:
   bleibt mit Name, Farbe und SSI-Nummer, ist danach abgemeldet
   (`GarminSession.none`) und sagt „Nicht angemeldet". Die gespeicherten
   Tauchgänge mitzulöschen ist ein Häkchen, standardmäßig aus.
-- Ein Garmin-Konto ist ein Eintrag: Wer sich mit einer Mailadresse
-  anmeldet, die schon da ist, stellt das bestehende Konto um, ob per
-  Passwort oder Schlüssel.
+- Ein Garmin-Konto ist ein Eintrag: Eine Anmeldung für eine Person, die
+  schon da ist, stellt das bestehende Konto um, ob per Passwort oder
+  Schlüssel. Erkannt wird die Person an `garmin_guid` im Token. Am Gerät
+  geprüft: Passwort- und Schlüssel-Token derselben Person tragen denselben
+  Wert. Die Mailadresse ist nur Rückfall, denn das Profil hinter einem
+  Schlüssel enthält keine (Felder: `displayName` und Einstellungen). Mit
+  der Kennung prüft auch der Schlüssel-Bildschirm, ob ein Schlüssel zu
+  einem fremden Konto gehört.
 
 #### Was noch fehlt
 

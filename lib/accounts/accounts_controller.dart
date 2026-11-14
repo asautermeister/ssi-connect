@@ -38,6 +38,16 @@ class AccountsController extends ChangeNotifier {
 
   Future<void> loadFromStorage() async {
     _accounts = await _repository.loadAll();
+    // Entries from before the Garmin id was kept learn it from the token
+    // they already hold - no request, the claim is in the token itself.
+    for (var i = 0; i < _accounts.length; i++) {
+      final account = _accounts[i];
+      final guid = account.session.garminGuid;
+      if (account.garminGuid == null && guid != null) {
+        _accounts[i] = account.copyWith(garminGuid: guid);
+        await _repository.save(_accounts[i]);
+      }
+    }
     _loaded = true;
     notifyListeners();
   }
@@ -76,7 +86,8 @@ class AccountsController extends ChangeNotifier {
     required GarminSession session,
   }) => _updateAccount(
     accountId,
-    (account) => account.copyWith(session: session),
+    (account) =>
+        account.copyWith(session: session, garminGuid: session.garminGuid),
   );
 
   /// Forgets the Personal API key on an account and leaves it signed out.
@@ -102,15 +113,16 @@ class AccountsController extends ChangeNotifier {
   /// route switches the existing entry over and keeps everything hanging off
   /// its id. The name stays the one the family gave it.
   ///
-  /// The mail address is the only thing both routes know: typed in on the
-  /// password route, read from the profile on the key route. Without one
-  /// there is nothing to compare, and a new entry is made.
+  /// Who is who is decided by Garmin's id in the token ([garminGuid]),
+  /// which both routes carry. The mail address is only the fallback: the
+  /// profile behind a key has none, so on that route it is usually empty.
+  /// With neither to go on, a new entry is made.
   Future<GarminAccount> addAccountFromSuccess({
     required String email,
     required GarminSession session,
     String? displayName,
   }) async {
-    final existing = _byEmail(email);
+    final existing = _sameGarminUser(email: email, session: session);
     if (existing != null) {
       await reconnect(accountId: existing.id, session: session);
       return _accounts.firstWhere((a) => a.id == existing.id);
@@ -136,6 +148,7 @@ class AccountsController extends ChangeNotifier {
       email: email,
       displayName: (name == null || name.isEmpty) ? email : name,
       session: session,
+      garminGuid: session.garminGuid,
     );
     _accounts = [..._accounts, account];
     await _repository.save(account);
@@ -177,7 +190,10 @@ class AccountsController extends ChangeNotifier {
       refreshed = await _authClient.refresh(session);
     }
 
-    final updated = account.copyWith(session: refreshed);
+    final updated = account.copyWith(
+      session: refreshed,
+      garminGuid: refreshed.garminGuid,
+    );
     _accounts = [
       for (final a in _accounts)
         if (a.id == account.id) updated else a,
@@ -272,10 +288,44 @@ class AccountsController extends ChangeNotifier {
     await _updateAccount(accountId, (account) => account.withoutSsiIdentity());
   }
 
-  GarminAccount? _byEmail(String email) {
+  /// Whether [session] belongs to someone other than the person behind
+  /// [account] - a key pasted into the wrong entry, which would quietly
+  /// fill it with a stranger's dives.
+  ///
+  /// Only says yes when it knows: both Garmin ids present and different,
+  /// or, without them, both mail addresses present and different.
+  bool isOtherGarminUser(
+    GarminAccount account,
+    GarminSession session, {
+    String? email,
+  }) {
+    final theirs = session.garminGuid;
+    final ours = account.garminGuid ?? account.session.garminGuid;
+    if (theirs != null && ours != null) return theirs != ours;
+    final theirMail = email?.trim().toLowerCase() ?? '';
+    final ourMail = account.email.trim().toLowerCase();
+    return theirMail.isNotEmpty && ourMail.isNotEmpty && theirMail != ourMail;
+  }
+
+  /// The entry for the person [session] belongs to, if there is one.
+  GarminAccount? _sameGarminUser({
+    required String email,
+    required GarminSession session,
+  }) {
+    final guid = session.garminGuid;
+    if (guid != null) {
+      for (final account in _accounts) {
+        if ((account.garminGuid ?? account.session.garminGuid) == guid) {
+          return account;
+        }
+      }
+    }
     final wanted = email.trim().toLowerCase();
     if (wanted.isEmpty) return null;
     for (final account in _accounts) {
+      // An entry known to be someone else is not matched by its address.
+      final known = account.garminGuid ?? account.session.garminGuid;
+      if (guid != null && known != null && known != guid) continue;
       if (account.email.trim().toLowerCase() == wanted) return account;
     }
     return null;
