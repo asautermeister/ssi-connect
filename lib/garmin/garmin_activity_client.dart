@@ -29,7 +29,11 @@ class GarminActivityClient {
   final Dio _dio;
   final String _domain;
 
-  String get _connectApiBase => 'https://connectapi.$_domain';
+  /// Which host a session talks to. The paths are the same on both, so
+  /// this is the only thing that differs between the internal interface
+  /// and the official Personal API.
+  String _baseFor(GarminSession session) =>
+      'https://${session.api.subdomain}.$_domain';
 
   /// Queries each dive activity type separately and merges the results.
   ///
@@ -106,7 +110,7 @@ class GarminActivityClient {
   }) async {
     try {
       return await _dio.get<dynamic>(
-        '$_connectApiBase$path',
+        '${_baseFor(session)}$path',
         queryParameters: queryParameters,
         options: Options(
           headers: {

@@ -229,6 +229,28 @@ abstract class AppStrings {
   String syncFailedFor(String account, String message);
   String get signInAgain;
 
+  /// Tooltip on the eye beside a password field. Names what pressing it
+  /// does, not what the field currently is.
+  /// Garmin's official read-only key, the alternative to a password.
+  String get personalKeyTitle;
+  String get personalKeyIntro;
+  String get personalKeyHowTo;
+  String get personalKeyUrl;
+  String get personalKeyLabel;
+  String get personalKeyPasteFromClipboard;
+  String get personalKeyClipboardEmpty;
+  String get personalKeyMalformed;
+  String get personalKeyCheck;
+  String get personalKeyChecking;
+  String personalKeyBelongsTo(String name);
+  String get personalKeyWrongAccount;
+  String get personalKeyExpired;
+  String get personalKeyReplace;
+  String get personalKeyUsePassword;
+  String get personalKeyUseKey;
+  String get showPassword;
+  String get hidePassword;
+
   /// Named on the account whose Garmin session Garmin no longer accepts.
   String get sessionExpired;
 

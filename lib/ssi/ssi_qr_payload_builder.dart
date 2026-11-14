@@ -94,6 +94,25 @@ import 'ssi_payload_fields.dart';
 ///   recorded would show which - and the app has no way to pick a guide
 ///   yet anyway.
 ///
+/// And one group is left out because SSI's own export does not carry it
+/// either. A seventh capture settles that - a dive whose SSI entry has an
+/// average depth, a cylinder size and start and end pressures filled in,
+/// exported from the app as a QR code:
+/// `dive;noid;dive_type:0;divetime:69.0;datetime:202611051123;depth_m:23.9;
+/// site:760063;var_watertype_id:5;var_divetype_id:24;var_divetype_id:24;
+/// user_master_id:...;user_firstname:...;user_lastname:...;
+/// user_leader_id:;watertemp_c:21.0`
+///
+/// Thirteen fields, and not one of them holds any of those values. So the
+/// export is a subset of what the logbook stores, and average depth,
+/// cylinder and pressures cannot be transferred at all - there is nothing
+/// to put them in. Garmin reports an average depth and the app shows it;
+/// it stops here, not for want of a value.
+///
+/// That capture also puts `watertemp_c` at the very end, after the
+/// `user_*` fields - a third observed ordering, which is further evidence
+/// that order carries no meaning.
+///
 /// An omitted field simply isn't imported; a wrongly guessed one would be
 /// silently wrong in the user's logbook, which is the worse failure.
 class SsiQrPayloadBuilder {

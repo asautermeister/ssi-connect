@@ -162,7 +162,8 @@ class GarminAuthClient {
   }
 
   Future<GarminSession> refresh(GarminSession session) async {
-    if (session.refreshToken == null) {
+    final clientId = session.diClientId;
+    if (session.refreshToken == null || clientId == null) {
       throw GarminAuthException(
         GarminAuthErrorType.invalidCredentials,
         'Keine Refresh-Information vorhanden - bitte erneut einloggen.',
@@ -175,13 +176,13 @@ class GarminAuthClient {
         options: Options(
           contentType: Headers.formUrlEncodedContentType,
           headers: _nativeHeaders({
-            'Authorization': _basicAuth(session.diClientId),
+            'Authorization': _basicAuth(clientId),
             'Accept': 'application/json',
           }),
         ),
         data: {
           'grant_type': 'refresh_token',
-          'client_id': session.diClientId,
+          'client_id': clientId,
           'refresh_token': session.refreshToken,
         },
       );
@@ -193,7 +194,7 @@ class GarminAuthClient {
     return GarminSession(
       accessToken: data['access_token'] as String,
       refreshToken: (data['refresh_token'] as String?) ?? session.refreshToken,
-      diClientId: session.diClientId,
+      diClientId: clientId,
     );
   }
 

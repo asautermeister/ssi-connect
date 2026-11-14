@@ -26,6 +26,8 @@ import 'ssi_identity_screen.dart';
 import 'theme/app_theme.dart';
 import 'widgets/app_card.dart';
 import 'widgets/offline_banner.dart';
+import 'garmin_key_screen.dart';
+import '../features.dart';
 
 /// Start screen. Leads with the dives themselves rather than with a list of
 /// names: the reason to open this app is to hand a dive to SSI, and from
@@ -268,6 +270,7 @@ class _EmptyAccounts extends StatelessWidget {
 enum _AccountAction {
   rename,
   signInAgain,
+  personalKey,
   color,
   ssiIdentity,
   clearCache,
@@ -348,6 +351,11 @@ class _AccountCard extends StatelessWidget {
                   builder: (_) => AddAccountScreen(reconnect: account),
                 ),
               ),
+              _AccountAction.personalKey => Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => GarminKeyScreen(account: account),
+                ),
+              ),
               _AccountAction.color => _pickColor(context),
               _AccountAction.ssiIdentity => Navigator.of(context).push(
                 MaterialPageRoute(
@@ -366,6 +374,13 @@ class _AccountCard extends StatelessWidget {
                 value: _AccountAction.signInAgain,
                 child: Text(s.signInAgain),
               ),
+              // Still offered to an account that already has a key, so the
+              // key can be replaced even in a build with the switch off.
+              if (Features.personalApi || account.session.isPersonal)
+                PopupMenuItem(
+                  value: _AccountAction.personalKey,
+                  child: Text(s.personalKeyTitle),
+                ),
               PopupMenuItem(
                 value: _AccountAction.color,
                 child: Text(s.chooseColour),
@@ -641,9 +656,18 @@ class _ExpiredSession extends StatelessWidget {
     final theme = Theme.of(context);
     final s = AppStrings.of(context);
 
+    // What ran out, and so what the way back in is. An account set up with
+    // a key cannot be repaired by signing in again, and one set up with a
+    // password has no key to replace.
+    final byKey = account.session.isPersonal;
+
     return InkWell(
       onTap: () => Navigator.of(context).push(
-        MaterialPageRoute(builder: (_) => AddAccountScreen(reconnect: account)),
+        MaterialPageRoute(
+          builder: (_) => byKey
+              ? GarminKeyScreen(account: account)
+              : AddAccountScreen(reconnect: account),
+        ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -655,7 +679,9 @@ class _ExpiredSession extends StatelessWidget {
           ),
           const SizedBox(width: AppSpacing.xs),
           Text(
-            '${s.sessionExpired} · ${s.signInAgain}',
+            byKey
+                ? '${s.personalKeyExpired} · ${s.personalKeyReplace}'
+                : '${s.sessionExpired} · ${s.signInAgain}',
             style: theme.textTheme.bodySmall?.copyWith(
               color: theme.colorScheme.error,
               fontWeight: FontWeight.w600,

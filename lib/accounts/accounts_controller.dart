@@ -10,6 +10,7 @@ import '../ssi/ssi_session.dart';
 import 'account_repository.dart';
 import 'models/account_color.dart';
 import 'models/garmin_account.dart';
+import '../garmin/garmin_personal_api_client.dart';
 
 /// App-wide state for the logged-in Garmin accounts: loads them from secure
 /// storage on startup, drives the add-account (login + MFA) flow, and hands
@@ -19,11 +20,14 @@ class AccountsController extends ChangeNotifier {
   AccountsController({
     AccountRepository? repository,
     GarminAuthClient? authClient,
+    GarminPersonalApiClient? personalApi,
   }) : _repository = repository ?? AccountRepository(),
-       _authClient = authClient ?? GarminAuthClient();
+       _authClient = authClient ?? GarminAuthClient(),
+       _personalApi = personalApi ?? GarminPersonalApiClient();
 
   final AccountRepository _repository;
   final GarminAuthClient _authClient;
+  final GarminPersonalApiClient _personalApi;
   final _uuid = const Uuid();
 
   List<GarminAccount> _accounts = [];
@@ -114,12 +118,34 @@ class AccountsController extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Returns a session that should still be valid, refreshing and
-  /// persisting a new access token first if [GarminAuthClient.refresh]
-  /// succeeds. Throws [GarminAuthException] if refreshing fails - callers
-  /// should send the user back through [login] in that case.
+  /// Returns a session that should still be valid, persisting it.
+  ///
+  /// Which way that happens depends on what the account was set up with:
+  /// an SSO session is refreshed with its refresh token, a Personal API
+  /// session is minted afresh from the key, which is the only way that
+  /// side offers - there is no refresh token on it. A token that still has
+  /// more than an hour left is kept, so an ordinary retry does not cost a
+  /// round trip. The hour is the window Garmin's own client uses.
+  ///
+  /// Throws [GarminAuthException] when it cannot be done. For an SSO
+  /// account that means sending the user back through [login]; for a key,
+  /// that the key itself has expired or been deleted and a new one has to
+  /// be put in.
   Future<GarminSession> ensureFreshSession(GarminAccount account) async {
-    final refreshed = await _authClient.refresh(account.session);
+    final session = account.session;
+    final GarminSession refreshed;
+
+    if (session.personalApiKey case final key?) {
+      final expiry = session.tokenExpiresAt;
+      if (expiry != null &&
+          expiry.difference(DateTime.now().toUtc()) > _tokenKeepWindow) {
+        return session;
+      }
+      refreshed = await _personalApi.exchange(key);
+    } else {
+      refreshed = await _authClient.refresh(session);
+    }
+
     final updated = account.copyWith(session: refreshed);
     _accounts = [
       for (final a in _accounts)
@@ -129,6 +155,9 @@ class AccountsController extends ChangeNotifier {
     notifyListeners();
     return refreshed;
   }
+
+  /// How much life a Personal API token must have left to be reused.
+  static const _tokenKeepWindow = Duration(hours: 1);
 
   /// Renames an account. An empty name falls back to the mail address
   /// rather than leaving a nameless card on the start screen.
