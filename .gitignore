@@ -32,3 +32,13 @@ migrate_working_dir/
 .pub-cache/
 .pub/
 /build/
+
+# Build output of the platform folders, not only the one at the root.
+**/build/
+
+# Signing material. The upload keystore must never enter the history - see
+# RELEASING.md. android/.gitignore covers its own folder; this covers the
+# rest of the tree, the project root included.
+*.jks
+*.keystore
+key.properties
