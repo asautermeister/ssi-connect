@@ -387,10 +387,13 @@ class AppStringsEn extends AppStrings {
       'no Garmin password at all.';
   @override
   String get personalKeyHowTo =>
-      'Sign in to Garmin Connect in a browser, open Settings, choose '
-      '"Personal API Key" and create one. It is shown exactly once.';
+      'Open the address below in a browser and sign in to Garmin. Choose '
+      '"Create key", accept the additional terms and pick how long it '
+      'lasts. The default is 30 days, after which a new key is needed; '
+      '"1 year" saves that. Copy the key, it is shown exactly once.';
   @override
-  String get personalKeyUrl => 'connect.garmin.com';
+  String get personalKeyUrl =>
+      'https://connect.garmin.com/app/settings/personalApiToken';
   @override
   String get personalKeyLabel => 'Key';
   @override

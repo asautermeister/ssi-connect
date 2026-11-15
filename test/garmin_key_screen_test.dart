@@ -67,6 +67,7 @@ void main() {
       await _pump(tester, const GarminKeyScreen());
 
       await tester.enterText(_field('Schlüssel'), _key);
+      await tester.ensureVisible(find.text('Prüfen und speichern'));
       await tester.tap(find.text('Prüfen und speichern'));
       await tester.pumpAndSettle();
 

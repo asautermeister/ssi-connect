@@ -399,11 +399,14 @@ class AppStringsDe extends AppStrings {
       'Damit braucht die App kein Garmin-Passwort mehr.';
   @override
   String get personalKeyHowTo =>
-      'In Garmin Connect im Browser anmelden, unter Einstellungen den '
-      'Punkt "Personal API Key" wählen und einen Schlüssel erzeugen. Er '
-      'wird genau einmal angezeigt.';
+      'Die Adresse unten im Browser öffnen und bei Garmin anmelden. Dort '
+      '"Schlüssel erstellen", die Zusatzbedingungen annehmen und eine '
+      'Laufzeit wählen. Voreingestellt sind 30 Tage, danach muss ein neuer '
+      'Schlüssel her; "1 Jahr" spart das. Den Schlüssel kopieren, er wird '
+      'genau einmal angezeigt.';
   @override
-  String get personalKeyUrl => 'connect.garmin.com';
+  String get personalKeyUrl =>
+      'https://connect.garmin.com/app/settings/personalApiToken';
   @override
   String get personalKeyLabel => 'Schlüssel';
   @override
