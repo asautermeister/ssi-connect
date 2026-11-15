@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ssi_connect/accounts/account_repository.dart';
 import 'package:ssi_connect/accounts/accounts_controller.dart';
@@ -7,6 +9,24 @@ import 'package:ssi_connect/garmin/models/garmin_session.dart';
 import 'package:ssi_connect/ssi/ssi_buddy_code.dart';
 import 'package:ssi_connect/garmin/garmin_auth_exceptions.dart';
 import 'package:ssi_connect/garmin/garmin_personal_api_client.dart';
+
+/// A token shaped like Garmin's, carrying [guid] as `garmin_guid`. The
+/// signature part is not checked by the app, so any text will do.
+String _token(String guid, {String jti = 'x'}) {
+  String part(Map<String, Object> json) =>
+      base64Url.encode(utf8.encode(jsonEncode(json))).replaceAll('=', '');
+  return '${part({'alg': 'RS256'})}.'
+      '${part({'garmin_guid': guid, 'jti': jti})}.signature';
+}
+
+GarminSession _passwordFor(String guid) => GarminSession(
+  accessToken: _token(guid),
+  refreshToken: 'r',
+  diClientId: 'c',
+);
+
+GarminSession _keyFor(String guid) =>
+    GarminSession.personal(accessToken: _token(guid), key: 'GCDC_a.b.c.d');
 
 class _InMemoryRepository extends AccountRepository {
   final saved = <String, GarminAccount>{};
@@ -143,6 +163,309 @@ void main() {
       expect(updated.ssiMemberId, '3902893');
       expect(updated.session.accessToken, 'a');
     });
+  });
+
+  group('Garmin id', () {
+    test('is read from the token', () {
+      expect(_keyFor('guid-1').garminGuid, 'guid-1');
+      expect(_session.garminGuid, isNull);
+      expect(const GarminSession.none().garminGuid, isNull);
+    });
+
+    test('a key without a mail address still finds its person', () async {
+      // What the device showed: the profile behind a key has no mail
+      // address, so matching by address alone made a second entry.
+      final controller = AccountsController(repository: _InMemoryRepository());
+      final account = await controller.addAccountFromSuccess(
+        email: 'a@example.com',
+        session: _passwordFor('guid-1'),
+        displayName: 'Andreas',
+      );
+
+      await controller.addAccountFromSuccess(
+        email: '',
+        session: _keyFor('guid-1'),
+      );
+
+      final only = controller.accounts.single;
+      expect(only.id, account.id);
+      expect(only.session.isPersonal, isTrue);
+      expect(only.garminGuid, 'guid-1');
+    });
+
+    test('the same address with another id is another person', () async {
+      final controller = AccountsController(repository: _InMemoryRepository());
+      await controller.addAccountFromSuccess(
+        email: 'a@example.com',
+        session: _passwordFor('guid-1'),
+      );
+      await controller.addAccountFromSuccess(
+        email: 'a@example.com',
+        session: _passwordFor('guid-2'),
+      );
+
+      expect(controller.accounts, hasLength(2));
+    });
+
+    test('an entry from before learns its id from its token', () async {
+      final repository = _InMemoryRepository();
+      repository.saved['old'] = GarminAccount(
+        id: 'old',
+        email: 'a@example.com',
+        displayName: 'Andreas',
+        session: _passwordFor('guid-1'),
+      );
+      final controller = AccountsController(repository: repository);
+
+      await controller.loadFromStorage();
+
+      expect(controller.accounts.single.garminGuid, 'guid-1');
+      expect(repository.saved['old']!.garminGuid, 'guid-1');
+    });
+
+    test(
+      'survives removing the key, so the next sign-in is recognised',
+      () async {
+        final controller = AccountsController(
+          repository: _InMemoryRepository(),
+        );
+        final account = await controller.addAccountFromSuccess(
+          email: '',
+          session: _keyFor('guid-1'),
+        );
+        await controller.removePersonalKey(account.id);
+        expect(controller.accounts.single.garminGuid, 'guid-1');
+
+        await controller.addAccountFromSuccess(
+          email: 'a@example.com',
+          session: _passwordFor('guid-1'),
+        );
+
+        final only = controller.accounts.single;
+        expect(only.id, account.id);
+        expect(only.session.isSignedOut, isFalse);
+      },
+    );
+
+    test('is kept in storage', () {
+      final account = GarminAccount(
+        id: 'a',
+        email: '',
+        displayName: 'Andreas',
+        session: const GarminSession.none(),
+        garminGuid: 'guid-1',
+      );
+      expect(
+        GarminAccount.fromJson(
+          jsonDecode(jsonEncode(account.toJson())) as Map<String, dynamic>,
+        ).garminGuid,
+        'guid-1',
+      );
+    });
+  });
+
+  group('AccountsController.isOtherGarminUser', () {
+    final controller = AccountsController(repository: _InMemoryRepository());
+    GarminAccount entry({String email = '', String? guid}) => GarminAccount(
+      id: 'a',
+      email: email,
+      displayName: 'Andreas',
+      session: guid == null ? _session : _passwordFor(guid),
+    );
+
+    test('a key of another Garmin id is someone else', () {
+      expect(
+        controller.isOtherGarminUser(entry(guid: 'guid-1'), _keyFor('guid-2')),
+        isTrue,
+      );
+    });
+
+    test('a key of the same Garmin id is the same person', () {
+      expect(
+        controller.isOtherGarminUser(entry(guid: 'guid-1'), _keyFor('guid-1')),
+        isFalse,
+      );
+    });
+
+    test('a signed-out entry still knows whose it is', () {
+      final signedOut = GarminAccount(
+        id: 'a',
+        email: '',
+        displayName: 'Andreas',
+        session: const GarminSession.none(),
+        garminGuid: 'guid-1',
+      );
+      expect(
+        controller.isOtherGarminUser(signedOut, _keyFor('guid-2')),
+        isTrue,
+      );
+    });
+
+    test('without ids, different addresses decide', () {
+      expect(
+        controller.isOtherGarminUser(
+          entry(email: 'a@example.com'),
+          _session,
+          email: 'b@example.com',
+        ),
+        isTrue,
+      );
+    });
+
+    test('knowing nothing is not taken as someone else', () {
+      expect(controller.isOtherGarminUser(entry(), _session), isFalse);
+    });
+  });
+
+  group('AccountsController one entry per Garmin account', () {
+    test('a key for an account that is here switches it over', () async {
+      // Seen on the test device: the same person once by password and once
+      // by key, two entries, the same dives loaded twice.
+      final repository = _InMemoryRepository();
+      final controller = AccountsController(repository: repository);
+      final account = await controller.addAccountFromSuccess(
+        email: 'a@example.com',
+        session: _session,
+        displayName: 'Andreas',
+      );
+      await controller.setSsiIdentity(
+        account.id,
+        const SsiBuddyCode(memberId: '3902893', firstName: 'Andreas'),
+      );
+      await controller.setColor(account.id, AccountColor.blue);
+
+      final result = await controller.addAccountFromSuccess(
+        email: 'A@Example.com',
+        session: const GarminSession.personal(
+          accessToken: 'k',
+          key: 'GCDC_a.b.c.d',
+        ),
+        displayName: 'Andreas Sautermeister',
+      );
+
+      final only = controller.accounts.single;
+      expect(result.id, account.id);
+      expect(only.id, account.id);
+      expect(only.session.isPersonal, isTrue);
+      expect(only.displayName, 'Andreas');
+      expect(only.ssiMemberId, '3902893');
+      expect(only.color, AccountColor.blue);
+      expect(repository.saved.keys, [account.id]);
+      expect(repository.saved[account.id]!.session.isPersonal, isTrue);
+    });
+
+    test('a password for a key account switches it back', () async {
+      final controller = AccountsController(repository: _InMemoryRepository());
+      final account = await controller.addAccountFromSuccess(
+        email: 'a@example.com',
+        session: const GarminSession.personal(
+          accessToken: 'k',
+          key: 'GCDC_a.b.c.d',
+        ),
+      );
+
+      await controller.addAccountFromSuccess(
+        email: 'a@example.com',
+        session: _session,
+      );
+
+      final only = controller.accounts.single;
+      expect(only.id, account.id);
+      expect(only.session.isPersonal, isFalse);
+    });
+
+    test('a different address is a different account', () async {
+      final controller = AccountsController(repository: _InMemoryRepository());
+      await controller.addAccountFromSuccess(
+        email: 'a@example.com',
+        session: _session,
+      );
+      await controller.addAccountFromSuccess(
+        email: 'b@example.com',
+        session: _session,
+      );
+
+      expect(controller.accounts, hasLength(2));
+    });
+
+    test('without an address there is nothing to match', () async {
+      // The key route takes the address from the profile, and Garmin may
+      // leave it out. Then two entries are better than a wrong merge.
+      final controller = AccountsController(repository: _InMemoryRepository());
+      await controller.addAccountFromSuccess(email: '', session: _session);
+      await controller.addAccountFromSuccess(email: '', session: _session);
+
+      expect(controller.accounts, hasLength(2));
+    });
+  });
+
+  group('AccountsController.removePersonalKey', () {
+    test('signs the account out and keeps everything else', () async {
+      final repository = _InMemoryRepository();
+      final controller = AccountsController(repository: repository);
+      final account = await controller.addAccountFromSuccess(
+        email: 'a@example.com',
+        session: const GarminSession.personal(
+          accessToken: 'k',
+          key: 'GCDC_a.b.c.d',
+        ),
+        displayName: 'Andreas',
+      );
+      await controller.setSsiIdentity(
+        account.id,
+        const SsiBuddyCode(memberId: '3902893', firstName: 'Andreas'),
+      );
+      await controller.setColor(account.id, AccountColor.blue);
+
+      await controller.removePersonalKey(account.id);
+
+      final only = controller.accounts.single;
+      expect(only.session.isSignedOut, isTrue);
+      expect(only.session.personalApiKey, isNull);
+      expect(only.displayName, 'Andreas');
+      expect(only.ssiMemberId, '3902893');
+      expect(only.color, AccountColor.blue);
+      // The key must be gone from storage too, not just from memory.
+      expect(repository.saved[account.id]!.session.personalApiKey, isNull);
+    });
+
+    test('a password account is left alone', () async {
+      final controller = AccountsController(repository: _InMemoryRepository());
+      final account = await controller.addAccountFromSuccess(
+        email: 'a@example.com',
+        session: _session,
+      );
+
+      await controller.removePersonalKey(account.id);
+
+      expect(controller.accounts.single.session.refreshToken, 'r');
+    });
+
+    test('a signed-out account takes a sign-in again', () async {
+      final controller = AccountsController(repository: _InMemoryRepository());
+      final account = await controller.addAccountFromSuccess(
+        email: 'a@example.com',
+        session: const GarminSession.personal(
+          accessToken: 'k',
+          key: 'GCDC_a.b.c.d',
+        ),
+      );
+      await controller.removePersonalKey(account.id);
+
+      await controller.addAccountFromSuccess(
+        email: 'a@example.com',
+        session: _session,
+      );
+
+      final only = controller.accounts.single;
+      expect(only.id, account.id);
+      expect(only.session.isSignedOut, isFalse);
+    });
+  });
+
+  test('a signed-out session survives storage', () {
+    final back = GarminSession.fromJson(const GarminSession.none().toJson());
+    expect(back.isSignedOut, isTrue);
   });
 
   group('AccountsController.reconnect', () {

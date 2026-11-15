@@ -399,11 +399,14 @@ class AppStringsDe extends AppStrings {
       'Damit braucht die App kein Garmin-Passwort mehr.';
   @override
   String get personalKeyHowTo =>
-      'In Garmin Connect im Browser anmelden, unter Einstellungen den '
-      'Punkt "Personal API Key" wählen und einen Schlüssel erzeugen. Er '
-      'wird genau einmal angezeigt.';
+      'Die Adresse unten im Browser öffnen und bei Garmin anmelden. Dort '
+      '"Schlüssel erstellen", die Zusatzbedingungen annehmen und eine '
+      'Laufzeit wählen. Voreingestellt sind 30 Tage, danach muss ein neuer '
+      'Schlüssel her; "1 Jahr" spart das. Den Schlüssel kopieren, er wird '
+      'genau einmal angezeigt.';
   @override
-  String get personalKeyUrl => 'connect.garmin.com';
+  String get personalKeyUrl =>
+      'https://connect.garmin.com/app/settings/personalApiToken';
   @override
   String get personalKeyLabel => 'Schlüssel';
   @override
@@ -433,6 +436,29 @@ class AppStringsDe extends AppStrings {
   String get personalKeyUsePassword => 'Stattdessen mit Passwort anmelden';
   @override
   String get personalKeyUseKey => 'Stattdessen Personal API Key verwenden';
+  @override
+  String get personalKeyRemove => 'Schlüssel entfernen';
+  @override
+  String get personalKeyNameHint => 'Wie dieser Account in der App heißen soll';
+  @override
+  String get personalKeyNameRequired =>
+      'Bitte einen Namen eingeben. Garmin verrät über den Schlüssel keinen.';
+  @override
+  String get personalKeyRemoveQuestion => 'Schlüssel entfernen?';
+  @override
+  String personalKeyRemoveBody(String name) =>
+      'Die App vergisst den Schlüssel von $name. Der Account bleibt mit '
+      'Name, Farbe und SSI-Nummer erhalten. Um wieder Tauchgänge zu laden, '
+      'meldest du dich neu an, mit Passwort oder neuem Schlüssel.\n\n'
+      'Bei Garmin bleibt der Schlüssel gültig, bis du ihn in Garmin Connect '
+      'löschst.';
+  @override
+  String get personalKeyRemoveAlsoDives =>
+      'Gespeicherte Tauchgänge auch löschen';
+  @override
+  String get personalKeyRemoved => 'Schlüssel entfernt';
+  @override
+  String get notSignedIn => 'Nicht angemeldet';
   @override
   String get showPassword => 'Passwort anzeigen';
   @override

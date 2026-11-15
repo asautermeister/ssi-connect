@@ -173,15 +173,30 @@ Was da ist:
   fremden Konto fliegt auf, bevor er fremde Tauchgänge lädt.
 - Ein abgelaufener Schlüssel sagt „Schlüssel abgelaufen" statt „Sitzung
   abgelaufen" und führt zum Schlüssel-Bildschirm statt zur Anmeldung.
+- „Schlüssel entfernen" im Kontomenü, nur bei einem Konto mit Schlüssel
+  und unabhängig vom Schalter, weil es der Weg hinaus ist. Das Konto
+  bleibt mit Name, Farbe und SSI-Nummer, ist danach abgemeldet
+  (`GarminSession.none`) und sagt „Nicht angemeldet". Die gespeicherten
+  Tauchgänge mitzulöschen ist ein Häkchen, standardmäßig aus.
+- Ein Garmin-Konto ist ein Eintrag: Eine Anmeldung für eine Person, die
+  schon da ist, stellt das bestehende Konto um, ob per Passwort oder
+  Schlüssel. Erkannt wird die Person an `garmin_guid` im Token. Am Gerät
+  geprüft: Passwort- und Schlüssel-Token derselben Person tragen denselben
+  Wert. Die Mailadresse ist nur Rückfall, denn das Profil hinter einem
+  Schlüssel enthält keine (Felder: `displayName` und Einstellungen). Mit
+  der Kennung prüft auch der Schlüssel-Bildschirm, ob ein Schlüssel zu
+  einem fremden Konto gehört.
 
 #### Was noch fehlt
 
-1. **Am Gerät prüfen.** Vor allem: Kommt man überhaupt zum Schlüssel?
-   Erzeugt wird er in Garmin Connect **im Browser** – die App zeigt nur
-   die Adresse an, sie öffnet sie nicht. Das würde `url_launcher`
-   brauchen, eine weitere Plattform-Abhängigkeit, und davon wurde dieses
-   Projekt schon zweimal gebissen. Erst sehen, wie lästig es wirklich
-   ist.
+1. **Am Gerät prüfen – zum größten Teil erledigt (14.11.2026, Pixel 7).**
+   Zum Schlüssel kommt man: die Adresse im Browser aufrufen, bei Garmin
+   anmelden samt 2SV, Schlüssel erstellen, kopieren. Tausch, Profil und
+   Tauchgangsliste laufen gegen `personal.connectapi` mit 200. Dabei
+   aufgefallen und behoben: doppelte Konten für dieselbe Person und
+   mehrfaches Laden der ersten Seite beim Start. Offen sind noch
+   Detailansicht und QR-Code und das Entfernen des Schlüssels am Gerät.
+   `url_launcher` ist danach nicht nötig.
 2. **Etappe 3: Übertragung zwischen Geräten.** Das Gerät mit dem
    Schlüssel zeigt ihn als QR-Code, das andere scannt ihn.
    `QrScanScreen<T>` ist bereits generisch, `QrDisplayScreen` zeigt
@@ -189,16 +204,42 @@ Was da ist:
    QR-Code mit einem gültigen Zugangsschlüssel auf einem Bildschirm ist
    abfotografierbar. Das gehört hinter eine Bestätigung, die sagt, was
    gleich sichtbar wird, nicht in ein Menü neben „Umbenennen".
-3. **Die Lizenzfrage.** Die Personal-Stufe ist für Werkzeuge gedacht, die
-   man selbst betreibt. Jeder mit eigenem Schlüssel auf eigenem Gerät
-   trifft das dem Sinn nach – lesen sollte man es trotzdem, bevor die
-   Funktion in ein Release geht.
+3. **Die Lizenzfrage – Text liegt vor (Zusatzbedingungen, Stand
+   1.10.2026).** Kernsatz: Schlüssel „sind persönlich für dich und dürfen
+   nur von dir in Verbindung mit Anwendungen, Services oder Tools
+   verwendet werden, die du für deinen eigenen Gebrauch entwickelst oder
+   betreibst". Nicht erlaubt: verkaufen, übertragen, unterlizenzieren,
+   vertreiben, offenlegen, mit Dritten teilen. Folgen für die App, ohne
+   juristische Gewissheit:
+   - Der eigene Schlüssel in der selbst gebauten App auf dem eigenen
+     Gerät ist der gemeinte Fall.
+   - Das Familien-Tablet ist eine Grauzone: Jede Person trägt zwar ihren
+     eigenen Schlüssel ein, aber auf einem Gerät, das andere mitbenutzen,
+     in einer App, die sie nicht selbst betreibt.
+   - Etappe 3 (Schlüssel per QR auf ein zweites Gerät) ist zwischen
+     eigenen Geräten kein Teilen mit Dritten, auf ein fremdes Gerät schon.
+   - Ein öffentliches Release mit eingeschalteter Funktion lädt andere
+     ein, ihre Schlüssel in eine App zu stecken, die sie nicht selbst
+     entwickeln. Deshalb bleibt der Schalter aus, bis das entschieden
+     ist.
 4. **Keine Tauchgangsnummer.** Belegt: weder Liste noch Detail führen
    eine. Die Überschrift der Detailseite fällt auf den Typ zurück. Kostet
    wenig, weil die App das wegen Apnoe ohnehin kann, ist aber ein
    sichtbarer Verlust gegenüber dem SSO-Weg.
-5. **Ratenbegrenzungen** sind unbekannt. Die 60-Sekunden-Sperre im
-   Refresh schützt schon.
+5. **Ratenbegrenzungen** sind nicht beziffert. Die Bedingungen behalten
+   sich vor, jederzeit zu drosseln oder zu sperren, und ein Verstoß kann
+   den Schlüssel kosten. Die 60-Sekunden-Sperre im Refresh und das
+   einmalige Laden pro Start halten die Zahl der Aufrufe klein.
+6. **Laufzeit.** Garmin bietet 30 Tage (voreingestellt), 90, 180 Tage
+   und 1 Jahr. Die Anleitung in der App empfiehlt jetzt 1 Jahr. Denkbar
+   wäre, das Ablaufdatum am Konto anzuzeigen, bevor es so weit ist.
+   Dafür müsste man wissen, ob es irgendwo abzulesen ist; das Token
+   selbst lebt nur einen Tag.
+
+Der Weg zum Schlüssel, am 15.11.2026 durchgegangen:
+`https://connect.garmin.com/app/settings/personalApiToken` öffnen, bei
+Garmin anmelden (samt 2SV), „Schlüssel erstellen", Zusatzbedingungen
+annehmen, Laufzeit wählen, kopieren, Kopieren bestätigen.
 
 Der alte Weg bleibt unverändert daneben bestehen. Kein Account wird
 umgestellt, der nicht ausdrücklich einen Schlüssel bekommt.

@@ -271,6 +271,7 @@ enum _AccountAction {
   rename,
   signInAgain,
   personalKey,
+  removeKey,
   color,
   ssiIdentity,
   clearCache,
@@ -356,6 +357,7 @@ class _AccountCard extends StatelessWidget {
                   builder: (_) => GarminKeyScreen(account: account),
                 ),
               ),
+              _AccountAction.removeKey => _confirmRemoveKey(context),
               _AccountAction.color => _pickColor(context),
               _AccountAction.ssiIdentity => Navigator.of(context).push(
                 MaterialPageRoute(
@@ -380,6 +382,14 @@ class _AccountCard extends StatelessWidget {
                 PopupMenuItem(
                   value: _AccountAction.personalKey,
                   child: Text(s.personalKeyTitle),
+                ),
+              // Regardless of the switch: taking a key off is the way out,
+              // and has to stay possible in a build that no longer offers
+              // putting one on.
+              if (account.session.isPersonal)
+                PopupMenuItem(
+                  value: _AccountAction.removeKey,
+                  child: Text(s.personalKeyRemove),
                 ),
               PopupMenuItem(
                 value: _AccountAction.color,
@@ -452,6 +462,37 @@ class _AccountCard extends StatelessWidget {
     await controller.rename(account.id, name);
   }
 
+  /// Takes the key off and leaves the account signed out. Deleting its
+  /// dives too is offered, not done: they may well be wanted until the
+  /// account is signed in again the other way.
+  Future<void> _confirmRemoveKey(BuildContext context) async {
+    final controller = context.read<AccountsController>();
+    final dives = context.read<RecentDivesController>();
+    final fetch = context.read<DiveFetcher>();
+    final messenger = ScaffoldMessenger.of(context);
+    final removed = AppStrings.of(context).personalKeyRemoved;
+
+    final alsoDives = await showDialog<bool>(
+      context: context,
+      builder: (_) => _RemoveKeyDialog(name: account.displayName),
+    );
+    if (alsoDives == null) return;
+
+    await controller.removePersonalKey(account.id);
+    if (alsoDives) await dives.forget(account.id);
+
+    // Ask once right away, so the card says "not signed in" now rather
+    // than whenever the next automatic fetch comes due. It costs no
+    // request: a signed-out account fails before anything is sent, and the
+    // dives kept above stay on screen.
+    final updated = controller.accounts
+        .where((a) => a.id == account.id)
+        .toList();
+    await dives.load(accounts: updated, fetch: fetch, notWithin: Duration.zero);
+
+    messenger.showSnackBar(SnackBar(content: Text(removed)));
+  }
+
   /// Removing an account drops its stored tokens, which means a full
   /// re-login with a fresh MFA code - worth a confirmation step.
   Future<void> _confirmRemove(BuildContext context) async {
@@ -484,6 +525,54 @@ class _AccountCard extends StatelessWidget {
       // be exactly what nobody expects.
       await dives.forget(account.id);
     }
+  }
+}
+
+/// Confirms removing a key. Pops null on cancel, otherwise whether the
+/// stored dives should go too - off unless ticked.
+class _RemoveKeyDialog extends StatefulWidget {
+  const _RemoveKeyDialog({required this.name});
+
+  final String name;
+
+  @override
+  State<_RemoveKeyDialog> createState() => _RemoveKeyDialogState();
+}
+
+class _RemoveKeyDialogState extends State<_RemoveKeyDialog> {
+  var _alsoDives = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final s = AppStrings.of(context);
+    return AlertDialog(
+      title: Text(s.personalKeyRemoveQuestion),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(s.personalKeyRemoveBody(widget.name)),
+          const SizedBox(height: AppSpacing.md),
+          CheckboxListTile(
+            value: _alsoDives,
+            onChanged: (value) => setState(() => _alsoDives = value ?? false),
+            title: Text(s.personalKeyRemoveAlsoDives),
+            controlAffinity: ListTileControlAffinity.leading,
+            contentPadding: EdgeInsets.zero,
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text(s.cancel),
+        ),
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(_alsoDives),
+          child: Text(s.remove),
+        ),
+      ],
+    );
   }
 }
 
@@ -658,7 +747,10 @@ class _ExpiredSession extends StatelessWidget {
 
     // What ran out, and so what the way back in is. An account set up with
     // a key cannot be repaired by signing in again, and one set up with a
-    // password has no key to replace.
+    // password has no key to replace. One whose key was removed has
+    // nothing at all, and either way back in will do - the sign-in screen
+    // offers both.
+    final signedOut = account.session.isSignedOut;
     final byKey = account.session.isPersonal;
 
     return InkWell(
@@ -679,7 +771,9 @@ class _ExpiredSession extends StatelessWidget {
           ),
           const SizedBox(width: AppSpacing.xs),
           Text(
-            byKey
+            signedOut
+                ? '${s.notSignedIn} · ${s.signIn}'
+                : byKey
                 ? '${s.personalKeyExpired} · ${s.personalKeyReplace}'
                 : '${s.sessionExpired} · ${s.signInAgain}',
             style: theme.textTheme.bodySmall?.copyWith(

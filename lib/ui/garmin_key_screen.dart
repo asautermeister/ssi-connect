@@ -22,10 +22,14 @@ import 'theme/app_theme.dart';
 /// account gets its owner's real name, and a key pasted into the wrong
 /// person's entry is caught before it starts loading a stranger's dives.
 class GarminKeyScreen extends StatefulWidget {
-  const GarminKeyScreen({super.key, this.account});
+  const GarminKeyScreen({super.key, this.account, this.initialName});
 
   /// The account to put the key on, or null to make a new one.
   final GarminAccount? account;
+
+  /// What was already typed as the name on the sign-in screen, so switching
+  /// to a key does not throw it away.
+  final String? initialName;
 
   @override
   State<GarminKeyScreen> createState() => _GarminKeyScreenState();
@@ -33,7 +37,10 @@ class GarminKeyScreen extends StatefulWidget {
 
 class _GarminKeyScreenState extends State<GarminKeyScreen> {
   final _key = TextEditingController();
+  late final _name = TextEditingController(text: widget.initialName?.trim());
   final _api = GarminPersonalApiClient();
+
+  bool get _isNew => widget.account == null;
 
   bool _busy = false;
   String? _error;
@@ -41,6 +48,7 @@ class _GarminKeyScreenState extends State<GarminKeyScreen> {
   @override
   void dispose() {
     _key.dispose();
+    _name.dispose();
     super.dispose();
   }
 
@@ -65,6 +73,14 @@ class _GarminKeyScreenState extends State<GarminKeyScreen> {
       setState(() => _error = s.personalKeyMalformed);
       return;
     }
+    // A new entry needs a name from here: the profile behind a key has
+    // none to offer, only Garmin's internal handle, and no mail address to
+    // fall back on either.
+    final name = _name.text.trim();
+    if (_isNew && name.isEmpty) {
+      setState(() => _error = s.personalKeyNameRequired);
+      return;
+    }
 
     setState(() {
       _busy = true;
@@ -79,10 +95,13 @@ class _GarminKeyScreenState extends State<GarminKeyScreen> {
       final existing = widget.account;
       if (existing != null) {
         // Putting a stranger's key on an existing entry would quietly fill
-        // it with their dives. The mail address is the one thing both
-        // sides name, so it is what gets compared.
-        final theirs = profile.email?.toLowerCase();
-        if (theirs != null && theirs != existing.email.toLowerCase()) {
+        // it with their dives. Garmin's id in the token is what tells them
+        // apart; the profile behind a key carries no mail address.
+        if (accounts.isOtherGarminUser(
+          existing,
+          session,
+          email: profile.email,
+        )) {
           setState(() {
             _busy = false;
             _error = s.personalKeyWrongAccount;
@@ -94,7 +113,7 @@ class _GarminKeyScreenState extends State<GarminKeyScreen> {
         await accounts.addAccountFromSuccess(
           email: profile.email ?? '',
           session: session,
-          displayName: profile.displayName,
+          displayName: name,
         );
       }
       if (mounted) Navigator.of(context).pop(true);
@@ -144,6 +163,20 @@ class _GarminKeyScreenState extends State<GarminKeyScreen> {
                   ),
                 ),
                 const SizedBox(height: AppSpacing.xl),
+                if (_isNew) ...[
+                  TextField(
+                    controller: _name,
+                    decoration: InputDecoration(
+                      labelText: s.name,
+                      helperText: s.personalKeyNameHint,
+                    ),
+                    textCapitalization: TextCapitalization.words,
+                    onChanged: (_) {
+                      if (_error != null) setState(() => _error = null);
+                    },
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                ],
                 TextField(
                   controller: _key,
                   maxLines: 2,

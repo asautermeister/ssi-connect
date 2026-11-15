@@ -387,10 +387,13 @@ class AppStringsEn extends AppStrings {
       'no Garmin password at all.';
   @override
   String get personalKeyHowTo =>
-      'Sign in to Garmin Connect in a browser, open Settings, choose '
-      '"Personal API Key" and create one. It is shown exactly once.';
+      'Open the address below in a browser and sign in to Garmin. Choose '
+      '"Create key", accept the additional terms and pick how long it '
+      'lasts. The default is 30 days, after which a new key is needed; '
+      '"1 year" saves that. Copy the key, it is shown exactly once.';
   @override
-  String get personalKeyUrl => 'connect.garmin.com';
+  String get personalKeyUrl =>
+      'https://connect.garmin.com/app/settings/personalApiToken';
   @override
   String get personalKeyLabel => 'Key';
   @override
@@ -419,6 +422,27 @@ class AppStringsEn extends AppStrings {
   String get personalKeyUsePassword => 'Sign in with a password instead';
   @override
   String get personalKeyUseKey => 'Use a personal API key instead';
+  @override
+  String get personalKeyRemove => 'Remove key';
+  @override
+  String get personalKeyNameHint => 'What this account is called in the app';
+  @override
+  String get personalKeyNameRequired =>
+      'Please enter a name. Garmin does not give one away with the key.';
+  @override
+  String get personalKeyRemoveQuestion => 'Remove key?';
+  @override
+  String personalKeyRemoveBody(String name) =>
+      "The app forgets $name's key. The account stays, with its name, "
+      'colour and SSI number. To load dives again, sign in anew, with a '
+      'password or a new key.\n\n'
+      'At Garmin the key stays valid until you delete it in Garmin Connect.';
+  @override
+  String get personalKeyRemoveAlsoDives => 'Also delete stored dives';
+  @override
+  String get personalKeyRemoved => 'Key removed';
+  @override
+  String get notSignedIn => 'Not signed in';
   @override
   String get showPassword => 'Show password';
   @override

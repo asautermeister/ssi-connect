@@ -229,7 +229,10 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
               ? null
               : () => Navigator.of(context).pushReplacement(
                   MaterialPageRoute(
-                    builder: (_) => GarminKeyScreen(account: widget.reconnect),
+                    builder: (_) => GarminKeyScreen(
+                      account: widget.reconnect,
+                      initialName: _nameController.text,
+                    ),
                   ),
                 ),
         ),

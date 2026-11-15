@@ -21,6 +21,7 @@ class GarminAccount {
     required this.email,
     required this.displayName,
     required this.session,
+    this.garminGuid,
     this.ssiMemberId,
     this.ssiFirstName,
     this.ssiLastName,
@@ -34,6 +35,14 @@ class GarminAccount {
   final String email;
   final String displayName;
   final GarminSession session;
+
+  /// Garmin's id for this person, from the token's `garmin_guid` claim.
+  ///
+  /// Kept on the account rather than only read from [session], because a
+  /// removed key leaves no token behind - and the next sign-in still has to
+  /// be recognised as this person. Null on an entry that has never had a
+  /// token carrying it.
+  final String? garminGuid;
 
   final String? ssiMemberId;
   final String? ssiFirstName;
@@ -78,6 +87,7 @@ class GarminAccount {
 
   GarminAccount copyWith({
     GarminSession? session,
+    String? garminGuid,
     String? displayName,
     String? ssiMemberId,
     String? ssiFirstName,
@@ -90,6 +100,7 @@ class GarminAccount {
       email: email,
       displayName: displayName ?? this.displayName,
       session: session ?? this.session,
+      garminGuid: garminGuid ?? this.garminGuid,
       ssiMemberId: ssiMemberId ?? this.ssiMemberId,
       ssiFirstName: ssiFirstName ?? this.ssiFirstName,
       ssiLastName: ssiLastName ?? this.ssiLastName,
@@ -106,6 +117,7 @@ class GarminAccount {
     email: email,
     displayName: displayName,
     session: session,
+    garminGuid: garminGuid,
     ssiMemberId: ssiMemberId,
     ssiFirstName: ssiFirstName,
     ssiLastName: ssiLastName,
@@ -123,6 +135,7 @@ class GarminAccount {
     email: email,
     displayName: displayName,
     session: session,
+    garminGuid: garminGuid,
     ssiMemberId: ssiMemberId,
     ssiFirstName: ssiFirstName,
     ssiLastName: ssiLastName,
@@ -141,6 +154,7 @@ class GarminAccount {
     email: email,
     displayName: displayName,
     session: session,
+    garminGuid: garminGuid,
     color: color,
   );
 
@@ -149,6 +163,7 @@ class GarminAccount {
     'email': email,
     'displayName': displayName,
     'session': session.toJson(),
+    if (garminGuid != null) 'garminGuid': garminGuid,
     'ssiMemberId': ssiMemberId,
     'ssiFirstName': ssiFirstName,
     'ssiLastName': ssiLastName,
@@ -162,6 +177,7 @@ class GarminAccount {
     email: json['email'] as String,
     displayName: json['displayName'] as String,
     session: GarminSession.fromJson(json['session'] as Map<String, dynamic>),
+    garminGuid: json['garminGuid'] as String?,
     ssiMemberId: json['ssiMemberId'] as String?,
     ssiFirstName: json['ssiFirstName'] as String?,
     ssiLastName: json['ssiLastName'] as String?,

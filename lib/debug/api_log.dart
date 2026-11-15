@@ -61,6 +61,16 @@ class ApiLog extends ChangeNotifier {
 
   void add(ApiLogEntry entry) {
     if (!enabled) return;
+    // One line on the console in debug builds, so `flutter run` shows the
+    // traffic without reading it off the phone. No bodies: the line is
+    // short on purpose, and the details stay on the device.
+    if (kDebugMode) {
+      debugPrint(
+        'API ${entry.method} ${entry.url} -> '
+        '${entry.statusCode ?? "-"}'
+        '${entry.error != null ? ' ERROR ${entry.error}' : ''}',
+      );
+    }
     _entries.add(entry);
     if (_entries.length > _maxEntries) {
       _entries.removeRange(0, _entries.length - _maxEntries);

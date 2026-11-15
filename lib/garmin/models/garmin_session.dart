@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 /// Which Garmin API a session talks to.
 ///
 /// Two of them, with the same paths behind them: the internal app
@@ -45,6 +47,18 @@ class GarminSession {
        refreshToken = null,
        diClientId = null;
 
+  /// No credentials at all: the account is kept, but signed out.
+  ///
+  /// What is left after a Personal API key is removed. Name, colour and SSI
+  /// number stay on the account, and the next sign-in, by password or by a
+  /// new key, puts a real session back in place.
+  const GarminSession.none()
+    : accessToken = '',
+      refreshToken = null,
+      diClientId = null,
+      personalApiKey = null,
+      tokenExpiresAt = null;
+
   final String accessToken;
 
   /// SSO only.
@@ -63,7 +77,34 @@ class GarminSession {
 
   bool get isPersonal => personalApiKey != null;
 
+  /// True for [GarminSession.none]: nothing to send to Garmin, and nothing
+  /// to renew a token from.
+  bool get isSignedOut =>
+      accessToken.isEmpty && refreshToken == null && personalApiKey == null;
+
   GarminApi get api => isPersonal ? GarminApi.personal : GarminApi.internal;
+
+  /// Garmin's own id for the person behind the token, from its
+  /// `garmin_guid` claim. Null when the token carries none or is not a JWT.
+  ///
+  /// The one thing both sign-in routes are known to share: checked on a
+  /// device, the password token and the key token of the same person carry
+  /// the same value. The profile behind a key has no mail address, so this
+  /// is what tells two entries for one person apart from two people.
+  String? get garminGuid {
+    final parts = accessToken.split('.');
+    if (parts.length != 3) return null;
+    try {
+      final claims = jsonDecode(
+        utf8.decode(base64Url.decode(base64Url.normalize(parts[1]))),
+      );
+      if (claims is! Map) return null;
+      final guid = claims['garmin_guid'];
+      return guid is String && guid.isNotEmpty ? guid : null;
+    } on Object {
+      return null;
+    }
+  }
 
   GarminSession copyWith({
     String? accessToken,
