@@ -436,6 +436,11 @@ class AppStringsDe extends AppStrings {
   @override
   String get personalKeyRemove => 'Schlüssel entfernen';
   @override
+  String get personalKeyNameHint => 'Wie dieser Account in der App heißen soll';
+  @override
+  String get personalKeyNameRequired =>
+      'Bitte einen Namen eingeben. Garmin verrät über den Schlüssel keinen.';
+  @override
   String get personalKeyRemoveQuestion => 'Schlüssel entfernen?';
   @override
   String personalKeyRemoveBody(String name) =>

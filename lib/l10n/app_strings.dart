@@ -249,6 +249,8 @@ abstract class AppStrings {
   String get personalKeyUsePassword;
   String get personalKeyUseKey;
   String get personalKeyRemove;
+  String get personalKeyNameHint;
+  String get personalKeyNameRequired;
   String get personalKeyRemoveQuestion;
   String personalKeyRemoveBody(String name);
   String get personalKeyRemoveAlsoDives;
