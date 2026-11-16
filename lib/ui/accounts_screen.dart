@@ -524,6 +524,7 @@ class _AccountCard extends StatelessWidget {
       // dive profiles on the tablet after they were removed from it would
       // be exactly what nobody expects.
       await dives.forget(account.id);
+      await dives.forgetDiveNumbers(account.id);
     }
   }
 }

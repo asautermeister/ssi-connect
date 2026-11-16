@@ -395,6 +395,17 @@ class AppStringsEn extends AppStrings {
   String get personalKeyUrl =>
       'https://connect.garmin.com/app/settings/personalApiToken';
   @override
+  String get diveNumberSet => 'Set dive number';
+  @override
+  String get diveNumberSetBody =>
+      'The number of this dive in your logbook. The others are counted from '
+      'here, freedives left out. If dives are missing in Garmin further '
+      'back, set another number there.';
+  @override
+  String get diveNumberLabel => 'Dive number';
+  @override
+  String get diveNumberInvalid => 'Please enter a number from 1.';
+  @override
   String get personalKeyOpenPage => 'Open the Garmin page';
   @override
   String get personalKeyOpenPageFailed =>

@@ -408,6 +408,17 @@ class AppStringsDe extends AppStrings {
   String get personalKeyUrl =>
       'https://connect.garmin.com/app/settings/personalApiToken';
   @override
+  String get diveNumberSet => 'Tauchgangsnummer festlegen';
+  @override
+  String get diveNumberSetBody =>
+      'Die Nummer dieses Tauchgangs in deinem Logbuch. Die anderen werden '
+      'von hier aus gezählt, Apnoe nicht mitgerechnet. Fehlen weiter hinten '
+      'Tauchgänge in Garmin, dort einfach noch eine Nummer festlegen.';
+  @override
+  String get diveNumberLabel => 'Tauchgangsnummer';
+  @override
+  String get diveNumberInvalid => 'Bitte eine Zahl ab 1 eingeben.';
+  @override
   String get personalKeyOpenPage => 'Seite bei Garmin öffnen';
   @override
   String get personalKeyOpenPageFailed =>

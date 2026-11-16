@@ -236,6 +236,10 @@ abstract class AppStrings {
   String get personalKeyIntro;
   String get personalKeyHowTo;
   String get personalKeyUrl;
+  String get diveNumberSet;
+  String get diveNumberSetBody;
+  String get diveNumberLabel;
+  String get diveNumberInvalid;
   String get personalKeyOpenPage;
   String get personalKeyOpenPageFailed;
   String get personalKeyLabel;

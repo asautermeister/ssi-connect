@@ -190,15 +190,14 @@ Was da ist:
 
 #### Was noch fehlt
 
-1. **Am Gerät prüfen – zum größten Teil erledigt (14.11.2026, Pixel 7).**
-   Zum Schlüssel kommt man: die Adresse im Browser aufrufen, bei Garmin
-   anmelden samt 2SV, Schlüssel erstellen, kopieren. Tausch, Profil und
-   Tauchgangsliste laufen gegen `personal.connectapi` mit 200. Dabei
-   aufgefallen und behoben: doppelte Konten für dieselbe Person und
-   mehrfaches Laden der ersten Seite beim Start. Offen sind noch
-   Detailansicht und QR-Code. Das Entfernen des Schlüssels ist am Gerät
-   geprüft. Der Schlüssel-Bildschirm öffnet die Garmin-Seite über einen
-   eigenen Kanal (`lib/net/browser.dart`), ohne `url_launcher`.
+1. **Am Gerät geprüft (14. und 16.11.2026, Pixel 7).** Schlüssel
+   erstellen, Tausch, Profil, Tauchgangsliste, Detailansicht, QR-Code
+   und das Entfernen des Schlüssels laufen. Der Knopf auf dem
+   Schlüssel-Bildschirm öffnet die Garmin-Seite im Browser (eigener Kanal
+   in `lib/net/browser.dart`, kein `url_launcher`). Ein abgelaufenes
+   Token wird still erneuert: erst 401, dann Tausch, dann die Liste.
+   Dass dem ein Fehlversuch vorausgeht, ließe sich sparen – das Token
+   trägt sein Ablaufdatum (`exp`), die App könnte vorher tauschen.
 2. **Die Lizenzfrage – Text liegt vor (Zusatzbedingungen, Stand
    1.10.2026).** Kernsatz: Schlüssel „sind persönlich für dich und dürfen
    nur von dir in Verbindung mit Anwendungen, Services oder Tools
@@ -215,10 +214,15 @@ Was da ist:
      ein, ihre Schlüssel in eine App zu stecken, die sie nicht selbst
      entwickeln. Deshalb bleibt der Schalter aus, bis das entschieden
      ist.
-3. **Keine Tauchgangsnummer.** Belegt: weder Liste noch Detail führen
-   eine. Die Überschrift der Detailseite fällt auf den Typ zurück. Kostet
-   wenig, weil die App das wegen Apnoe ohnehin kann, ist aber ein
-   sichtbarer Verlust gegenüber dem SSO-Weg.
+3. **Keine Tauchgangsnummer – gelöst über einen Anker (16.11.2026).**
+   Die Personal API liefert weder in der Liste noch im Detail eine
+   Nummer. Selbst durchzählen reicht nicht: Am Konto mit 279 am letzten
+   Tauchgang ergab die Zählung 294 (alle), 282 (ohne Apnoe), 275 (nur
+   Einzelgas) – ein Logbuch hat Tauchgänge, die nie in Garmin landeten.
+   Deshalb setzt man in der Detailansicht (#) die Nummer eines
+   Tauchgangs, die übrigen werden von dort in beide Richtungen gezählt,
+   Apnoe nicht mitgerechnet. Mehrere Anker für Lücken, jeder Tauchgang
+   zählt vom nächstgelegenen. Nur wo Garmin keine Nummer sendet.
 4. **Ratenbegrenzungen** sind nicht beziffert. Die Bedingungen behalten
    sich vor, jederzeit zu drosseln oder zu sperren, und ein Verstoß kann
    den Schlüssel kosten. Die 60-Sekunden-Sperre im Refresh und das

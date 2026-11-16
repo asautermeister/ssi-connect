@@ -50,7 +50,9 @@ class SsiConnectApp extends StatelessWidget {
         ChangeNotifierProvider(
           create: (_) => SsiSyncController()..initialize(),
         ),
-        ChangeNotifierProvider(create: (_) => RecentDivesController()),
+        ChangeNotifierProvider(
+          create: (_) => RecentDivesController()..loadNumberAnchors(),
+        ),
         ChangeNotifierProvider(
           create: (_) => ExportedDivesController()..loadFromStorage(),
         ),
