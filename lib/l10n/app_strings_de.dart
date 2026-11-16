@@ -399,7 +399,7 @@ class AppStringsDe extends AppStrings {
       'Damit braucht die App kein Garmin-Passwort mehr.';
   @override
   String get personalKeyHowTo =>
-      'Die Adresse unten im Browser öffnen und bei Garmin anmelden. Dort '
+      'Die Garmin-Seite öffnen und dort anmelden. Dann '
       '"Schlüssel erstellen", die Zusatzbedingungen annehmen und eine '
       'Laufzeit wählen. Voreingestellt sind 30 Tage, danach muss ein neuer '
       'Schlüssel her; "1 Jahr" spart das. Den Schlüssel kopieren, er wird '
@@ -407,6 +407,11 @@ class AppStringsDe extends AppStrings {
   @override
   String get personalKeyUrl =>
       'https://connect.garmin.com/app/settings/personalApiToken';
+  @override
+  String get personalKeyOpenPage => 'Seite bei Garmin öffnen';
+  @override
+  String get personalKeyOpenPageFailed =>
+      'Kein Browser hat die Seite geöffnet. Die Adresse lässt sich kopieren.';
   @override
   String get personalKeyLabel => 'Schlüssel';
   @override

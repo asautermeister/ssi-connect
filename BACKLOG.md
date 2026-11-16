@@ -143,11 +143,12 @@ Unterschiede verstecken statt sie zu zeigen.
 
 ## Ideen
 
-### Personal API: gebaut, aber noch nie an einem Gerät gelaufen
+### Personal API: läuft am Gerät, in Releases ausgeblendet
 
-Verkabelung, Eingabe und Ablaufbehandlung stehen; die Übertragung
-zwischen Geräten per QR-Code fehlt noch, und **nichts davon ist je auf
-einem Gerät ausgeführt worden** – nur Analyzer und Tests.
+Verkabelung, Eingabe und Ablaufbehandlung stehen und sind am Pixel 7
+gelaufen. Eine Übertragung des Schlüssels per QR-Code auf ein anderes
+Gerät ist verworfen (16.11.2026): Wer das Gerät wechselt, erstellt auf
+dem neuen einfach einen neuen Schlüssel.
 
 **Ab 1.3.2 ausgeblendet.** Die beiden Einstiege, der Button beim
 Anmelden und der Punkt im Kontomenü, stehen hinter `Features.personalApi`
@@ -195,16 +196,10 @@ Was da ist:
    Tauchgangsliste laufen gegen `personal.connectapi` mit 200. Dabei
    aufgefallen und behoben: doppelte Konten für dieselbe Person und
    mehrfaches Laden der ersten Seite beim Start. Offen sind noch
-   Detailansicht und QR-Code und das Entfernen des Schlüssels am Gerät.
-   `url_launcher` ist danach nicht nötig.
-2. **Etappe 3: Übertragung zwischen Geräten.** Das Gerät mit dem
-   Schlüssel zeigt ihn als QR-Code, das andere scannt ihn.
-   `QrScanScreen<T>` ist bereits generisch, `QrDisplayScreen` zeigt
-   beliebige Nutzlast – es wäre fast nur Verdrahtung. **Aber:** ein
-   QR-Code mit einem gültigen Zugangsschlüssel auf einem Bildschirm ist
-   abfotografierbar. Das gehört hinter eine Bestätigung, die sagt, was
-   gleich sichtbar wird, nicht in ein Menü neben „Umbenennen".
-3. **Die Lizenzfrage – Text liegt vor (Zusatzbedingungen, Stand
+   Detailansicht und QR-Code. Das Entfernen des Schlüssels ist am Gerät
+   geprüft. Der Schlüssel-Bildschirm öffnet die Garmin-Seite über einen
+   eigenen Kanal (`lib/net/browser.dart`), ohne `url_launcher`.
+2. **Die Lizenzfrage – Text liegt vor (Zusatzbedingungen, Stand
    1.10.2026).** Kernsatz: Schlüssel „sind persönlich für dich und dürfen
    nur von dir in Verbindung mit Anwendungen, Services oder Tools
    verwendet werden, die du für deinen eigenen Gebrauch entwickelst oder
@@ -216,21 +211,19 @@ Was da ist:
    - Das Familien-Tablet ist eine Grauzone: Jede Person trägt zwar ihren
      eigenen Schlüssel ein, aber auf einem Gerät, das andere mitbenutzen,
      in einer App, die sie nicht selbst betreibt.
-   - Etappe 3 (Schlüssel per QR auf ein zweites Gerät) ist zwischen
-     eigenen Geräten kein Teilen mit Dritten, auf ein fremdes Gerät schon.
    - Ein öffentliches Release mit eingeschalteter Funktion lädt andere
      ein, ihre Schlüssel in eine App zu stecken, die sie nicht selbst
      entwickeln. Deshalb bleibt der Schalter aus, bis das entschieden
      ist.
-4. **Keine Tauchgangsnummer.** Belegt: weder Liste noch Detail führen
+3. **Keine Tauchgangsnummer.** Belegt: weder Liste noch Detail führen
    eine. Die Überschrift der Detailseite fällt auf den Typ zurück. Kostet
    wenig, weil die App das wegen Apnoe ohnehin kann, ist aber ein
    sichtbarer Verlust gegenüber dem SSO-Weg.
-5. **Ratenbegrenzungen** sind nicht beziffert. Die Bedingungen behalten
+4. **Ratenbegrenzungen** sind nicht beziffert. Die Bedingungen behalten
    sich vor, jederzeit zu drosseln oder zu sperren, und ein Verstoß kann
    den Schlüssel kosten. Die 60-Sekunden-Sperre im Refresh und das
    einmalige Laden pro Start halten die Zahl der Aufrufe klein.
-6. **Laufzeit.** Garmin bietet 30 Tage (voreingestellt), 90, 180 Tage
+5. **Laufzeit.** Garmin bietet 30 Tage (voreingestellt), 90, 180 Tage
    und 1 Jahr. Die Anleitung in der App empfiehlt jetzt 1 Jahr. Denkbar
    wäre, das Ablaufdatum am Konto anzuzeigen, bevor es so weit ist.
    Dafür müsste man wissen, ob es irgendwo abzulesen ist; das Token

@@ -7,6 +7,7 @@ import 'package:ssi_connect/accounts/accounts_controller.dart';
 import 'package:ssi_connect/accounts/models/garmin_account.dart';
 import 'package:ssi_connect/garmin/models/garmin_session.dart';
 import 'package:ssi_connect/l10n/app_strings.dart';
+import 'package:ssi_connect/net/browser.dart';
 import 'package:ssi_connect/ui/garmin_key_screen.dart';
 import 'package:ssi_connect/ui/theme/app_theme.dart';
 
@@ -50,6 +51,59 @@ Finder _field(String label) => find.byWidgetPredicate(
 
 void main() {
   group('GarminKeyScreen', () {
+    testWidgets('the button opens the Garmin key page in the browser', (
+      tester,
+    ) async {
+      final opened = <Object?>[];
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        Browser.channel,
+        (call) async {
+          opened.add(call.arguments);
+          return true;
+        },
+      );
+      addTearDown(
+        () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+          Browser.channel,
+          null,
+        ),
+      );
+      await _pump(tester, const GarminKeyScreen());
+
+      await tester.tap(find.text('Seite bei Garmin öffnen'));
+      await tester.pumpAndSettle();
+
+      expect(opened, [
+        'https://connect.garmin.com/app/settings/personalApiToken',
+      ]);
+      expect(find.byType(SnackBar), findsNothing);
+    });
+
+    testWidgets('without a browser the address stays to copy by hand', (
+      tester,
+    ) async {
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        Browser.channel,
+        (_) async => false,
+      );
+      addTearDown(
+        () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+          Browser.channel,
+          null,
+        ),
+      );
+      await _pump(tester, const GarminKeyScreen());
+
+      await tester.tap(find.text('Seite bei Garmin öffnen'));
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('Kein Browser'), findsOneWidget);
+      expect(
+        find.text('https://connect.garmin.com/app/settings/personalApiToken'),
+        findsOneWidget,
+      );
+    });
+
     testWidgets('a new account brings the name typed on the sign-in screen', (
       tester,
     ) async {

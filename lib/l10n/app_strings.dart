@@ -236,6 +236,8 @@ abstract class AppStrings {
   String get personalKeyIntro;
   String get personalKeyHowTo;
   String get personalKeyUrl;
+  String get personalKeyOpenPage;
+  String get personalKeyOpenPageFailed;
   String get personalKeyLabel;
   String get personalKeyPasteFromClipboard;
   String get personalKeyClipboardEmpty;
