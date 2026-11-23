@@ -353,8 +353,84 @@ Konten zu zählen ist ehrlich und reicht.
 ### Tauchplätze zwischen Geräten teilen
 
 Ein Tauchplatz ließe sich als QR-Code anzeigen und von einem zweiten
-Gerät einlesen, so wie es die Buddy-Liste schon kann. Nützlich für ein
-zweites Familien-Tablet ohne SSI-Anmeldung.
+Gerät einlesen, so wie es die Buddy-Liste schon kann. Zwei Fälle, in
+denen das gebraucht wird: ein zweites Familien-Tablet **ohne**
+SSI-Anmeldung, das seine Plätze von nirgends herbekommt, und ein von Hand
+eingetragener Platz, der nach einem Neuaufsetzen nicht wieder
+hereinzuimportieren ist – er stand nie in einem Logbuch.
+
+#### Was im Code steht
+
+```
+divesite;303948;name:Blue Hole;lat:36.0166;lon:14.2798;region:Gozo
+```
+
+Alle Felder von `DiveSite` reisen mit, jedes aus einem Grund:
+
+- `siteId` – das Einzige, was SSI je interessiert.
+- `name` – das Label der Liste.
+- `lat`/`lon` – **ohne die ist der geteilte Platz auf dem Zielgerät
+  nutzlos.** Der Umkreis-Vorschlag ist der ganze Nutzen eines bekannten
+  Platzes; eine Nummer ohne Position wird nie wieder von selbst gefunden.
+  Vier Dezimalstellen wie in `coordinatesLabel`, nicht mehr.
+- `region` – damit der Platz auf dem zweiten Gerät in derselben Gruppe
+  landet wie auf dem ersten.
+
+Rund 70 Bytes pro Platz.
+
+**Der Marker ist `divesite`, nicht `site`.** `buddy`, `center` und `dive`
+sind SSIs eigene Marker, und `site:` ist ein *Feld* im
+Tauchgangs-Payload. Ein eigener Marker schließt eine Verwechslung auch
+dann aus, wenn SSI selbst einmal Plätze als Code ausgibt.
+
+**Das ist das Format dieser App, keins von SSI.** Die SSI-App wird diesen
+Code nie lesen – anders als der Buddy-Code, der SSIs eigener ist. Gehört
+in den Doc-Kommentar, sonst hält ihn später jemand für einen SSI-Code und
+sucht den Fehler bei SSI. Jedes Feld durch `ssiPayloadValue()`: Namen
+kommen aus fremden Logbüchern.
+
+#### Wo es andockt – fast nichts davon ist neu
+
+- **Zeigen:** QR-Symbol rechts auf `_SiteCard`, genau wie die Buddy-Karte
+  es bekommen hat. Gerendert wird mit `QrScanSurface`.
+- **Lesen:** Der FAB „Code scannen" liest heute schon *beide* Arten – es
+  braucht einen dritten Fall in `SsiCodeScanScreen.parse` und in
+  `_scan()`, keinen neuen Knopf. Ein Scanner, drei Code-Arten, und die
+  Frage „was scannst du gerade?" stellt sich weiterhin nicht.
+- **Zusammenführen:** `DiveSitesController.addAllNew` existiert und macht
+  genau das Richtige – nur Neues anlegen, Region nachtragen, einen
+  umbenannten Eintrag nicht überfahren.
+
+**Eine Entscheidung ist offen:** Was passiert bei einem Platz, dessen
+Nummer das Gerät schon kennt? `save` würde den lokalen Namen
+überschreiben, `addAllNew` behält ihn. Vorschlag: behalten – der lokale
+Name ist eine Entscheidung des Nutzers – aber „kennt dieses Gerät schon"
+sagen statt still nichts zu tun.
+
+#### Einer oder viele
+
+1. **Ein Platz pro Code.** Der Anfang. Für die drei Plätze einer Reise
+   genügt es, und es ist in sich geschlossen und testbar.
+2. **Eine Region am Stück** – aber nicht als ein Riesen-Code: Version 40
+   ist bei 380 px vom Nachbartablet aus kaum zu scannen. Durchblättern
+   wie der Tauchtag, `DiveQrBatchScreen` ist das Muster und steht schon.
+3. **Die ganze Liste** (dreistellig) ist kein QR-Fall. Dafür eine Datei:
+   `file_picker` liegt für den FIT-Import schon da, `DiveSite.toJson` ist
+   fertig, der Export wäre `jsonEncode` über die Liste. Gegen die Datei
+   spricht nur, dass sie irgendwie vom Gerät zum Gerät muss – QR
+   funktioniert ohne Netz, ohne Kabel und ohne Konto.
+
+**Verworfen:** Bluetooth oder „Nearby" (Plattform-Code und neue
+Berechtigungen für etwas, das zwei Kameras auch können) und ein Austausch
+über SSI (für ein Konto mit Logbuch kommen die Plätze von dort – die
+Lücke ist gerade das Tablet *ohne* Anmeldung).
+
+**Sicherheit:** Die Liste liegt verschlüsselt, weil sie zusammen mit den
+Koordinaten sagt, wo diese Person taucht. Ein angezeigter QR-Code ist
+eine bewusste Übergabe an die Person daneben und zeigt nur, was ohnehin
+auf dem Bildschirm steht. Entscheidend ist, dass **nichts mitreist, was
+nicht in der Zeile oben steht** – keine Konto-ID, keine Herkunft, keine
+Tauchgangsdaten.
 
 ### CI-Workflow für Pull Requests
 
