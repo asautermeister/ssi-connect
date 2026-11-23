@@ -423,10 +423,6 @@ class AppStringsEn extends AppStrings {
   @override
   String get personalKeyCheck => 'Check and save';
   @override
-  String get personalKeyChecking => 'Checking the key ...';
-  @override
-  String personalKeyBelongsTo(String name) => "$name's key";
-  @override
   String get personalKeyWrongAccount =>
       'This key belongs to a different Garmin account. It would load a '
       "stranger's dives into this one.";
@@ -434,8 +430,6 @@ class AppStringsEn extends AppStrings {
   String get personalKeyExpired => 'Key expired';
   @override
   String get personalKeyReplace => 'Store a new key';
-  @override
-  String get personalKeyUsePassword => 'Sign in with a password instead';
   @override
   String get personalKeyUseKey => 'Use a personal API key instead';
   @override

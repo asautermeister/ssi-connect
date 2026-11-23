@@ -101,9 +101,9 @@ class RecentDiveCard extends StatelessWidget {
       // straight to the code from here and to the dive from there was two
       // answers to one question, and the code is on the detail page now
       // anyway - so nothing got further away.
-      onTap: () => Navigator.of(
-        context,
-      ).push(MaterialPageRoute(builder: (_) => _detailScreen())),
+      onTap: () =>
+          Navigator.of(context)
+              .push(MaterialPageRoute(builder: (_) => _detailScreen())),
       child: Row(
         children: [
           // With the running number above it, the same block the

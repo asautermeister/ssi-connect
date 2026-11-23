@@ -16,8 +16,10 @@ const divePageSize = 50;
 /// [start] skips that many dives, newest first: 0 is the first page,
 /// [divePageSize] the second. A page shorter than [divePageSize] means
 /// there is nothing older left.
-typedef DiveFetcher =
-    Future<List<Dive>> Function(GarminAccount account, {int start});
+typedef DiveFetcher = Future<List<Dive>> Function(
+  GarminAccount account, {
+  int start,
+});
 
 /// Loads dives from Garmin, refreshing the stored session once if the
 /// access token has expired.

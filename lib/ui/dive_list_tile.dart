@@ -87,9 +87,9 @@ class DiveListTile extends StatelessWidget {
 
     return AppCard(
       edgeColor: accountColor?.of(context),
-      onTap: () => Navigator.of(
-        context,
-      ).push(MaterialPageRoute(builder: (_) => _detailScreen())),
+      onTap: () =>
+          Navigator.of(context)
+              .push(MaterialPageRoute(builder: (_) => _detailScreen())),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

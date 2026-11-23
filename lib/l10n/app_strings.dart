@@ -247,12 +247,9 @@ abstract class AppStrings {
   String get personalKeyClipboardEmpty;
   String get personalKeyMalformed;
   String get personalKeyCheck;
-  String get personalKeyChecking;
-  String personalKeyBelongsTo(String name);
   String get personalKeyWrongAccount;
   String get personalKeyExpired;
   String get personalKeyReplace;
-  String get personalKeyUsePassword;
   String get personalKeyUseKey;
   String get personalKeyRemove;
   String get personalKeyNameHint;

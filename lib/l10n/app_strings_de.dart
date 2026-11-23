@@ -437,10 +437,6 @@ class AppStringsDe extends AppStrings {
   @override
   String get personalKeyCheck => 'Prüfen und speichern';
   @override
-  String get personalKeyChecking => 'Schlüssel wird geprüft ...';
-  @override
-  String personalKeyBelongsTo(String name) => 'Schlüssel von $name';
-  @override
   String get personalKeyWrongAccount =>
       'Dieser Schlüssel gehört zu einem anderen Garmin-Konto. Er würde '
       'fremde Tauchgänge in diesen Account laden.';
@@ -448,8 +444,6 @@ class AppStringsDe extends AppStrings {
   String get personalKeyExpired => 'Schlüssel abgelaufen';
   @override
   String get personalKeyReplace => 'Neuen Schlüssel hinterlegen';
-  @override
-  String get personalKeyUsePassword => 'Stattdessen mit Passwort anmelden';
   @override
   String get personalKeyUseKey => 'Stattdessen Personal API Key verwenden';
   @override

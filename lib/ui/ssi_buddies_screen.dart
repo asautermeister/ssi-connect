@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../l10n/app_strings.dart';
+
 import 'package:provider/provider.dart';
 
 import '../accounts/accounts_controller.dart';
@@ -826,9 +827,8 @@ Future<void> _scan(BuildContext context) async {
   }
 
   if (!context.mounted) return;
-  ScaffoldMessenger.of(
-    context,
-  ).showSnackBar(SnackBar(content: Text(s.savedConfirmation(name))));
+  ScaffoldMessenger.of(context)
+      .showSnackBar(SnackBar(content: Text(s.savedConfirmation(name))));
 }
 
 /// Manual fallback, for a tablet without a working camera or a buddy who

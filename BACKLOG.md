@@ -54,6 +54,22 @@ Erledigt und deshalb hier nicht mehr aufgeführt: das fehlende Escaping
 der QR-Payloads, die Personendaten Dritter im API-Log, `allowBackup` und
 vier nicht mehr aufgerufene Member. Steht im Git-Log.
 
+**Zweiter Durchgang am 23.11.2026**, nach dem Merge von #22, über alles
+seither Dazugekommene — Personal API, Schlüssel-Bildschirm, Browser-Kanal,
+Konsolen-Log, Tauchgangsnummern. Kein neuer Sicherheitsbefund:
+
+- Der Browser-Kanal (`lib/net/browser.dart`) lässt **nur `https`** durch,
+  und beide nativen Seiten prüfen das noch einmal selbst. Kein allgemeiner
+  Intent-Starter.
+- Die Konsolenzeile im Debug-Build trägt Methode, URL, Status und Fehler –
+  **keine Rumpfdaten**. Der bekannte Punkt bleibt, dass der Query-String
+  nicht redigiert wird; heute reist dort nichts Geheimes.
+- Der Personal API Key steht nur im Sitzungsmodell und im Keystore. Er
+  landet in keiner Log-Zeile und in keiner Fehlermeldung.
+
+Gefunden und behoben: drei l10n-Strings, die mit dem Schlüssel-Bildschirm
+angelegt und nie benutzt wurden.
+
 ### Built-in Kotlin ist umgestellt
 
 Erledigt: Flutter 3.47.8, `android.builtInKotlin=true` und
@@ -125,7 +141,8 @@ unten und sollte dort verwendet statt hier entfernt werden.
 Fehlalarme, damit der nächste Durchgang sie nicht erneut herleitet:
 `AccountColor`-Werte sind über `AccountColor.values` im Farbwähler
 erreichbar, `isSupported`/`shouldReload` sind Framework-Overrides von
-`LocalizationsDelegate`.
+`LocalizationsDelegate`, und `debugPrint` ist Flutters eigene Funktion,
+die ein Suchmuster für eine Deklaration halten kann.
 
 ### Drei fast identische Repositories
 
