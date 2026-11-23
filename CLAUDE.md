@@ -47,7 +47,11 @@ Was eindeutig und prüfbar ist, wird behoben — mit Test. Alles andere kommt
 nach `BACKLOG.md`, zusammen mit dem Grund, **warum** es nicht gemacht
 wurde. Erledigtes wird dort gelöscht; die Historie steht im Git-Log.
 
-## Grenzen dieser Umgebung
+## Grenzen der Cloud-Umgebung
+
+Lokal (Windows, Pixel 7 per USB) laufen Gradle-Builds und `flutter run`;
+dort lassen sich Gradle, Manifest und Signierung am Gerät prüfen. Das
+Folgende gilt nur für den Cloud-Container:
 
 - `flutter analyze` und `flutter test` laufen hier. **Gradle-Builds nicht**
   — es gibt kein Android-SDK. An Gradle, Manifest oder Signierung wird
