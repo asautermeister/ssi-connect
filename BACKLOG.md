@@ -160,18 +160,21 @@ Unterschiede verstecken statt sie zu zeigen.
 
 ## Ideen
 
-### Personal API: läuft am Gerät, in Releases ausgeblendet
+### Personal API: eingeschaltet
 
 Verkabelung, Eingabe und Ablaufbehandlung stehen und sind am Pixel 7
 gelaufen. Eine Übertragung des Schlüssels per QR-Code auf ein anderes
 Gerät ist verworfen (16.11.2026): Wer das Gerät wechselt, erstellt auf
 dem neuen einfach einen neuen Schlüssel.
 
-**Ab 1.3.2 ausgeblendet.** Die beiden Einstiege, der Button beim
-Anmelden und der Punkt im Kontomenü, stehen hinter `Features.personalApi`
-([lib/features.dart](lib/features.dart)). Zum Testen am Gerät:
-`flutter run --dart-define=PERSONAL_API=true`. Wenn die Punkte unten
-erledigt sind, entfällt der Schalter wieder.
+**Ohne Schalter, seit 23.11.2026.** `Features.personalApi` ist entfernt, beide
+Einstiege — der Button beim Anmelden und der Punkt im Kontomenü — sind
+immer da. Grund: Es gibt kein offizielles Release. Die App wird selbst
+gebaut und auf eigenen Geräten installiert, und damit ist genau der Fall
+gegeben, den Garmins Bedingungen meinen. **Vor einem öffentlichen Release
+muss die Lizenzfrage unten neu beantwortet werden** – dann lädt die
+Funktion Leute ein, ihren Schlüssel in eine App zu stecken, die sie nicht
+selbst betreiben.
 
 Was da ist:
 
@@ -229,8 +232,9 @@ Was da ist:
      in einer App, die sie nicht selbst betreibt.
    - Ein öffentliches Release mit eingeschalteter Funktion lädt andere
      ein, ihre Schlüssel in eine App zu stecken, die sie nicht selbst
-     entwickeln. Deshalb bleibt der Schalter aus, bis das entschieden
-     ist.
+     entwickeln. Solange es kein Release gibt, stellt sich die Frage
+     nicht – **mit dem ersten Release stellt sie sich wieder**, und dann
+     vor dem Release, nicht danach.
 3. **Keine Tauchgangsnummer – gelöst über einen Anker (16.11.2026).**
    Die Personal API liefert weder in der Liste noch im Detail eine
    Nummer. Selbst durchzählen reicht nicht: Am Konto mit 279 am letzten
