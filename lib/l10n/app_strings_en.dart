@@ -387,13 +387,29 @@ class AppStringsEn extends AppStrings {
       'no Garmin password at all.';
   @override
   String get personalKeyHowTo =>
-      'Open the address below in a browser and sign in to Garmin. Choose '
+      'Open the Garmin page and sign in there. Choose '
       '"Create key", accept the additional terms and pick how long it '
       'lasts. The default is 30 days, after which a new key is needed; '
       '"1 year" saves that. Copy the key, it is shown exactly once.';
   @override
   String get personalKeyUrl =>
       'https://connect.garmin.com/app/settings/personalApiToken';
+  @override
+  String get diveNumberSet => 'Set dive number';
+  @override
+  String get diveNumberSetBody =>
+      'The number of this dive in your logbook. The others are counted from '
+      'here, freedives left out. If dives are missing in Garmin further '
+      'back, set another number there.';
+  @override
+  String get diveNumberLabel => 'Dive number';
+  @override
+  String get diveNumberInvalid => 'Please enter a number from 1.';
+  @override
+  String get personalKeyOpenPage => 'Open the Garmin page';
+  @override
+  String get personalKeyOpenPageFailed =>
+      'No browser opened the page. The address can be copied.';
   @override
   String get personalKeyLabel => 'Key';
   @override
@@ -407,10 +423,6 @@ class AppStringsEn extends AppStrings {
   @override
   String get personalKeyCheck => 'Check and save';
   @override
-  String get personalKeyChecking => 'Checking the key ...';
-  @override
-  String personalKeyBelongsTo(String name) => "$name's key";
-  @override
   String get personalKeyWrongAccount =>
       'This key belongs to a different Garmin account. It would load a '
       "stranger's dives into this one.";
@@ -418,8 +430,6 @@ class AppStringsEn extends AppStrings {
   String get personalKeyExpired => 'Key expired';
   @override
   String get personalKeyReplace => 'Store a new key';
-  @override
-  String get personalKeyUsePassword => 'Sign in with a password instead';
   @override
   String get personalKeyUseKey => 'Use a personal API key instead';
   @override

@@ -17,6 +17,7 @@ class Dive {
     this.latitude,
     this.longitude,
     this.diveNumber,
+    this.diveNumberIsCounted = false,
     this.descentCount,
     this.waterType,
     this.isDecoDive,
@@ -42,6 +43,11 @@ class Dive {
   /// would look identical to a real one.
   final int? diveNumber;
 
+  /// True when [diveNumber] was counted here from a number set by hand
+  /// (see `applyDiveNumberAnchors`) rather than sent by the source. Never
+  /// written to the cache: the count is redone from the anchors each time.
+  final bool diveNumberIsCounted;
+
   /// Number of individual descents inside this activity, when there was
   /// more than one - a freediving session is many descents under one
   /// activity. Null for an ordinary single dive.
@@ -63,7 +69,11 @@ class Dive {
   /// position needs.
   bool get hasPosition => latitude != null && longitude != null;
 
-  Dive copyWith({int? diveNumberOfDay}) => Dive(
+  Dive copyWith({
+    int? diveNumberOfDay,
+    int? diveNumber,
+    bool? diveNumberIsCounted,
+  }) => Dive(
     id: id,
     dateTime: dateTime,
     maxDepthMeters: maxDepthMeters,
@@ -73,7 +83,8 @@ class Dive {
     locationName: locationName,
     latitude: latitude,
     longitude: longitude,
-    diveNumber: diveNumber,
+    diveNumber: diveNumber ?? this.diveNumber,
+    diveNumberIsCounted: diveNumberIsCounted ?? this.diveNumberIsCounted,
     descentCount: descentCount,
     waterType: waterType,
     isDecoDive: isDecoDive,
@@ -94,7 +105,8 @@ class Dive {
     'locationName': locationName,
     'latitude': latitude,
     'longitude': longitude,
-    'diveNumber': diveNumber,
+    // A counted number stays out: it follows the anchors, not the cache.
+    'diveNumber': diveNumberIsCounted ? null : diveNumber,
     'descentCount': descentCount,
     'waterType': waterType?.name,
     'isDecoDive': isDecoDive,

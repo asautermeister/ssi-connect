@@ -5,6 +5,7 @@ import '../garmin/garmin_auth_exceptions.dart';
 import '../models/dive.dart';
 import 'dive_cache_repository.dart';
 import 'dive_loader.dart';
+import 'dive_number_anchors.dart';
 
 /// How one account's fetch went. Kept per account rather than as one global
 /// state so a single broken login doesn't blank the whole start screen -
@@ -70,11 +71,19 @@ class RecentDive {
 /// note saying when they were fetched - a dive from this morning is still
 /// worth a QR code at a dive site with no reception.
 class RecentDivesController extends ChangeNotifier {
-  RecentDivesController({DiveCacheRepository? cache})
-    : _cache = cache ?? DiveCacheRepository();
+  RecentDivesController({
+    DiveCacheRepository? cache,
+    DiveNumberAnchorRepository? anchors,
+  }) : _cache = cache ?? DiveCacheRepository(),
+       _anchorStore = anchors ?? DiveNumberAnchorRepository();
 
   final DiveCacheRepository _cache;
+  final DiveNumberAnchorRepository _anchorStore;
   final _byAccountId = <String, AccountDives>{};
+
+  /// Dive numbers set by hand, per account. Applied on the way out in
+  /// [forAccount], so the dives held here stay as the source sent them.
+  Map<String, List<DiveNumberAnchor>> _anchors = {};
 
   /// How many pages have been fetched per account, so the next "load more"
   /// knows where to continue.
@@ -147,8 +156,113 @@ class RecentDivesController extends ChangeNotifier {
     return oldest;
   }
 
-  AccountDives forAccount(String accountId) =>
-      _byAccountId[accountId] ?? const AccountDives();
+  AccountDives forAccount(String accountId) {
+    final load = _byAccountId[accountId];
+    if (load == null) return const AccountDives();
+    final anchors = _anchors[accountId];
+    if (anchors == null || anchors.isEmpty) return load;
+    return AccountDives(
+      dives: applyDiveNumberAnchors(load.dives, anchors),
+      isLoading: load.isLoading,
+      error: load.error,
+      fetchedAt: load.fetchedAt,
+      isFromCache: load.isFromCache,
+    );
+  }
+
+  Future<void> loadNumberAnchors() async {
+    _anchors = await _anchorStore.load();
+    notifyListeners();
+  }
+
+  /// The account a loaded dive belongs to, or null - a FIT import belongs
+  /// to none, and neither does a dive no list has loaded.
+  String? accountOf(String diveId) {
+    for (final entry in _byAccountId.entries) {
+      if (entry.value.dives.any((dive) => dive.id == diveId)) return entry.key;
+    }
+    return null;
+  }
+
+  /// The dive as it stands now, numbers counted in. A detail page holds
+  /// the dive it was opened with; this is how it sees a number set since.
+  Dive? findDive(String diveId) {
+    final accountId = accountOf(diveId);
+    if (accountId == null) return null;
+    for (final dive in forAccount(accountId).dives) {
+      if (dive.id == diveId) return dive;
+    }
+    return null;
+  }
+
+  /// The number set by hand on this very dive, or null.
+  int? anchoredNumber(String accountId, String diveId) {
+    for (final anchor in _anchors[accountId] ?? const <DiveNumberAnchor>[]) {
+      if (!anchor.carried && anchor.diveId == diveId) return anchor.number;
+    }
+    return null;
+  }
+
+  /// Sets [diveId] to [number], or clears its anchor when [number] is null.
+  Future<void> setDiveNumber(
+    String accountId,
+    String diveId,
+    int? number,
+  ) async {
+    final own = [
+      for (final anchor in _anchors[accountId] ?? const <DiveNumberAnchor>[])
+        if (!anchor.carried && anchor.diveId != diveId) anchor,
+      if (number != null) DiveNumberAnchor(diveId: diveId, number: number),
+    ];
+    // The carried anchor is rebuilt from the person's own, so a changed
+    // number cannot be outvoted by what was carried from the old one.
+    _anchors = {..._anchors, accountId: own};
+    _carryForward(accountId);
+    await _anchorStore.save(_anchors);
+    notifyListeners();
+  }
+
+  /// Drops the numbers set for an account that is gone.
+  Future<void> forgetDiveNumbers(String accountId) async {
+    if (!_anchors.containsKey(accountId)) return;
+    _anchors = {..._anchors}..remove(accountId);
+    await _anchorStore.save(_anchors);
+    notifyListeners();
+  }
+
+  /// Keeps a starting point on the newest numbered dive.
+  ///
+  /// The anchor someone sets is usually their latest dive. Fifty dives
+  /// later it is off the first page, and after the next app start nothing
+  /// loaded would reach it - so the count is carried along to whatever is
+  /// newest each time fresh dives arrive.
+  void _carryForward(String accountId) {
+    final own = [
+      for (final anchor in _anchors[accountId] ?? const <DiveNumberAnchor>[])
+        if (!anchor.carried) anchor,
+    ];
+    DiveNumberAnchor? carried;
+    if (own.isNotEmpty) {
+      for (final dive in forAccount(accountId).dives) {
+        if (dive.diveNumberIsCounted && dive.diveNumber != null) {
+          carried = DiveNumberAnchor(
+            diveId: dive.id,
+            number: dive.diveNumber!,
+            carried: true,
+          );
+          break;
+        }
+      }
+      // Nothing countable is loaded: keep what was carried before.
+      carried ??= _anchors[accountId]
+          ?.where((anchor) => anchor.carried)
+          .firstOrNull;
+    }
+    _anchors = {
+      ..._anchors,
+      accountId: [...own, ?carried],
+    };
+  }
 
   /// Every loaded dive across all accounts, most recent first.
   List<RecentDive> merged(List<GarminAccount> accounts) {
@@ -259,6 +373,10 @@ class RecentDivesController extends ChangeNotifier {
       _pagesLoaded[account.id] = 1;
       if (dives.length < divePageSize) _exhausted.add(account.id);
       await _cache.save(account.id, sorted);
+      if (_anchors[account.id]?.isNotEmpty ?? false) {
+        _carryForward(account.id);
+        await _anchorStore.save(_anchors);
+      }
     } catch (e) {
       // Failing does not throw away what we have. Cached dives with a
       // "fetched at" note beat an empty screen with an error on it.

@@ -33,6 +33,14 @@ void main() {
       expect(text, contains('3600'));
     });
 
+    test('removes a bare token sent back as plain text', () {
+      // The Personal API's key exchange: the whole body is the JWT.
+      const jwt = 'eyJhbGciOiJSUzI1NiJ9.eyJnYXJtaW5fZ3VpZCI6IngifQ.c2ln-_x';
+
+      expect(redact(jwt), isNot(contains('eyJ')));
+      expect(redact('Bearer $jwt'), 'Bearer ***');
+    });
+
     test('removes the MFA code', () {
       final text = redact({'mfaVerificationCode': '500231', 'mfaSetup': false});
 

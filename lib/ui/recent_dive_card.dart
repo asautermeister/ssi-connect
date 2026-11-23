@@ -106,7 +106,10 @@ class RecentDiveCard extends StatelessWidget {
       ).push(MaterialPageRoute(builder: (_) => _detailScreen())),
       child: Row(
         children: [
-          DiveTypeIcon(type: dive.type, size: 34),
+          // With the running number above it, the same block the
+          // per-account list shows - a merged list has the most need of a
+          // number to tell one diver's dives apart.
+          DiveTypeBadge(type: dive.type, diveNumber: dive.diveNumber, size: 34),
           const SizedBox(width: AppSpacing.md),
           Expanded(
             child: Column(

@@ -7,6 +7,7 @@ import '../accounts/models/garmin_account.dart';
 import '../garmin/garmin_auth_exceptions.dart';
 import '../garmin/garmin_personal_api_client.dart';
 import '../l10n/app_strings.dart';
+import '../net/browser.dart';
 import 'theme/app_theme.dart';
 
 /// Takes a Garmin Personal API key and makes an account out of it, or puts
@@ -50,6 +51,17 @@ class _GarminKeyScreenState extends State<GarminKeyScreen> {
     _key.dispose();
     _name.dispose();
     super.dispose();
+  }
+
+  Future<void> _openKeyPage() async {
+    final s = AppStrings.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+    final opened = await Browser.open(Uri.parse(s.personalKeyUrl));
+    if (!opened) {
+      messenger.showSnackBar(
+        SnackBar(content: Text(s.personalKeyOpenPageFailed)),
+      );
+    }
   }
 
   Future<void> _pasteFromClipboard() async {
@@ -152,14 +164,22 @@ class _GarminKeyScreenState extends State<GarminKeyScreen> {
                   ),
                 ),
                 const SizedBox(height: AppSpacing.sm),
-                // The address rather than a link: opening a browser would
-                // mean another platform plugin, and this project has been
-                // bitten by those twice.
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: OutlinedButton.icon(
+                    icon: const Icon(Icons.open_in_new, size: 18),
+                    label: Text(s.personalKeyOpenPage),
+                    onPressed: _openKeyPage,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.xs),
+                // Stays beside the button: it is what is left when no
+                // browser opens, and it says where the button goes.
                 SelectableText(
                   s.personalKeyUrl,
                   style: theme.textTheme.bodySmall?.copyWith(
                     fontFamily: 'monospace',
-                    color: theme.colorScheme.primary,
+                    color: palette.inkMuted,
                   ),
                 ),
                 const SizedBox(height: AppSpacing.xl),

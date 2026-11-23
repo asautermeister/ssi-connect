@@ -3,11 +3,14 @@ import 'package:provider/provider.dart';
 
 import '../l10n/app_strings.dart';
 
+import '../dives/dive_number_anchors.dart';
 import '../dives/exported_dives_controller.dart';
+import '../dives/recent_dives_controller.dart';
 import '../models/dive.dart';
 import '../ssi/dive_site.dart';
 import '../ssi/dive_sites_controller.dart';
 import '../ssi/ssi_buddy_code.dart';
+import 'dive_number_dialog.dart';
 import 'dive_site_section.dart';
 import 'format.dart';
 import 'qr_display_screen.dart';
@@ -92,14 +95,39 @@ class _DiveDetailScreenState extends State<DiveDetailScreen> {
     super.dispose();
   }
 
+  Future<void> _setNumber(
+    BuildContext context,
+    RecentDivesController numbers,
+    String accountId,
+    Dive dive,
+  ) async {
+    final anchored = numbers.anchoredNumber(accountId, dive.id);
+    final choice = await showDiveNumberDialog(
+      context,
+      current: dive.diveNumber,
+      canClear: anchored != null,
+    );
+    switch (choice) {
+      case SetDiveNumber(:final number):
+        await numbers.setDiveNumber(accountId, dive.id, number);
+      case ClearDiveNumber():
+        await numbers.setDiveNumber(accountId, dive.id, null);
+      case null:
+        break;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final s = AppStrings.of(context);
     final dives = widget.dives;
+    final numbers = _watchNumbers(context);
+    final current = _live(numbers, dives[_current].dive);
     // Garmin's running number for the diver, which is what a diver calls a
-    // dive. Null when Garmin did not send one - the number of the day then
-    // has to do, as before.
-    final diveNumber = dives[_current].dive.diveNumber;
+    // dive - or one counted from a number set by hand. Null when there is
+    // neither; the type then has to do.
+    final diveNumber = current.diveNumber;
+    final accountId = numbers?.accountOf(current.id);
 
     return Scaffold(
       appBar: AppBar(
@@ -109,10 +137,21 @@ class _DiveDetailScreenState extends State<DiveDetailScreen> {
               // the dive: what kind it was. The dive of the day says only
               // which of that day's it was, which is no help on a page that
               // already carries the date.
-              ? dives[_current].dive.type.title(s)
+              ? current.type.title(s)
               : s.diveNumberTitle(diveNumber),
         ),
         actions: [
+          // Only where the source sends no numbers of its own: a number
+          // Garmin sent is not ours to overrule.
+          if (numbers != null &&
+              accountId != null &&
+              countsAsNumberedDive(current) &&
+              (diveNumber == null || current.diveNumberIsCounted))
+            IconButton(
+              icon: const Icon(Icons.tag),
+              tooltip: s.diveNumberSet,
+              onPressed: () => _setNumber(context, numbers, accountId, current),
+            ),
           // Only while the title cannot tell the pages apart. Garmin's
           // running number is unique, so it says on its own that the swipe
           // arrived somewhere; the type does not - two dives of the same
@@ -153,6 +192,21 @@ class _DiveDetailScreenState extends State<DiveDetailScreen> {
     );
   }
 }
+
+/// The dives controller, when the screen sits under one. A FIT import and
+/// most tests show a dive without it, and then there is nothing to count.
+RecentDivesController? _watchNumbers(BuildContext context) {
+  try {
+    return context.watch<RecentDivesController>();
+  } on ProviderNotFoundException {
+    return null;
+  }
+}
+
+/// [dive] as the controller has it now, so a number set on this screen
+/// shows without reopening it.
+Dive _live(RecentDivesController? numbers, Dive dive) =>
+    numbers?.findDive(dive.id) ?? dive;
 
 class _DiveDetailPage extends StatefulWidget {
   const _DiveDetailPage({required this.entry, this.openAtCode = false});
@@ -259,7 +313,7 @@ class _DiveDetailPageState extends State<_DiveDetailPage>
 
   @override
   Widget build(BuildContext context) {
-    final dive = widget.entry.dive;
+    final dive = _live(_watchNumbers(context), widget.entry.dive);
     final diver = widget.entry.diver;
     final theme = Theme.of(context);
     final s = AppStrings.of(context);

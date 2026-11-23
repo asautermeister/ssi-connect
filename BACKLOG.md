@@ -54,6 +54,26 @@ Erledigt und deshalb hier nicht mehr aufgeführt: das fehlende Escaping
 der QR-Payloads, die Personendaten Dritter im API-Log, `allowBackup` und
 vier nicht mehr aufgerufene Member. Steht im Git-Log.
 
+**Zweiter Durchgang am 23.11.2026**, nach dem Merge von #22, über alles
+seither Dazugekommene — Personal API, Schlüssel-Bildschirm, Browser-Kanal,
+Konsolen-Log, Tauchgangsnummern. Kein neuer Sicherheitsbefund:
+
+- Der Browser-Kanal (`lib/net/browser.dart`) lässt **nur `https`** durch,
+  und beide nativen Seiten prüfen das noch einmal selbst. Kein allgemeiner
+  Intent-Starter.
+- Die Konsolenzeile im Debug-Build trägt Methode, URL, Status und Fehler –
+  **keine Rumpfdaten**. Der bekannte Punkt bleibt, dass der Query-String
+  nicht redigiert wird; heute reist dort nichts Geheimes.
+- Der Personal API Key steht nur im Sitzungsmodell und im Keystore. Er
+  landet in keiner Log-Zeile und in keiner Fehlermeldung.
+- **Nachtrag (Review 23.11.):** Das *Token* dagegen schon. Der Tausch
+  antwortet mit dem nackten JWT als Text, und die Schwärzung griff nur
+  hinter einem Feldnamen. Jetzt wird alles in JWT-Form geschwärzt
+  (`_sanitizeString`), mit Test.
+
+Gefunden und behoben: drei l10n-Strings, die mit dem Schlüssel-Bildschirm
+angelegt und nie benutzt wurden.
+
 ### Built-in Kotlin ist umgestellt
 
 Erledigt: Flutter 3.47.8, `android.builtInKotlin=true` und
@@ -125,7 +145,8 @@ unten und sollte dort verwendet statt hier entfernt werden.
 Fehlalarme, damit der nächste Durchgang sie nicht erneut herleitet:
 `AccountColor`-Werte sind über `AccountColor.values` im Farbwähler
 erreichbar, `isSupported`/`shouldReload` sind Framework-Overrides von
-`LocalizationsDelegate`.
+`LocalizationsDelegate`, und `debugPrint` ist Flutters eigene Funktion,
+die ein Suchmuster für eine Deklaration halten kann.
 
 ### Drei fast identische Repositories
 
@@ -143,17 +164,21 @@ Unterschiede verstecken statt sie zu zeigen.
 
 ## Ideen
 
-### Personal API: gebaut, aber noch nie an einem Gerät gelaufen
+### Personal API: eingeschaltet
 
-Verkabelung, Eingabe und Ablaufbehandlung stehen; die Übertragung
-zwischen Geräten per QR-Code fehlt noch, und **nichts davon ist je auf
-einem Gerät ausgeführt worden** – nur Analyzer und Tests.
+Verkabelung, Eingabe und Ablaufbehandlung stehen und sind am Pixel 7
+gelaufen. Eine Übertragung des Schlüssels per QR-Code auf ein anderes
+Gerät ist verworfen (16.11.2026): Wer das Gerät wechselt, erstellt auf
+dem neuen einfach einen neuen Schlüssel.
 
-**Ab 1.3.2 ausgeblendet.** Die beiden Einstiege, der Button beim
-Anmelden und der Punkt im Kontomenü, stehen hinter `Features.personalApi`
-([lib/features.dart](lib/features.dart)). Zum Testen am Gerät:
-`flutter run --dart-define=PERSONAL_API=true`. Wenn die Punkte unten
-erledigt sind, entfällt der Schalter wieder.
+**Ohne Schalter, seit 23.11.2026.** `Features.personalApi` ist entfernt, beide
+Einstiege — der Button beim Anmelden und der Punkt im Kontomenü — sind
+immer da. Grund: Es gibt kein offizielles Release. Die App wird selbst
+gebaut und auf eigenen Geräten installiert, und damit ist genau der Fall
+gegeben, den Garmins Bedingungen meinen. **Vor einem öffentlichen Release
+muss die Lizenzfrage unten neu beantwortet werden** – dann lädt die
+Funktion Leute ein, ihren Schlüssel in eine App zu stecken, die sie nicht
+selbst betreiben.
 
 Was da ist:
 
@@ -189,22 +214,15 @@ Was da ist:
 
 #### Was noch fehlt
 
-1. **Am Gerät prüfen – zum größten Teil erledigt (14.11.2026, Pixel 7).**
-   Zum Schlüssel kommt man: die Adresse im Browser aufrufen, bei Garmin
-   anmelden samt 2SV, Schlüssel erstellen, kopieren. Tausch, Profil und
-   Tauchgangsliste laufen gegen `personal.connectapi` mit 200. Dabei
-   aufgefallen und behoben: doppelte Konten für dieselbe Person und
-   mehrfaches Laden der ersten Seite beim Start. Offen sind noch
-   Detailansicht und QR-Code und das Entfernen des Schlüssels am Gerät.
-   `url_launcher` ist danach nicht nötig.
-2. **Etappe 3: Übertragung zwischen Geräten.** Das Gerät mit dem
-   Schlüssel zeigt ihn als QR-Code, das andere scannt ihn.
-   `QrScanScreen<T>` ist bereits generisch, `QrDisplayScreen` zeigt
-   beliebige Nutzlast – es wäre fast nur Verdrahtung. **Aber:** ein
-   QR-Code mit einem gültigen Zugangsschlüssel auf einem Bildschirm ist
-   abfotografierbar. Das gehört hinter eine Bestätigung, die sagt, was
-   gleich sichtbar wird, nicht in ein Menü neben „Umbenennen".
-3. **Die Lizenzfrage – Text liegt vor (Zusatzbedingungen, Stand
+1. **Am Gerät geprüft (14. und 16.11.2026, Pixel 7).** Schlüssel
+   erstellen, Tausch, Profil, Tauchgangsliste, Detailansicht, QR-Code
+   und das Entfernen des Schlüssels laufen. Der Knopf auf dem
+   Schlüssel-Bildschirm öffnet die Garmin-Seite im Browser (eigener Kanal
+   in `lib/net/browser.dart`, kein `url_launcher`). Ein abgelaufenes
+   Token wird still erneuert: erst 401, dann Tausch, dann die Liste.
+   Dass dem ein Fehlversuch vorausgeht, ließe sich sparen – das Token
+   trägt sein Ablaufdatum (`exp`), die App könnte vorher tauschen.
+2. **Die Lizenzfrage – Text liegt vor (Zusatzbedingungen, Stand
    1.10.2026).** Kernsatz: Schlüssel „sind persönlich für dich und dürfen
    nur von dir in Verbindung mit Anwendungen, Services oder Tools
    verwendet werden, die du für deinen eigenen Gebrauch entwickelst oder
@@ -216,21 +234,25 @@ Was da ist:
    - Das Familien-Tablet ist eine Grauzone: Jede Person trägt zwar ihren
      eigenen Schlüssel ein, aber auf einem Gerät, das andere mitbenutzen,
      in einer App, die sie nicht selbst betreibt.
-   - Etappe 3 (Schlüssel per QR auf ein zweites Gerät) ist zwischen
-     eigenen Geräten kein Teilen mit Dritten, auf ein fremdes Gerät schon.
    - Ein öffentliches Release mit eingeschalteter Funktion lädt andere
      ein, ihre Schlüssel in eine App zu stecken, die sie nicht selbst
-     entwickeln. Deshalb bleibt der Schalter aus, bis das entschieden
-     ist.
-4. **Keine Tauchgangsnummer.** Belegt: weder Liste noch Detail führen
-   eine. Die Überschrift der Detailseite fällt auf den Typ zurück. Kostet
-   wenig, weil die App das wegen Apnoe ohnehin kann, ist aber ein
-   sichtbarer Verlust gegenüber dem SSO-Weg.
-5. **Ratenbegrenzungen** sind nicht beziffert. Die Bedingungen behalten
+     entwickeln. Solange es kein Release gibt, stellt sich die Frage
+     nicht – **mit dem ersten Release stellt sie sich wieder**, und dann
+     vor dem Release, nicht danach.
+3. **Keine Tauchgangsnummer – gelöst über einen Anker (16.11.2026).**
+   Die Personal API liefert weder in der Liste noch im Detail eine
+   Nummer. Selbst durchzählen reicht nicht: Am Konto mit 279 am letzten
+   Tauchgang ergab die Zählung 294 (alle), 282 (ohne Apnoe), 275 (nur
+   Einzelgas) – ein Logbuch hat Tauchgänge, die nie in Garmin landeten.
+   Deshalb setzt man in der Detailansicht (#) die Nummer eines
+   Tauchgangs, die übrigen werden von dort in beide Richtungen gezählt,
+   Apnoe nicht mitgerechnet. Mehrere Anker für Lücken, jeder Tauchgang
+   zählt vom nächstgelegenen. Nur wo Garmin keine Nummer sendet.
+4. **Ratenbegrenzungen** sind nicht beziffert. Die Bedingungen behalten
    sich vor, jederzeit zu drosseln oder zu sperren, und ein Verstoß kann
    den Schlüssel kosten. Die 60-Sekunden-Sperre im Refresh und das
    einmalige Laden pro Start halten die Zahl der Aufrufe klein.
-6. **Laufzeit.** Garmin bietet 30 Tage (voreingestellt), 90, 180 Tage
+5. **Laufzeit.** Garmin bietet 30 Tage (voreingestellt), 90, 180 Tage
    und 1 Jahr. Die Anleitung in der App empfiehlt jetzt 1 Jahr. Denkbar
    wäre, das Ablaufdatum am Konto anzuzeigen, bevor es so weit ist.
    Dafür müsste man wissen, ob es irgendwo abzulesen ist; das Token
@@ -335,8 +357,113 @@ Konten zu zählen ist ehrlich und reicht.
 ### Tauchplätze zwischen Geräten teilen
 
 Ein Tauchplatz ließe sich als QR-Code anzeigen und von einem zweiten
-Gerät einlesen, so wie es die Buddy-Liste schon kann. Nützlich für ein
-zweites Familien-Tablet ohne SSI-Anmeldung.
+Gerät einlesen, so wie es die Buddy-Liste schon kann. Zwei Fälle, in
+denen das gebraucht wird: ein zweites Familien-Tablet **ohne**
+SSI-Anmeldung, das seine Plätze von nirgends herbekommt, und ein von Hand
+eingetragener Platz, der nach einem Neuaufsetzen nicht wieder
+hereinzuimportieren ist – er stand nie in einem Logbuch.
+
+#### Was im Code steht
+
+```
+divesite;303948;name:Blue Hole;lat:36.0166;lon:14.2798;region:Gozo
+```
+
+Alle Felder von `DiveSite` reisen mit, jedes aus einem Grund:
+
+- `siteId` – das Einzige, was SSI je interessiert.
+- `name` – das Label der Liste.
+- `lat`/`lon` – **ohne die ist der geteilte Platz auf dem Zielgerät
+  nutzlos.** Der Umkreis-Vorschlag ist der ganze Nutzen eines bekannten
+  Platzes; eine Nummer ohne Position wird nie wieder von selbst gefunden.
+  Vier Dezimalstellen wie in `coordinatesLabel`, nicht mehr.
+- `region` – damit der Platz auf dem zweiten Gerät in derselben Gruppe
+  landet wie auf dem ersten.
+
+Rund 70 Bytes pro Platz.
+
+**Der Marker ist `divesite`, nicht `site`.** `buddy`, `center` und `dive`
+sind SSIs eigene Marker, und `site:` ist ein *Feld* im
+Tauchgangs-Payload. Ein eigener Marker schließt eine Verwechslung auch
+dann aus, wenn SSI selbst einmal Plätze als Code ausgibt.
+
+**Das ist das Format dieser App, keins von SSI.** Die SSI-App wird diesen
+Code nie lesen – anders als der Buddy-Code, der SSIs eigener ist. Gehört
+in den Doc-Kommentar, sonst hält ihn später jemand für einen SSI-Code und
+sucht den Fehler bei SSI. Jedes Feld durch `ssiPayloadValue()`: Namen
+kommen aus fremden Logbüchern.
+
+#### Wo es andockt – fast nichts davon ist neu
+
+- **Zeigen:** QR-Symbol rechts auf `_SiteCard`, genau wie die Buddy-Karte
+  es bekommen hat. Gerendert wird mit `QrScanSurface`.
+- **Lesen:** Der FAB „Code scannen" liest heute schon *beide* Arten – es
+  braucht einen dritten Fall in `SsiCodeScanScreen.parse` und in
+  `_scan()`, keinen neuen Knopf. Ein Scanner, drei Code-Arten, und die
+  Frage „was scannst du gerade?" stellt sich weiterhin nicht.
+- **Zusammenführen:** `DiveSitesController.addAllNew` existiert und macht
+  genau das Richtige – nur Neues anlegen, Region nachtragen, einen
+  umbenannten Eintrag nicht überfahren.
+
+**Eine Entscheidung ist offen:** Was passiert bei einem Platz, dessen
+Nummer das Gerät schon kennt? `save` würde den lokalen Namen
+überschreiben, `addAllNew` behält ihn. Vorschlag: behalten – der lokale
+Name ist eine Entscheidung des Nutzers – aber „kennt dieses Gerät schon"
+sagen statt still nichts zu tun.
+
+#### Einer oder viele
+
+1. **Ein Platz pro Code.** Der Anfang. Für die drei Plätze einer Reise
+   genügt es, und es ist in sich geschlossen und testbar.
+2. **Eine Region am Stück** – aber nicht als ein Riesen-Code: Version 40
+   ist bei 380 px vom Nachbartablet aus kaum zu scannen. Durchblättern
+   wie der Tauchtag, `DiveQrBatchScreen` ist das Muster und steht schon.
+3. **Die ganze Liste** (dreistellig) ist kein QR-Fall. Dafür eine Datei:
+   `file_picker` liegt für den FIT-Import schon da, `DiveSite.toJson` ist
+   fertig, der Export wäre `jsonEncode` über die Liste. Gegen die Datei
+   spricht nur, dass sie irgendwie vom Gerät zum Gerät muss – QR
+   funktioniert ohne Netz, ohne Kabel und ohne Konto.
+
+**Verworfen:** Bluetooth oder „Nearby" (Plattform-Code und neue
+Berechtigungen für etwas, das zwei Kameras auch können) und ein Austausch
+über SSI (für ein Konto mit Logbuch kommen die Plätze von dort – die
+Lücke ist gerade das Tablet *ohne* Anmeldung).
+
+**Sicherheit:** Die Liste liegt verschlüsselt, weil sie zusammen mit den
+Koordinaten sagt, wo diese Person taucht. Ein angezeigter QR-Code ist
+eine bewusste Übergabe an die Person daneben und zeigt nur, was ohnehin
+auf dem Bildschirm steht. Entscheidend ist, dass **nichts mitreist, was
+nicht in der Zeile oben steht** – keine Konto-ID, keine Herkunft, keine
+Tauchgangsdaten.
+
+#### Der nächste Schritt, konkret
+
+Variante 1, ein Platz pro Code, in der Reihenfolge, in der sie sich
+abarbeiten lässt:
+
+1. **`lib/ssi/dive_site.dart`** – `sharePayload()` und
+   `DiveSite.tryParsePayload(String)` an `DiveSite` selbst, nicht als
+   eigener Typ. `SsiBuddyCode` und `SsiCenterCode` sind eigene Typen,
+   weil sie *SSIs* Drahtformat sind und es neben dem Modell steht; hier
+   ist das Modell schon das, was geteilt wird. `toJson` bleibt daneben
+   stehen – das eine ist die Ablage, das andere die Übergabe, und beide
+   dürfen sich unabhängig ändern.
+2. **`lib/ui/ssi_scan_screen.dart`** – dritter Fall in
+   `SsiCodeScanScreen.parse`, dazu der Hinweistext („Mitglied,
+   Tauchcenter oder Tauchplatz").
+3. **`lib/ui/ssi_buddies_screen.dart`** – QR-Symbol rechts auf
+   `_SiteCard` (die Buddy-Karte ist die Vorlage) und der dritte `case` in
+   `_scan()`. Dort fällt die offene Entscheidung von oben: bei bekannter
+   Nummer den lokalen Namen behalten und es sagen.
+4. **l10n** – neue Strings in die abstrakte Klasse *und* beide Sprachen,
+   sonst kompiliert es nicht.
+
+Tests, die das festnageln: Payload hin und zurück (in
+`test/dive_site_test.dart`), der Scanner erkennt die richtige der drei
+Arten, die Platz-Karte zeigt das Symbol, und eine schon bekannte Nummer
+behält den lokalen Namen. Bei Widget-Tests `pumpAndSettle` nach
+`pumpWidget` – die Lokalisierung löst asynchron auf, sonst ist der Baum
+leer.
 
 ### CI-Workflow für Pull Requests
 

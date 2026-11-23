@@ -759,5 +759,37 @@ void main() {
 
       expect(find.textContaining('Sitzung abgelaufen'), findsNothing);
     });
+
+    group('the Personal API key is always on offer', () {
+      // Both entry points stood behind Features.personalApi as long as the
+      // key had not run on a real device. The switch is gone (23.11.2026):
+      // there is no public release, the app is built and installed by the
+      // person whose key it is, and that is the case Garmin's terms mean.
+      testWidgets('in the menu of an account that signed in by password', (
+        tester,
+      ) async {
+        await _pump(tester, accounts: [_account('Andreas')]);
+
+        await tester.tap(find.byIcon(Icons.more_horiz));
+        await tester.pumpAndSettle();
+
+        expect(find.text('Personal API Key'), findsOneWidget);
+      });
+
+      testWidgets('beside the password on the sign-in screen', (tester) async {
+        await _pump(
+          tester,
+          accounts: [_account('Andreas')],
+          expired: {'Andreas'},
+        );
+        await tester.tap(find.textContaining('Sitzung abgelaufen'));
+        await tester.pumpAndSettle();
+
+        expect(
+          find.text('Stattdessen Personal API Key verwenden'),
+          findsOneWidget,
+        );
+      });
+    });
   });
 }

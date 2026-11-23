@@ -399,7 +399,7 @@ class AppStringsDe extends AppStrings {
       'Damit braucht die App kein Garmin-Passwort mehr.';
   @override
   String get personalKeyHowTo =>
-      'Die Adresse unten im Browser öffnen und bei Garmin anmelden. Dort '
+      'Die Garmin-Seite öffnen und dort anmelden. Dann '
       '"Schlüssel erstellen", die Zusatzbedingungen annehmen und eine '
       'Laufzeit wählen. Voreingestellt sind 30 Tage, danach muss ein neuer '
       'Schlüssel her; "1 Jahr" spart das. Den Schlüssel kopieren, er wird '
@@ -407,6 +407,22 @@ class AppStringsDe extends AppStrings {
   @override
   String get personalKeyUrl =>
       'https://connect.garmin.com/app/settings/personalApiToken';
+  @override
+  String get diveNumberSet => 'Tauchgangsnummer festlegen';
+  @override
+  String get diveNumberSetBody =>
+      'Die Nummer dieses Tauchgangs in deinem Logbuch. Die anderen werden '
+      'von hier aus gezählt, Apnoe nicht mitgerechnet. Fehlen weiter hinten '
+      'Tauchgänge in Garmin, dort einfach noch eine Nummer festlegen.';
+  @override
+  String get diveNumberLabel => 'Tauchgangsnummer';
+  @override
+  String get diveNumberInvalid => 'Bitte eine Zahl ab 1 eingeben.';
+  @override
+  String get personalKeyOpenPage => 'Seite bei Garmin öffnen';
+  @override
+  String get personalKeyOpenPageFailed =>
+      'Kein Browser hat die Seite geöffnet. Die Adresse lässt sich kopieren.';
   @override
   String get personalKeyLabel => 'Schlüssel';
   @override
@@ -421,10 +437,6 @@ class AppStringsDe extends AppStrings {
   @override
   String get personalKeyCheck => 'Prüfen und speichern';
   @override
-  String get personalKeyChecking => 'Schlüssel wird geprüft ...';
-  @override
-  String personalKeyBelongsTo(String name) => 'Schlüssel von $name';
-  @override
   String get personalKeyWrongAccount =>
       'Dieser Schlüssel gehört zu einem anderen Garmin-Konto. Er würde '
       'fremde Tauchgänge in diesen Account laden.';
@@ -432,8 +444,6 @@ class AppStringsDe extends AppStrings {
   String get personalKeyExpired => 'Schlüssel abgelaufen';
   @override
   String get personalKeyReplace => 'Neuen Schlüssel hinterlegen';
-  @override
-  String get personalKeyUsePassword => 'Stattdessen mit Passwort anmelden';
   @override
   String get personalKeyUseKey => 'Stattdessen Personal API Key verwenden';
   @override

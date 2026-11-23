@@ -7,7 +7,6 @@ import '../accounts/accounts_controller.dart';
 import '../accounts/models/garmin_account.dart';
 import '../garmin/garmin_auth_exceptions.dart';
 import '../garmin/models/garmin_session.dart';
-import '../features.dart';
 import 'widgets/password_field.dart';
 import 'theme/app_theme.dart';
 import 'garmin_key_screen.dart';
@@ -218,26 +217,24 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
     // The way out of typing a password into someone else's tablet at all.
     // Offered here rather than as a first choice, because the key has to
     // be created in a browser first and that is the longer road.
-    if (Features.personalApi) ...[
-      const SizedBox(height: AppSpacing.sm),
-      Align(
-        alignment: Alignment.centerLeft,
-        child: TextButton.icon(
-          icon: const Icon(Icons.key_outlined, size: 18),
-          label: Text(s.personalKeyUseKey),
-          onPressed: _busy
-              ? null
-              : () => Navigator.of(context).pushReplacement(
-                  MaterialPageRoute(
-                    builder: (_) => GarminKeyScreen(
-                      account: widget.reconnect,
-                      initialName: _nameController.text,
-                    ),
+    const SizedBox(height: AppSpacing.sm),
+    Align(
+      alignment: Alignment.centerLeft,
+      child: TextButton.icon(
+        icon: const Icon(Icons.key_outlined, size: 18),
+        label: Text(s.personalKeyUseKey),
+        onPressed: _busy
+            ? null
+            : () => Navigator.of(context).pushReplacement(
+                MaterialPageRoute(
+                  builder: (_) => GarminKeyScreen(
+                    account: widget.reconnect,
+                    initialName: _nameController.text,
                   ),
                 ),
-        ),
+              ),
       ),
-    ],
+    ),
   ];
 
   List<Widget> _mfaFields(AppStrings s) => [
