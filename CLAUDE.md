@@ -59,6 +59,10 @@ wurde. Erledigtes wird dort gelöscht; die Historie steht im Git-Log.
 
 ## Arbeitsweise, die sich hier bewährt hat
 
+- **Formatieren mit der Flutter-Version aus `release.yml`.** Ein älteres
+  `dart format` bricht anders um, und jeder Commit aus der anderen
+  Umgebung schreibt dieselben Zeilen dann wieder zurück.
+
 - **Nie eine Zuordnung raten.** SSIs Format und Garmins Feldnamen sind
   nicht dokumentiert; beides wurde aus echten Mitschnitten rekonstruiert.
   Ein ausgelassenes Feld wird nicht importiert, ein falsch geratenes landet

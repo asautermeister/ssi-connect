@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../l10n/app_strings.dart';
-
 import 'package:provider/provider.dart';
 
 import '../accounts/accounts_controller.dart';
@@ -125,8 +124,9 @@ class _AccountsScreenState extends State<AccountsScreen> {
               ),
             ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => Navigator.of(context)
-            .push(MaterialPageRoute(builder: (_) => const AddAccountScreen())),
+        onPressed: () => Navigator.of(
+          context,
+        ).push(MaterialPageRoute(builder: (_) => const AddAccountScreen())),
         icon: const Icon(Icons.person_add_alt),
         label: Text(s.addAccount),
       ),
@@ -850,17 +850,18 @@ class _QuickActions extends StatelessWidget {
           icon: Icons.tune,
           title: s.quickSettingsTitle,
           subtitle: s.quickSettingsSubtitle,
-          onTap: () => Navigator.of(context)
-              .push(MaterialPageRoute(builder: (_) => const SettingsScreen())),
+          onTap: () => Navigator.of(
+            context,
+          ).push(MaterialPageRoute(builder: (_) => const SettingsScreen())),
         ),
         const SizedBox(height: AppSpacing.md),
         _ActionCard(
           icon: Icons.info_outline,
           title: s.quickInfoTitle,
           subtitle: s.quickInfoSubtitle,
-          onTap: () =>
-              Navigator.of(context)
-                  .push(MaterialPageRoute(builder: (_) => const InfoScreen())),
+          onTap: () => Navigator.of(
+            context,
+          ).push(MaterialPageRoute(builder: (_) => const InfoScreen())),
         ),
       ],
     );

@@ -148,7 +148,9 @@ class ApiLogInterceptor extends Interceptor {
   /// Bodies are not always structured - Garmin returns HTML challenge pages
   /// and form-encoded payloads too, so scrub those textually as well.
   String _sanitizeString(String value) {
-    var result = value;
+    // A JWT with no name in front of it: the Personal API answers the key
+    // exchange with the bare token as text, which the key scrub below misses.
+    var result = value.replaceAll(RegExp(r'eyJ[\w-]+\.[\w-]+\.[\w-]+'), '***');
     for (final key in _secretKeys) {
       if (key.length < _minTextScrubKeyLength) continue;
       result = result.replaceAllMapped(

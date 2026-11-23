@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../l10n/app_strings.dart';
-
 import 'package:provider/provider.dart';
 
 import '../accounts/models/account_color.dart';

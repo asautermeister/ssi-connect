@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../l10n/app_strings.dart';
-
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 

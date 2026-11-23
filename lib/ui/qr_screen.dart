@@ -8,7 +8,6 @@ import '../models/dive.dart';
 import '../ssi/dive_site.dart';
 import '../ssi/ssi_buddy_code.dart';
 import '../ssi/ssi_qr_payload_builder.dart';
-
 import 'package:qr_flutter/qr_flutter.dart';
 
 import 'format.dart';

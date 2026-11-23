@@ -66,6 +66,10 @@ Konsolen-Log, Tauchgangsnummern. Kein neuer Sicherheitsbefund:
   nicht redigiert wird; heute reist dort nichts Geheimes.
 - Der Personal API Key steht nur im Sitzungsmodell und im Keystore. Er
   landet in keiner Log-Zeile und in keiner Fehlermeldung.
+- **Nachtrag (Review 23.11.):** Das *Token* dagegen schon. Der Tausch
+  antwortet mit dem nackten JWT als Text, und die Schwärzung griff nur
+  hinter einem Feldnamen. Jetzt wird alles in JWT-Form geschwärzt
+  (`_sanitizeString`), mit Test.
 
 Gefunden und behoben: drei l10n-Strings, die mit dem Schlüssel-Bildschirm
 angelegt und nie benutzt wurden.

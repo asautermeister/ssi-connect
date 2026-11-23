@@ -384,8 +384,9 @@ SsiLoggedDive? _loggedDiveFromEntry(Map<String, dynamic> entry) {
 DateTime? _parseLocal(Object? raw) {
   if (raw is! String) return null;
   final text = raw.trim();
-  final match = RegExp(r'^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})')
-      .firstMatch(text);
+  final match = RegExp(
+    r'^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})',
+  ).firstMatch(text);
   if (match == null) return null;
   return DateTime(
     int.parse(match.group(1)!),
