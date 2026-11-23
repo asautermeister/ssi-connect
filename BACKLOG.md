@@ -432,6 +432,35 @@ auf dem Bildschirm steht. Entscheidend ist, dass **nichts mitreist, was
 nicht in der Zeile oben steht** – keine Konto-ID, keine Herkunft, keine
 Tauchgangsdaten.
 
+#### Der nächste Schritt, konkret
+
+Variante 1, ein Platz pro Code, in der Reihenfolge, in der sie sich
+abarbeiten lässt:
+
+1. **`lib/ssi/dive_site.dart`** – `sharePayload()` und
+   `DiveSite.tryParsePayload(String)` an `DiveSite` selbst, nicht als
+   eigener Typ. `SsiBuddyCode` und `SsiCenterCode` sind eigene Typen,
+   weil sie *SSIs* Drahtformat sind und es neben dem Modell steht; hier
+   ist das Modell schon das, was geteilt wird. `toJson` bleibt daneben
+   stehen – das eine ist die Ablage, das andere die Übergabe, und beide
+   dürfen sich unabhängig ändern.
+2. **`lib/ui/ssi_scan_screen.dart`** – dritter Fall in
+   `SsiCodeScanScreen.parse`, dazu der Hinweistext („Mitglied,
+   Tauchcenter oder Tauchplatz").
+3. **`lib/ui/ssi_buddies_screen.dart`** – QR-Symbol rechts auf
+   `_SiteCard` (die Buddy-Karte ist die Vorlage) und der dritte `case` in
+   `_scan()`. Dort fällt die offene Entscheidung von oben: bei bekannter
+   Nummer den lokalen Namen behalten und es sagen.
+4. **l10n** – neue Strings in die abstrakte Klasse *und* beide Sprachen,
+   sonst kompiliert es nicht.
+
+Tests, die das festnageln: Payload hin und zurück (in
+`test/dive_site_test.dart`), der Scanner erkennt die richtige der drei
+Arten, die Platz-Karte zeigt das Symbol, und eine schon bekannte Nummer
+behält den lokalen Namen. Bei Widget-Tests `pumpAndSettle` nach
+`pumpWidget` – die Lokalisierung löst asynchron auf, sonst ist der Baum
+leer.
+
 ### CI-Workflow für Pull Requests
 
 Heute laufen `flutter analyze` und die Tests nur beim Release. Ein
